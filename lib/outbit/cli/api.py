@@ -3,7 +3,7 @@ import optparse
 import sys
 import os
 import json
-import md5
+import hashlib
 from functools import wraps
 from flask import Flask, Response, request
 
@@ -16,7 +16,7 @@ def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
-    m = md5.new()
+    m = hashlib.md5()
     m.update(password)
     password_md5 = m.digest()
 
