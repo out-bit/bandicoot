@@ -3,11 +3,44 @@ import optparse
 import sys
 import os
 import json
-from flask import Flask, Response
+import md5
+from functools import wraps
+from flask import Flask, Response, request
+
+
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
+
+
+def check_auth(username, password):
+    """This function is called to check if a username /
+    password combination is valid.
+    """
+    m = md5.new()
+    m.update(password)
+    password_md5 = m.digest()
+
+    return username == 'admin' and password_md5 == '^\xbe"\x94\xec\xd0\xe0\xf0\x8e\xabv\x90\xd2\xa6\xeei'
+
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return Response(
+    'Could not verify your access level for that URL.\n'
+    'You have to login with proper credentials', 401,
+    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
 
 
 @app.route("/")
+@requires_auth
 def outbit_base():
     dat = json.dumps({"response": "pong"})
     resp = Response(response=dat, status=200, mimetype="application/json")

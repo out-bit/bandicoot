@@ -50,8 +50,8 @@ class Cli(object):
         sys.exit(0)
 
     def run_action(self, category, action, options):
-        jsonobj = '{"category": "%s", "action": "%s", "options": "%s"}'
-        response = requests.get(self.url, data=jsonobj)
+        jsonobj = '{"category": "%s", "action": "%s", "options": "%s"}' % (category, action, options)
+        response = requests.get(self.url, auth=("admin", "secret"), data=jsonobj)
         return json.loads(response.text)
 
     def ping(self):
