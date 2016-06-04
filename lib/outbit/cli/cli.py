@@ -53,7 +53,7 @@ class Cli(object):
 
     def prompt(self):
         """ Command Prompt """
-        sys.stdout.write("outbit> ")
+        sys.stdout.write("%s@outbit> " % self.user)
 
     def login_prompt(self):
         if self.user is None:
