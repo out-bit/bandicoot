@@ -6,21 +6,31 @@ import json
 import hashlib
 from functools import wraps
 from flask import Flask, Response, request
+from pymongo import MongoClient
 
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+dbclient = MongoClient('localhost', 27017)
+db = dbclient.outbit
 
 
 def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
+    valid_auth = False
     m = hashlib.md5()
     m.update(password)
-    password_md5 = m.digest()
+    password_md5 = m.hexdigest()
 
-    return username == 'admin' and password_md5 == '^\xbe"\x94\xec\xd0\xe0\xf0\x8e\xabv\x90\xd2\xa6\xeei'
+    post = db.posts.find_one({"username": username})
+
+    if post["password_md5"] == password_md5:
+        valid_auth = True
+
+    return valid_auth
 
 def authenticate():
     """Sends a 401 response that enables basic auth"""
@@ -42,7 +52,6 @@ def requires_auth(f):
 @app.route("/", methods=["POST"])
 @requires_auth
 def outbit_base():
-#    indata = request.get_json(force=True)
     indata = request.get_json()
     dat = None
     status = 200
@@ -51,8 +60,16 @@ def outbit_base():
         dat = json.dumps({"response": "pong"})
     elif indata["category"] == "/users" and indata["action"] == "add":
         (username, password) = indata["options"].split(",")
-        # TODO: Create User
+
+        m = hashlib.md5()
+        m.update(password)
+        password_md5 = str(m.hexdigest())
+
+        post = {"username": username, "password_md5": password_md5}
+        db.posts.insert_one(post)
+
         print("Creating User %s" % username)
+
         dat = json.dumps({"response": "success created %s" % username})
     else:
         status=403
