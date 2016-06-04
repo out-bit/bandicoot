@@ -66,14 +66,26 @@ def outbit_base():
     dat = None
     status = 200
 
-    if indata["category"] == "/" and indata["action"] == "ping":
-        dat = json.dumps({"response": "pong"})
+    if indata["category"] == "/" and indata["action"] == "help":
+        dat = json.dumps({"response": "  exit\n  quit\n  ping\n  help"})
+    elif indata["category"] == "/" and indata["action"] == "ping":
+        dat = json.dumps({"response": "  pong"})
     elif indata["category"] == "/users" and indata["action"] == "add":
-        (username, password) = indata["options"].split(",")
+        username = None
+        password = None
+        for option in indata["options"].split(","):
+            if "username=" in option:
+                username = option.split("=")[1]
+            if "password=" in option:
+                password = option.split("=")[1]
         action_add_user(username, password)
-        dat = json.dumps({"response": "success created %s" % username})
+        dat = json.dumps({"response": "  created user %s" % username})
     else:
-        status=403
+         # TESTING
+        print("Testing: %s" % indata)
+        dat = json.dumps({"response": "  action not found"})
+        # END TESTING
+        #status=403 TODO PUT THIS BACK AND REMOVE TESTING
 
     resp = Response(response=dat, status=status, mimetype="application/json")
     return(resp)

@@ -43,7 +43,7 @@ class Cli(object):
         print("======================")
         print("Welcome To outbit")
         print("Connecting to Server %s" % self.url)
-        if self.ping() == "pong":
+        if "pong" in self.action_ping():
             print("Connected to Server %s" % self.url)
         else:
             print("Failed connecting to server %s" % self.url)
@@ -64,50 +64,12 @@ class Cli(object):
     def exit(self):
         sys.exit(0)
 
-    def run_action(self, category, action, options):
-        jsonobj = {"category": category, "action": action, "options": options}
-        r = requests.post(self.url, headers={'Content-Type': 'application/json'},
-            auth=(self.user, self.password), data=json.dumps(jsonobj))
-
-        if r.status_code == requests.codes.ok:
-            return json.loads(r.text)
-        else:
-            return None
-
-    def ping(self):
-        data = self.run_action("/", "ping", "")
+    def action_ping(self):
+        data = self.run_action(self.get_action_from_command("ping"))
         if data is not None:
             return data["response"]
         else:
-            return None
-
-    def is_action_add_user(self, action):
-        return len(action) == 4 and action[0] == "users" and action[1] == "add"
-
-    def action_add_user(self, username, password):
-        data = self.run_action("/users", "add", "%s,%s" % (username, password))
-        if data is not None:
-            print("Added user %s: %s" % (username, data["response"]))
-        else:
-            print("Failed Added user %s: %s" % (username, data["response"]))
-
-    def is_action_help(self, action):
-        return len(action) == 1 and action[0] == "help"
-
-    def action_help(self, action):
-        print("  Command Options:")
-        if len(action) <= 1:
-            print("  exit\n  quit\n  ping\n  help")
-        else:
-            # TODO: print usage of category and commands, user defined as well
-            pass
-
-    def is_action_ping(self, action):
-        return len(action) == 1 and action[0] == "ping"
-
-    def action_ping(self):
-        sys.stdout.write("  Ping ..... ")
-        print("%s" % self.ping())
+            return ""
 
     def is_action_quit(self, action):
         return len(action) == 1 and ( action[0] == "quit" or action[0] == "exit" )
@@ -116,27 +78,58 @@ class Cli(object):
         print("  Goodbye!")
         self.exit()
 
+    def run_action(self, actionjson):
+        r = requests.post(self.url, headers={'Content-Type': 'application/json'},
+            auth=(self.user, self.password), data=json.dumps(actionjson))
+
+        if r.status_code == requests.codes.ok:
+            return json.loads(r.text)
+        else:
+            return None
+
+    def get_action_from_command(self, line):
+        action_list = line.strip().split()
+        actionjson = {'category': "/", "action": "", "options": ""}
+        if len(action_list) == 1:
+            actionjson = {'category': "/", "action": action_list[0], "options": ""}
+        elif len(action_list) >= 2:
+            category = "/"
+            action = ""
+            options = ""
+            count = 0 # Count number of options
+            action_list_reverse = list(action_list)
+            action_list_reverse.reverse()
+            for node in action_list_reverse:
+                if category is "/" and action is "" and "=" in node:
+                    options += "%s," % node
+                    count += 1
+                elif category is "/" and action is "" and "=" not in node:
+                    action = node
+                    count += 1
+                else:
+                    category_range = len(action_list) - count
+                    category = "/%s" % "/".join(action_list[0:category_range])
+            actionjson = {'category': category, "action": action, "options": options}
+
+        return actionjson
+
     def startshell(self):
         while True:
             line = sys.stdin.readline().strip()
             action = line.split()
             if self.is_action_quit(action):
                 # outbit> quit
+                # outbit> exit
                 self.action_quit()
-            elif self.is_action_ping(action):
-                # outbit> ping
-                self.action_ping()
-            elif self.is_action_add_user(action):
-                # outbit> users add username password
-                username = action[2]
-                password = action[3]
-                self.action_add_user(username, password)
-            elif self.is_action_help(action):
-                # outbit> help
-                self.action_help(action)
             else:
-                # outbit> wrong command
-                self.action_help(action)
+                # Server Side Handles Command Response
+                # outbit> [category ..] action [option1=something ..]
+                actionjson = self.get_action_from_command(line)
+                data = self.run_action(actionjson)
+                if data is not None:
+                    print(data["response"])
+                else:
+                    print("outbit - Failed To Get Response From Server")
             self.prompt()
 
     def run(self):
