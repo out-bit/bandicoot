@@ -1,5 +1,5 @@
 import nose
-from outbit.cli import Cli
+from outbit.cli.cli import Cli
 import unittest
 import sys
 import os
