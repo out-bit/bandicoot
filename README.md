@@ -1,6 +1,8 @@
 outbit
 =====================
 
+[![Join the chat at https://gitter.im/starboarder2001/outbit](https://badges.gitter.im/starboarder2001/outbit.svg)](https://gitter.im/starboarder2001/outbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Description
 ===========
 
