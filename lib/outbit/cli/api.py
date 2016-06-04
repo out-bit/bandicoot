@@ -32,12 +32,14 @@ def check_auth(username, password):
 
     return valid_auth
 
+
 def authenticate():
     """Sends a 401 response that enables basic auth"""
     return Response(
     'Could not verify your access level for that URL.\n'
     'You have to login with proper credentials', 401,
     {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
 
 def requires_auth(f):
     @wraps(f)
@@ -47,6 +49,14 @@ def requires_auth(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
+
+
+def action_add_user(username, password):
+    m = hashlib.md5()
+    m.update(password)
+    password_md5 = str(m.hexdigest())
+    post = {"username": username, "password_md5": password_md5}
+    db.users.posts.insert_one(post)
 
 
 @app.route("/", methods=["POST"])
@@ -60,16 +70,7 @@ def outbit_base():
         dat = json.dumps({"response": "pong"})
     elif indata["category"] == "/users" and indata["action"] == "add":
         (username, password) = indata["options"].split(",")
-
-        m = hashlib.md5()
-        m.update(password)
-        password_md5 = str(m.hexdigest())
-
-        post = {"username": username, "password_md5": password_md5}
-        db.users.posts.insert_one(post)
-
-        print("Creating User %s" % username)
-
+        action_add_user(username, password)
         dat = json.dumps({"response": "success created %s" % username})
     else:
         status=403
@@ -115,12 +116,7 @@ class Cli(object):
         default_password = "superadmin"
         post = db.users.posts.find_one({"username": default_user})
         if post is None:
-            m = hashlib.md5()
-            m.update(default_password)
-            default_password_md5 = str(m.hexdigest())
-
-            post = {"username": default_user, "password_md5": default_password_md5}
-            db.users.posts.insert_one(post)
+            action_add_user(default_user, default_password)
 
         # Start API Server
         print("Starting outbit api server on %s://%s:%d" % ("https" if
