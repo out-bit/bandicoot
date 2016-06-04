@@ -81,33 +81,58 @@ class Cli(object):
         else:
             return None
 
-    def add_user(self, username, password):
-        data = self.run_action("/users", "add", "%s,%s" % (username, password))
-        print("Added user %s: %s" % (username, data["response"]))
+    def is_action_add_user(self, action):
+        return len(action) == 4 and action[0] == "users" and action[1] == "add"
 
-    def help(self):
+    def action_add_user(self, username, password):
+        data = self.run_action("/users", "add", "%s,%s" % (username, password))
+        if data is not None:
+            print("Added user %s: %s" % (username, data["response"]))
+        else:
+            print("Failed Added user %s: %s" % (username, data["response"]))
+
+    def is_action_help(self, action):
+        return len(action) == 1 and action[0] == "help"
+
+    def action_help(self, action):
         print("  Command Options:")
-        # Todo Print User Added Commands
-        print("  exit\n  quit\n  ping\n  help")
+        if len(action) <= 1:
+            print("  exit\n  quit\n  ping\n  help")
+        else:
+            # TODO: print usage of category and commands, user defined as well
+            pass
+
+    def is_action_ping(self, action):
+        return len(action) == 1 and action[0] == "ping"
+
+    def action_ping(self):
+        sys.stdout.write("  Ping ..... ")
+        print("%s" % self.ping())
+
+    def is_action_quit(self, action):
+        return len(action) == 1 and ( action[0] == "quit" or action[0] == "exit" )
+
+    def action_quit(self):
+        print("  Goodbye!")
+        self.exit()
 
     def startshell(self):
         while True:
             line = sys.stdin.readline().strip()
-            if line == "quit" or line == "exit":
-                print("  Goodbye!")
-                self.exit()
-            if line == "ping":
-                sys.stdout.write("  Ping ..... ")
-                print("%s" % self.ping())
-            else:
-                action = line.split(" ")
+            action = line.split()
+            if self.is_action_quit(action):
+                self.action_quit()
+            elif self.is_action_ping(action):
+                self.action_ping()
+            elif self.is_action_add_user(action):
                 # users add username password
-                if action[0] == "users" and action[1] == "add":
-                    username = action[2]
-                    password = action[3]
-                    self.add_user(username, password)
-                else:
-                    self.help()
+                username = action[2]
+                password = action[3]
+                self.action_add_user(username, password)
+            elif self.is_action_help(action):
+                self.action_help(action)
+            else:
+                self.action_help(action)
             self.prompt()
 
     def run(self):
