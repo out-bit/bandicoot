@@ -1,5 +1,5 @@
 import nose
-from ansibledocgen.cli import Cli
+from outbit.cli import Cli
 import unittest
 import sys
 import os
