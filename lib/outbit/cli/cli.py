@@ -50,14 +50,19 @@ class Cli(object):
         sys.exit(0)
 
     def run_action(self, category, action, options):
-        jsonobj = '{"category": "%s", "action": "%s", "options": "%s"}' % (category, action, options)
-        response = requests.get(self.url, auth=("admin", "secret"), data=jsonobj)
+        jsonobj = {"category": category, "action": action, "options": options}
+        response = requests.post(self.url, headers={'Content-Type': 'application/json'},
+            auth=("admin", "secret"), data=json.dumps(jsonobj))
         return json.loads(response.text)
 
     def ping(self):
         sys.stdout.write("Ping ..... ")
         data = self.run_action("/", "ping", "")
         print("Pong: %s" % data["response"])
+
+    def add_user(self, username, password):
+        data = self.run_action("/users", "add", "%s,%s" % (username, password))
+        print("Added user %s: %s" % (username, data["response"]))
 
     def help(self):
         print("  Command Options:")
@@ -72,7 +77,14 @@ class Cli(object):
             if line == "ping":
                 self.ping()
             else:
-                self.help()
+                action = line.split(" ")
+                # users add username password
+                if action[0] == "users" and action[1] == "add":
+                    username = action[2]
+                    password = action[3]
+                    self.add_user(username, password)
+                else:
+                    self.help()
             self.prompt()
 
     def run(self):

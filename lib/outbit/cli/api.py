@@ -39,11 +39,25 @@ def requires_auth(f):
     return decorated
 
 
-@app.route("/")
+@app.route("/", methods=["POST"])
 @requires_auth
 def outbit_base():
-    dat = json.dumps({"response": "pong"})
-    resp = Response(response=dat, status=200, mimetype="application/json")
+#    indata = request.get_json(force=True)
+    indata = request.get_json()
+    dat = None
+    status = 200
+
+    if indata["category"] == "/" and indata["action"] == "ping":
+        dat = json.dumps({"response": "pong"})
+    elif indata["category"] == "/users" and indata["action"] == "add":
+        (username, password) = indata["options"].split(",")
+        # TODO: Create User
+        print("Creating User %s" % username)
+        dat = json.dumps({"response": "success created %s" % username})
+    else:
+        status=403
+
+    resp = Response(response=dat, status=status, mimetype="application/json")
     return(resp)
 
 
