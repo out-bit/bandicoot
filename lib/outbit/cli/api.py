@@ -109,6 +109,20 @@ class Cli(object):
 
     def run(self):
         """ EntryPoint Of Application """
+
+        # First Time Defaults, Setup superadmin if it doesnt exist
+        default_user = "superadmin"
+        default_password = "superadmin"
+        post = db.users.posts.find_one({"username": default_user})
+        if post is None:
+            m = hashlib.md5()
+            m.update(default_password)
+            default_password_md5 = str(m.hexdigest())
+
+            post = {"username": default_user, "password_md5": default_password_md5}
+            db.users.posts.insert_one(post)
+
+        # Start API Server
         print("Starting outbit api server on %s://%s:%d" % ("https" if
             self.is_secure else "http", self.server, self.port))
         if self.is_secure:
@@ -116,3 +130,6 @@ class Cli(object):
             sys.exit(1)
         else:
             app.run(host=self.server, port=self.port, debug=self.is_debug)
+
+
+

@@ -16,7 +16,8 @@ class Cli(object):
         parser = optparse.OptionParser()
         parser.add_option("-u", "--user", dest="user",
                           help="outbit username",
-                          metavar="USER")
+                          metavar="USER",
+                          default="superadmin")
         parser.add_option("-s", "--server", dest="server",
                           help="IP address or hostname of outbit-api server",
                           metavar="SERVER",
