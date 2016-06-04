@@ -94,9 +94,10 @@ class Cli(object):
         while True:
             line = sys.stdin.readline().strip()
             if line == "quit" or line == "exit":
+                print("  Goodbye!")
                 self.exit()
             if line == "ping":
-                sys.stdout.write("Ping ..... ")
+                sys.stdout.write("  Ping ..... ")
                 print("%s" % self.ping())
             else:
                 action = line.split(" ")
