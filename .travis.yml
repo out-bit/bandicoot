@@ -18,8 +18,7 @@ install:
 
 # Run Tests
 script:
-    - 'export PYTHONPATH="${PYTHONPATH}:./lib"'
-    - "coverage run --source=outbit $(which nosetests) -w test/units/"
+    - './run_tests.sh'
 
 after_success:
     - coveralls

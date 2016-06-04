@@ -38,11 +38,6 @@ class Cli(object):
         self.url = "%s://%s:%d" % ("https" if self.is_secure else "http", self.server, self.port)
         self.password = None
 
-        if self.user is None:
-            self.user = raw_input("Username: ")
-        if self.password is None:
-            self.password = getpass.getpass()
-
     def welcome(self):
         """ Welcome Message """
         print("======================")
@@ -59,6 +54,12 @@ class Cli(object):
     def prompt(self):
         """ Command Prompt """
         sys.stdout.write("outbit> ")
+
+    def login_prompt(self):
+        if self.user is None:
+            self.user = raw_input("Username: ")
+        if self.password is None:
+            self.password = getpass.getpass()
 
     def exit(self):
         sys.exit(0)
@@ -110,6 +111,7 @@ class Cli(object):
 
     def run(self):
         """ EntryPoint Of Application """
+        self.login_prompt()
         self.welcome()
         self.prompt()
         self.startshell()
