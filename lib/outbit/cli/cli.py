@@ -121,17 +121,21 @@ class Cli(object):
             line = sys.stdin.readline().strip()
             action = line.split()
             if self.is_action_quit(action):
+                # outbit> quit
                 self.action_quit()
             elif self.is_action_ping(action):
+                # outbit> ping
                 self.action_ping()
             elif self.is_action_add_user(action):
-                # users add username password
+                # outbit> users add username password
                 username = action[2]
                 password = action[3]
                 self.action_add_user(username, password)
             elif self.is_action_help(action):
+                # outbit> help
                 self.action_help(action)
             else:
+                # outbit> wrong command
                 self.action_help(action)
             self.prompt()
 
