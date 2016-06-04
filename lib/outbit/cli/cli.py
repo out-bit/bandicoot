@@ -3,6 +3,7 @@ import optparse
 import sys
 import os
 import requests
+import json
 
 
 class Cli(object):
@@ -38,6 +39,7 @@ class Cli(object):
         """ Welcome Message """
         print("======================")
         print("Welcome To outbit")
+        print("connected to server %s" % self.url)
         print("======================")
 
     def prompt(self):
@@ -50,11 +52,12 @@ class Cli(object):
     def run_action(self, category, action, options):
         jsonobj = '{"category": "%s", "action": "%s", "options": "%s"}'
         response = requests.get(self.url, data=jsonobj)
+        return json.loads(response.text)
 
     def ping(self):
         sys.stdout.write("Ping ..... ")
-        self.run_action("/", "ping", "")
-        print("Pong")
+        data = self.run_action("/", "ping", "")
+        print("Pong: %s" % data["response"])
 
     def help(self):
         print("  Command Options:")

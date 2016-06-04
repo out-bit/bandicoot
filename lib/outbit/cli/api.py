@@ -2,7 +2,16 @@
 import optparse
 import sys
 import os
-import requests
+import json
+from flask import Flask, Response
+app = Flask(__name__)
+
+
+@app.route("/")
+def outbit_base():
+    dat = json.dumps({"response": "pong"})
+    resp = Response(response=dat, status=200, mimetype="application/json")
+    return(resp)
 
 
 class Cli(object):
@@ -24,12 +33,22 @@ class Cli(object):
                           help="Use SSL",
                           metavar="SECURE",
                           action="store_true")
+        parser.add_option("-d", "--debug", dest="is_debug",
+                          help="Debug Mode",
+                          metavar="DEBUG",
+                          action="store_true")
         (options, args) = parser.parse_args()
         self.server = options.server
         self.port = int(options.port)
         self.is_secure = options.is_secure
+        self.is_debug = options.is_debug
 
     def run(self):
         """ EntryPoint Of Application """
         print("Starting outbit api server on %s://%s:%d" % ("https" if
             self.is_secure else "http", self.server, self.port))
+        if self.is_secure:
+            print("Does not support SSL yet")
+            sys.exit(1)
+        else:
+            app.run(host=self.server, port=self.port, debug=self.is_debug)
