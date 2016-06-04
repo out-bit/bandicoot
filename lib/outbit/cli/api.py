@@ -25,7 +25,7 @@ def check_auth(username, password):
     m.update(password)
     password_md5 = m.hexdigest()
 
-    post = db.posts.find_one({"username": username})
+    post = db.users.posts.find_one({"username": username})
 
     if post["password_md5"] == password_md5:
         valid_auth = True
@@ -66,7 +66,7 @@ def outbit_base():
         password_md5 = str(m.hexdigest())
 
         post = {"username": username, "password_md5": password_md5}
-        db.posts.insert_one(post)
+        db.users.posts.insert_one(post)
 
         print("Creating User %s" % username)
 
