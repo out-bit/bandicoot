@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: OSX Check homebrew is installed
+      shell: "brew list"
+      changed_when: False
+      when: ansible_distribution == 'MacOSX'
+
+    - name: OSX Install mongodb
+      shell: "brew install mongodb"
+      changed_when: False
+      when: ansible_distribution == 'MacOSX'
+
+    - name: OSX Start mongodb
+      shell: "brew services start mongodb"
+      changed_when: False
+      when: ansible_distribution == 'MacOSX'
