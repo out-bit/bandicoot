@@ -84,6 +84,9 @@ def outbit_base():
             if "password=" in option:
                 password = option.split("=")[1]
 
+        # username and password are required
+        # TODO implement required options
+
         if indata["action"] == "add":
             post = db.users.posts.find_one({"username": username})
             if post is None:
@@ -97,6 +100,23 @@ def outbit_base():
                 dat = json.dumps({"response": "  deleted user %s" % username})
             else:
                 dat = json.dumps({"response": "  user %s does not exist" % username})
+    elif indata["category"] == "/actions":
+        if indata["action"] == "add":
+            pass
+        elif indata["action"] == "del":
+            pass
+    elif indata["category"] == "/secrets":
+        if indata["action"] == "add":
+            pass
+        elif indata["action"] == "del":
+            pass
+    elif indata["category"] == "/roles":
+        if indata["action"] == "add":
+            pass
+        elif indata["action"] == "del":
+            pass
+    elif indata["category"] == "/" and indata["action"] == "history":
+        pass
     else:
          # TESTING
         print("Testing: %s" % indata)
