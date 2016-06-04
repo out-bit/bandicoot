@@ -1,9 +1,24 @@
 #!/usr/bin/env python
 """ Outbit CLI Interface"""
-from outbit.cli import Cli
 import sys
+import os
 
 if __name__ == "__main__":
-    cli = Cli()
+    me = os.path.basename(sys.argv[0])
+    cli = None
+
+    if me.find('-') != -1:
+        target = me.split('-')
+        if len(target) > 1:
+            sub = target[1]
+            mycli = getattr(__import__("outbit.cli.%s" % sub, fromlist=["Cli"]), "Cli")
+            cli = mycli()
+    elif me == 'outbit':
+        mycli = getattr(__import__("outbit.cli.cli", fromlist=["Cli"]), "Cli")
+        cli = mycli()
+    else:
+        print("Unknown outbit CLI Tool")
+        sys.exit(1)
+
     cli.run()
     sys.exit(0)

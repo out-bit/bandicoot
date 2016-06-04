@@ -41,6 +41,7 @@ setup(name='outbit',
       scripts=[
          'bin/outbit',
          'bin/outbit-api',
+         'bin/outbit-cli',
       ],
       data_files=[],
 )
