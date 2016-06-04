@@ -59,6 +59,11 @@ def action_add_user(username, password):
     db.users.posts.insert_one(post)
 
 
+def action_del_user(username):
+    post = {"username": username}
+    db.users.posts.delete_many(post)
+
+
 @app.route("/", methods=["POST"])
 @requires_auth
 def outbit_base():
@@ -70,7 +75,7 @@ def outbit_base():
         dat = json.dumps({"response": "  exit\n  quit\n  ping\n  help"})
     elif indata["category"] == "/" and indata["action"] == "ping":
         dat = json.dumps({"response": "  pong"})
-    elif indata["category"] == "/users" and indata["action"] == "add":
+    elif indata["category"] == "/users":
         username = None
         password = None
         for option in indata["options"].split(","):
@@ -78,8 +83,13 @@ def outbit_base():
                 username = option.split("=")[1]
             if "password=" in option:
                 password = option.split("=")[1]
-        action_add_user(username, password)
-        dat = json.dumps({"response": "  created user %s" % username})
+
+        if indata["action"] == "add":
+            action_add_user(username, password)
+            dat = json.dumps({"response": "  created user %s" % username})
+        elif indata["action"] == "del":
+            action_del_user(username)
+            dat = json.dumps({"response": "  deleted user %s" % username})
     else:
          # TESTING
         print("Testing: %s" % indata)
