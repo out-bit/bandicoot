@@ -56,12 +56,12 @@ def action_add_user(username, password):
     m.update(password)
     password_md5 = str(m.hexdigest())
     post = {"username": username, "password_md5": password_md5}
-    db.users.posts.insert_one(post)
+    return db.users.posts.insert_one(post)
 
 
 def action_del_user(username):
     post = {"username": username}
-    db.users.posts.delete_many(post)
+    return db.users.posts.delete_many(post)
 
 
 @app.route("/", methods=["POST"])
@@ -71,7 +71,7 @@ def outbit_base():
     dat = None
     status = 200
 
-    if indata["category"] == "/" and indata["action"] == "help":
+    if indata["category"] == "/" and ( indata["action"] == "help" or indata["action"] == "ls" ):
         dat = json.dumps({"response": "  exit\n  quit\n  ping\n  help"})
     elif indata["category"] == "/" and indata["action"] == "ping":
         dat = json.dumps({"response": "  pong"})
@@ -85,11 +85,18 @@ def outbit_base():
                 password = option.split("=")[1]
 
         if indata["action"] == "add":
-            action_add_user(username, password)
-            dat = json.dumps({"response": "  created user %s" % username})
+            post = db.users.posts.find_one({"username": username})
+            if post is None:
+                action_add_user(username, password)
+                dat = json.dumps({"response": "  created user %s" % username})
+            else:
+                dat = json.dumps({"response": "  user %s already exists" % username})
         elif indata["action"] == "del":
-            action_del_user(username)
-            dat = json.dumps({"response": "  deleted user %s" % username})
+            result = action_del_user(username)
+            if result.deleted_count > 0:
+                dat = json.dumps({"response": "  deleted user %s" % username})
+            else:
+                dat = json.dumps({"response": "  user %s does not exist" % username})
     else:
          # TESTING
         print("Testing: %s" % indata)
