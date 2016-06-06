@@ -5,6 +5,7 @@ import os
 import requests
 import json
 import getpass
+import curses
 
 
 class Cli(object):
@@ -37,23 +38,21 @@ class Cli(object):
         self.is_secure = options.is_secure
         self.url = "%s://%s:%d" % ("https" if self.is_secure else "http", self.server, self.port)
         self.password = None
+        self.screen = None
+        self.history = []
 
     def welcome(self):
         """ Welcome Message """
-        print("======================")
-        print("Welcome To outbit")
-        print("Connecting to Server %s" % self.url)
+        self.screen.addstr("======================\n")
+        self.screen.addstr("Welcome To outbit\n")
+        self.screen.addstr("Connecting to Server %s\n" % self.url)
         if "pong" in self.action_ping():
-            print("Connected to Server %s" % self.url)
+            self.screen.addstr("Connected to Server %s\n" % self.url)
         else:
-            print("Failed connecting to server %s" % self.url)
-            print("======================")
+            self.screen.addstr("Failed connecting to server %s\n" % self.url)
+            self.screen.addstr("======================\n")
             sys.exit(1)
-        print("======================")
-
-    def prompt(self):
-        """ Command Prompt """
-        sys.stdout.write("%s@outbit> " % self.user)
+        self.screen.addstr("======================\n")
 
     def login_prompt(self):
         if self.user is None:
@@ -75,7 +74,7 @@ class Cli(object):
         return len(action) == 1 and ( action[0] == "quit" or action[0] == "exit" )
 
     def action_quit(self):
-        print("  Goodbye!")
+        self.screen.addstr("  Goodbye!\n")
         self.exit()
 
     def run_action(self, actionjson):
@@ -113,28 +112,81 @@ class Cli(object):
 
         return actionjson
 
-    def startshell(self):
+    def startshell(self, arg):
+        self.screen = curses.initscr()
+        self.welcome()
+        self.screen.addstr("outbit> ")
+        self.screen.keypad(1)
+        self.screen.scrollok(1)
+
+        history_index = 0
+
+        line = ""
         while True:
-            line = sys.stdin.readline().strip()
-            action = line.split()
-            if self.is_action_quit(action):
-                # outbit> quit
-                # outbit> exit
-                self.action_quit()
+            s = self.screen.getch()
+
+            # Ascii
+            if s >= 32 and s <= 126:
+                self.screen.addstr(chr(s))
+                line += chr(s)
+                history_index = 0
+            elif s == ord("\n"):
+                self.screen.addstr("\n")
+                self.shell_parse_line(line)
+                self.history.append(line)
+                self.screen.addstr("\noutbit> ")
+                line = ""
+                history_index = 0
+            # Backspace
+            elif s == curses.KEY_BACKSPACE or s == 127 or s == curses.erasechar():
+                line = line[:-1]
+                (y, x) = self.screen.getyx()
+                self.screen.addstr(y, 0, "outbit> ")
+                self.screen.addstr(y, len("outbit> "), line)
+                self.screen.clrtoeol()
+                history_index = 0
+            # Ctrl-U, clear line
+            elif s == 21:
+                (y, x) = self.screen.getyx()
+                self.screen.addstr(y, 0, "outbit> ")
+                self.screen.clrtoeol()
+                history_index = 0
+            elif s == curses.KEY_UP:
+                history_index += 1
+                (y, x) = self.screen.getyx()
+                self.screen.addstr(y, 0, "outbit> ")
+                self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
+                self.screen.clrtoeol()
+            elif s == curses.KEY_DOWN:
+                history_index -= 1
+                (y, x) = self.screen.getyx()
+                self.screen.addstr(y, 0, "outbit> ")
+                self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
+                self.screen.clrtoeol()
             else:
-                # Server Side Handles Command Response
-                # outbit> [category ..] action [option1=something ..]
-                actionjson = self.get_action_from_command(line)
-                data = self.run_action(actionjson)
-                if data is not None:
-                    print(data["response"])
-                else:
-                    print("outbit - Failed To Get Response From Server")
-            self.prompt()
+                self.screen.addstr("Out of range: %d" % s)
+                history_index = 0
+
+        curses.endwin()
+
+    def shell_parse_line(self, line):
+        line = line.strip()
+        action = line.split()
+        if self.is_action_quit(action):
+            # outbit> quit
+            # outbit> exit
+            self.action_quit()
+        else:
+            # Server Side Handles Command Response
+            # outbit> [category ..] action [option1=something ..]
+            actionjson = self.get_action_from_command(line)
+            data = self.run_action(actionjson)
+            if data is not None:
+                self.screen.addstr(data["response"])
+            else:
+                self.screen.addstr("outbit - Failed To Get Response From Server\n")
 
     def run(self):
         """ EntryPoint Of Application """
         self.login_prompt()
-        self.welcome()
-        self.prompt()
-        self.startshell()
+        curses.wrapper(self.startshell)
