@@ -152,6 +152,7 @@ class Cli(object):
                 else:
                     self.screen.addstr(chr(s))
                 history_index = 0
+            # Finished With Line Input
             elif s == ord("\n"):
                 self.screen.addstr("\n")
                 if search_mode:
@@ -178,7 +179,7 @@ class Cli(object):
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.clrtoeol()
                 history_index = 0
-            # Ctrl-r, clear line
+            # Ctrl-r, search
             elif s == 18:
                 search_mode = True
                 (y, x) = self.screen.getyx()
