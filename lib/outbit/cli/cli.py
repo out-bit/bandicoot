@@ -119,7 +119,12 @@ class Cli(object):
         self.screen.keypad(1)
         self.screen.scrollok(1)
 
+        # ctrl-u
         history_index = 0
+
+        # ctrl-r
+        search_mode = False
+        last_match = None
 
         line = ""
         while True:
@@ -127,16 +132,38 @@ class Cli(object):
 
             # Ascii
             if s >= 32 and s <= 126:
-                self.screen.addstr(chr(s))
                 line += chr(s)
+                if search_mode:
+                    match = None
+                    for item in reversed(self.history):
+                        if line in item:
+                            match = item
+                            break
+                    if match is None:
+                        self.screen.addstr(y, 0, "(reverse-i-search)`':")
+                        self.screen.addstr(y, len("(reverse-i-search)`':"), line)
+                        self.screen.clrtoeol()
+                    else:
+                        (y, x) = self.screen.getyx()
+                        self.screen.addstr(y, 0, "(reverse-i-search)`':")
+                        self.screen.addstr(y, len("(reverse-i-search)`':"), match)
+                        self.screen.clrtoeol()
+                        last_match = match
+                else:
+                    self.screen.addstr(chr(s))
                 history_index = 0
             elif s == ord("\n"):
                 self.screen.addstr("\n")
-                self.shell_parse_line(line)
-                self.history.append(line)
+                if search_mode:
+                    self.shell_parse_line(match)
+                    self.history.append(match)
+                else:
+                    self.shell_parse_line(line)
+                    self.history.append(line)
                 self.screen.addstr("\noutbit> ")
                 line = ""
                 history_index = 0
+                search_mode = False
             # Backspace
             elif s == curses.KEY_BACKSPACE or s == 127 or s == curses.erasechar():
                 line = line[:-1]
@@ -145,11 +172,19 @@ class Cli(object):
                 self.screen.addstr(y, len("outbit> "), line)
                 self.screen.clrtoeol()
                 history_index = 0
-            # Ctrl-U, clear line
+            # Ctrl-u, clear line
             elif s == 21:
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.clrtoeol()
+                history_index = 0
+            # Ctrl-r, clear line
+            elif s == 18:
+                search_mode = True
+                (y, x) = self.screen.getyx()
+                self.screen.addstr(y, 0, "(reverse-i-search)`':")
+                self.screen.clrtoeol()
+                line = ""
                 history_index = 0
             elif s == curses.KEY_UP:
                 history_index += 1
