@@ -64,6 +64,14 @@ def action_del_user(username):
     return db.users.posts.delete_many(post)
 
 
+def action_list_users():
+    result = ""
+    cursor = db.users.posts.find()
+    for doc in list(cursor):
+        result += "  %s\n" % doc["username"]
+    return result.rstrip() # Do not return the last character (carrage return)
+
+
 @app.route("/", methods=["POST"])
 @requires_auth
 def outbit_base():
@@ -100,6 +108,9 @@ def outbit_base():
                 dat = json.dumps({"response": "  deleted user %s" % username})
             else:
                 dat = json.dumps({"response": "  user %s does not exist" % username})
+        elif indata["action"] == "list":
+            result = action_list_users()
+            dat = json.dumps({"response": result})
     elif indata["category"] == "/actions":
         if indata["action"] == "add":
             pass
