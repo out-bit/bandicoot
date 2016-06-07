@@ -178,6 +178,7 @@ class Cli(object):
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.clrtoeol()
+                line = ""
                 history_index = 0
             # Ctrl-r, search
             elif s == 18:
