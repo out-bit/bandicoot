@@ -193,12 +193,14 @@ class Cli(object):
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
                 self.screen.clrtoeol()
+                line = self.history[-(history_index%len(self.history))]
             elif s == curses.KEY_DOWN:
                 history_index -= 1
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
                 self.screen.clrtoeol()
+                line = self.history[-(history_index%len(self.history))]
             else:
                 self.screen.addstr("Out of range: %d" % s)
                 history_index = 0
