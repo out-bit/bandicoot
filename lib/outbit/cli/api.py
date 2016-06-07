@@ -92,16 +92,16 @@ def outbit_base():
             if "password=" in option:
                 password = option.split("=")[1]
 
-        # username and password are required
-        # TODO implement required options
-
         if indata["action"] == "add":
-            post = db.users.posts.find_one({"username": username})
-            if post is None:
-                action_add_user(username, password)
-                dat = json.dumps({"response": "  created user %s" % username})
+            if username is None or password is None:
+                dat = json.dumps({"response": "  username and password are required options"})
             else:
-                dat = json.dumps({"response": "  user %s already exists" % username})
+                post = db.users.posts.find_one({"username": username})
+                if post is None:
+                    action_add_user(username, password)
+                    dat = json.dumps({"response": "  created user %s" % username})
+                else:
+                    dat = json.dumps({"response": "  user %s already exists" % username})
         elif indata["action"] == "del":
             result = action_del_user(username)
             if result.deleted_count > 0:
@@ -111,6 +111,8 @@ def outbit_base():
         elif indata["action"] == "list":
             result = action_list_users()
             dat = json.dumps({"response": result})
+        else:
+            dat = json.dumps({"response": "  unknown action"})
     elif indata["category"] == "/actions":
         if indata["action"] == "add":
             pass
