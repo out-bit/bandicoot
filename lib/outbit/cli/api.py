@@ -71,6 +71,60 @@ def action_list_users():
         result += "  %s\n" % doc["username"]
     return result.rstrip() # Do not return the last character (carrage return)
 
+def action_actions_add(options):
+    post = {}
+    post["name"] = ""
+    post["desc"] = ""
+    post["category"] = ""
+    post["action"] = ""
+    post["chdir"] = ""
+    post["command"] = ""
+    dat = None
+    for option in options:
+        if "name=" in option:
+            post["name"] = option.split("=")[1]
+        if "desc=" in option:
+            post["desc"] = option.split("=")[1]
+        if "category=" in option:
+            post["cateory"] = option.split("=")[1]
+        if "action=" in option:
+            post["action"] = option.split("=")[1]
+        if "chdir=" in option:
+            post["chdir"] = option.split("=")[1]
+        if "command=" in option:
+            post["command"] = option.split("=")[1]
+    find_result = db.actions.find_one({"name": post["name"]})
+    if find_result is None:
+        result = db.actions.insert_one(post)
+        dat = json.dumps({"response": "  created action %s" % post["name"]})
+    else:
+        dat = json.dumps({"response": "  action %s already exists" % post["name"]})
+    return dat
+
+def action_actions_del(options):
+    name = None
+    dat = None
+    for option in options:
+        if "name=" in option:
+            name = option.split("=")[1]
+
+    if name is None:
+        dat = json.dumps({"response": "  name option is required"})
+    post = {"name": name}
+    result = db.actions.delete_many(post)
+    if result.deleted_count > 0:
+        dat = json.dumps({"response": "  deleted action %s" % name})
+    else:
+        dat = json.dumps({"response": "  action %s does not exist" % name})
+    return dat
+
+def action_actions_list(options):
+    result = ""
+    cursor = db.actions.find()
+    for doc in list(cursor):
+        #result += "  %s\n" % doc["name"]
+        result += "  %s\n" % doc
+    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 @app.route("/", methods=["POST"])
 @requires_auth
@@ -115,9 +169,11 @@ def outbit_base():
             dat = json.dumps({"response": "  unknown action"})
     elif indata["category"] == "/actions":
         if indata["action"] == "add":
-            pass
+            dat = action_actions_add(indata["options"].split(","))
         elif indata["action"] == "del":
-            pass
+            dat = action_actions_del(indata["options"].split(","))
+        elif indata["action"] == "list":
+            dat = action_actions_list(indata["options"].split(","))
     elif indata["category"] == "/secrets":
         if indata["action"] == "add":
             pass
