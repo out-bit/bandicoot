@@ -16,6 +16,23 @@ dbclient = MongoClient('localhost', 27017)
 db = dbclient.outbit
 
 
+def plugin_command(args):
+    return { "response": "command output: %s, args: %s" % ("test", args)}
+
+
+plugins = {"command": plugin_command}
+
+
+def parse_action(category, action, options):
+    cursor = db.actions.find()
+    for dbaction in list(cursor):
+        if dbaction["category"] == category and dbaction["action"] == action:
+            for plugin in plugins.keys():
+                if plugin in dbaction:
+                    return json.dumps(plugins[plugin](dbaction[plugin]))
+    return None
+
+
 def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
@@ -86,7 +103,7 @@ def action_actions_add(options):
         if "desc=" in option:
             post["desc"] = option.split("=")[1]
         if "category=" in option:
-            post["cateory"] = option.split("=")[1]
+            post["category"] = option.split("=")[1]
         if "action=" in option:
             post["action"] = option.split("=")[1]
         if "chdir=" in option:
@@ -187,11 +204,13 @@ def outbit_base():
     elif indata["category"] == "/" and indata["action"] == "history":
         pass
     else:
-         # TESTING
-        print("Testing: %s" % indata)
-        dat = json.dumps({"response": "  action not found"})
-        # END TESTING
-        #status=403 TODO PUT THIS BACK AND REMOVE TESTING
+        dat = parse_action(indata["category"], indata["action"], indata["options"])
+        if dat is None:
+             # TESTING
+            print("Testing: %s" % indata)
+            dat = json.dumps({"response": "  action not found"})
+            # END TESTING
+            #status=403 TODO PUT THIS BACK AND REMOVE TESTING
 
     resp = Response(response=dat, status=status, mimetype="application/json")
     return(resp)
