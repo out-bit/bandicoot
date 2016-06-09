@@ -70,7 +70,11 @@ def plugin_help(action, options):
     cursor = db.actions.find()
     response = ""
     for dbaction in builtin_actions + list(cursor):
-        response += "  %s %s \t\t%-60s\n" % (dbaction["category"].lstrip("/").rstrip("/").replace("/", " "), dbaction["action"], dbaction["desc"])
+        category_str = dbaction["category"].strip("/").replace("/", " ")
+        if category_str is None or len(category_str) <= 0:
+            response += "  %s \t\t\t%-60s\n" % (dbaction["action"], dbaction["desc"])
+        else:
+            response += "  %s %s \t\t%-60s\n" % (dbaction["category"].strip("/").replace("/", " "), dbaction["action"], dbaction["desc"])
     return json.dumps({"response": response})
 
 
