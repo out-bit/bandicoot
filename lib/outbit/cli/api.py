@@ -16,21 +16,8 @@ dbclient = MongoClient('localhost', 27017)
 db = dbclient.outbit
 
 
-def plugin_command(args):
-    return { "response": "command output: %s, args: %s" % ("test", args)}
-
-
-plugins = {"command": plugin_command}
-
-
-def parse_action(category, action, options):
-    cursor = db.actions.find()
-    for dbaction in list(cursor):
-        if dbaction["category"] == category and dbaction["action"] == action:
-            for plugin in plugins.keys():
-                if plugin in dbaction:
-                    return json.dumps(plugins[plugin](dbaction[plugin]))
-    return None
+def plugin_command(action, options):
+    return json.dumps({ "response": "command output: %s, args: %s" % (action, options)})
 
 
 def check_auth(username, password):
@@ -68,6 +55,14 @@ def requires_auth(f):
     return decorated
 
 
+def action_help(action, options):
+    return json.dumps({"response": "  exit\n  quit\n  ping\n  help"})
+
+
+def action_ping(action, options):
+    return json.dumps({"response": "  pong"})
+
+
 def action_add_user(username, password):
     m = hashlib.md5()
     m.update(password)
@@ -88,7 +83,7 @@ def action_list_users():
         result += "  %s\n" % doc["username"]
     return result.rstrip() # Do not return the last character (carrage return)
 
-def action_actions_add(options):
+def action_actions_add(action, options):
     post = {}
     post["name"] = ""
     post["desc"] = ""
@@ -118,7 +113,7 @@ def action_actions_add(options):
         dat = json.dumps({"response": "  action %s already exists" % post["name"]})
     return dat
 
-def action_actions_del(options):
+def action_actions_del(action, options):
     name = None
     dat = None
     for option in options:
@@ -135,13 +130,42 @@ def action_actions_del(options):
         dat = json.dumps({"response": "  action %s does not exist" % name})
     return dat
 
-def action_actions_list(options):
+def action_actions_list(action, options):
     result = ""
     cursor = db.actions.find()
     for doc in list(cursor):
         #result += "  %s\n" % doc["name"]
         result += "  %s\n" % doc
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
+
+
+plugins = {"command": plugin_command,
+            "actions_list": action_actions_list,
+            "actions_del": action_actions_del,
+            "actions_add": action_actions_add,
+            "ping": action_ping,
+            "help": action_help}
+
+builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
+                  {'category': '/actions', 'plugin': 'actions_del', 'action': 'del', 'desc': 'del actions'},
+                  {'category': '/actions', 'plugin': 'actions_add', 'action': 'add', 'desc': 'add actions'},
+                  {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
+                  {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
+                  ]
+
+
+def parse_action(category, action, options):
+    cursor = db.actions.find()
+    for dbaction in builtin_actions + list(cursor):
+        if dbaction["category"] == category and dbaction["action"] == action:
+            if "plugin" in dbaction:
+                return plugins[dbaction["plugin"]](dbaction, options)
+
+            for plugin in plugins:
+                if plugin in dbaction:
+                    return plugins[plugin](dbaction, options)
+    return None
+
 
 @app.route("/", methods=["POST"])
 @requires_auth
@@ -150,11 +174,7 @@ def outbit_base():
     dat = None
     status = 200
 
-    if indata["category"] == "/" and ( indata["action"] == "help" or indata["action"] == "ls" ):
-        dat = json.dumps({"response": "  exit\n  quit\n  ping\n  help"})
-    elif indata["category"] == "/" and indata["action"] == "ping":
-        dat = json.dumps({"response": "  pong"})
-    elif indata["category"] == "/users":
+    if indata["category"] == "/users":
         username = None
         password = None
         for option in indata["options"].split(","):
@@ -184,27 +204,8 @@ def outbit_base():
             dat = json.dumps({"response": result})
         else:
             dat = json.dumps({"response": "  unknown action"})
-    elif indata["category"] == "/actions":
-        if indata["action"] == "add":
-            dat = action_actions_add(indata["options"].split(","))
-        elif indata["action"] == "del":
-            dat = action_actions_del(indata["options"].split(","))
-        elif indata["action"] == "list":
-            dat = action_actions_list(indata["options"].split(","))
-    elif indata["category"] == "/secrets":
-        if indata["action"] == "add":
-            pass
-        elif indata["action"] == "del":
-            pass
-    elif indata["category"] == "/roles":
-        if indata["action"] == "add":
-            pass
-        elif indata["action"] == "del":
-            pass
-    elif indata["category"] == "/" and indata["action"] == "history":
-        pass
     else:
-        dat = parse_action(indata["category"], indata["action"], indata["options"])
+        dat = parse_action(indata["category"], indata["action"], indata["options"].split(","))
         if dat is None:
              # TESTING
             print("Testing: %s" % indata)
