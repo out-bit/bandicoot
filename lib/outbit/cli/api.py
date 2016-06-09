@@ -52,7 +52,11 @@ def requires_auth(f):
 
 
 def plugin_help(action, options):
-    return json.dumps({"response": "  exit\n  quit\n  ping\n  help"})
+    cursor = db.actions.find()
+    response = ""
+    for dbaction in builtin_actions + list(cursor):
+        response += "  %s %s \t\t%-60s\n" % (dbaction["category"].lstrip("/").rstrip("/").replace("/", " "), dbaction["action"], dbaction["desc"])
+    return json.dumps({"response": response})
 
 
 def plugin_ping(action, options):
