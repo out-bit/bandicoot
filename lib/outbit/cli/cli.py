@@ -6,6 +6,80 @@ import requests
 import json
 import getpass
 import curses
+import ply.yacc as yacc
+import ply.lex as lex
+
+
+# LEX tokens
+tokens = ("CATEGORY", "ACTION", "OPTIONNAME", "OPTIONVAL", "SPACE", "EQUAL", "QUOTESINGLE", "QUOTEDOUBLE")
+
+t_CATEGORY      =r'[a-zA-Z0-9]+'
+t_ACTION        =r'[a-zA-Z0-9]+'
+t_OPTIONNAME    =r'[a-zA-Z0-9]+'
+t_OPTIONVAL     =r'[a-zA-Z0-9]+' # later will include spaces
+t_SPACE         =r'\s+'
+t_EQUAL         =r'='
+t_QUOTESINGLE   =r"'"
+t_QUOTEDOUBLE   =r'"'
+
+# Ignored characters
+t_ignore = "\n"
+
+def t_error(t):
+    print("Illegal character '%s'" % t.value[0])
+    t.lexer.skip(1)
+
+# Build the lexer
+lexer = lex.lex()
+
+parser_category = "/"
+parser_action = ""
+parser_options = {}
+
+# YACC parser
+def p_action(t):
+    '''action : CATEGORY SPACE ACTION SPACE options
+              | ACTION SPACE options
+              | ACTION'''
+    print("action: %s\n" % t[1])
+    global parser_action
+    global parser_category
+    global parser_options
+    parser_action = t[1]
+    if len(t) == 6:
+        parser_category = t[1]
+        parser_action = t[3]
+        parser_options = t[5]
+    elif len(t) == 4:
+        parser_action = t[1]
+        parser_options = t[3]
+    elif len(t) == 2:
+        parser_action = t[1]
+
+def p_options(t):
+    '''options : option SPACE option
+               | option'''
+    print("options: %s\n" % t[1])
+
+def p_option(t):
+    '''option : OPTIONNAME EQUAL OPTIONVAL
+              | OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
+              | OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE'''
+    print("option: %s\n" % t[1])
+    if t[0] is None:
+        t[0] = {}
+    if t[3] == "'":
+        t[0][t[1]] = t[6]
+    elif t[3] == '"':
+        t[0][t[1]] = t[6]
+    else:
+        print("option test: %s, %s\n" % (t[1], t[5]))
+        t[0][t[1]] = t[5]
+
+def p_error(t):
+    print("Syntax error at '%s'" % t.value)
+
+parser = yacc.yacc()
 
 
 class Cli(object):
@@ -51,7 +125,7 @@ class Cli(object):
         else:
             self.screen.addstr("Failed connecting to server %s\n" % self.url)
             self.screen.addstr("======================\n")
-            sys.exit(1)
+            #sys.exit(1)
         self.screen.addstr("======================\n")
 
     def login_prompt(self):
@@ -87,30 +161,9 @@ class Cli(object):
             return None
 
     def get_action_from_command(self, line):
-        action_list = line.strip().split()
-        actionjson = {'category': "/", "action": "", "options": ""}
-        if len(action_list) == 1:
-            actionjson = {'category': "/", "action": action_list[0], "options": ""}
-        elif len(action_list) >= 2:
-            category = "/"
-            action = ""
-            options = ""
-            count = 0 # Count number of options
-            action_list_reverse = list(action_list)
-            action_list_reverse.reverse()
-            for node in action_list_reverse:
-                if category is "/" and action is "" and "=" in node:
-                    options += "%s," % node
-                    count += 1
-                elif category is "/" and action is "" and "=" not in node:
-                    action = node
-                    count += 1
-                else:
-                    category_range = len(action_list) - count
-                    category = "/%s" % "/".join(action_list[0:category_range])
-            actionjson = {'category': category, "action": action, "options": options}
-
-        return actionjson
+        parser.parse(line)
+        print("category: %s, action: %s, options: %s" % (parser_category, parser_action, parser_options))
+        return {'category': parser_category, "action": parser_action, "options": parser_options}
 
     def startshell(self, arg):
         self.screen = curses.initscr()

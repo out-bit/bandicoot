@@ -1,0 +1,222 @@
+Created by PLY version 3.8 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> action
+Rule 1     action -> CATEGORY SPACE ACTION SPACE options
+Rule 2     action -> ACTION SPACE options
+Rule 3     action -> ACTION
+Rule 4     options -> option SPACE option
+Rule 5     options -> option
+Rule 6     option -> OPTIONNAME EQUAL OPTIONVAL
+Rule 7     option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
+Rule 8     option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+
+Terminals, with rules where they appear
+
+ACTION               : 1 2 3
+CATEGORY             : 1
+EQUAL                : 6 7 8
+OPTIONNAME           : 6 7 8
+OPTIONVAL            : 6 7 8
+QUOTEDOUBLE          : 8 8
+QUOTESINGLE          : 7 7
+SPACE                : 1 1 2 4
+error                : 
+
+Nonterminals, with rules where they appear
+
+action               : 0
+option               : 4 4 5
+options              : 1 2
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . action
+    (1) action -> . CATEGORY SPACE ACTION SPACE options
+    (2) action -> . ACTION SPACE options
+    (3) action -> . ACTION
+
+    CATEGORY        shift and go to state 2
+    ACTION          shift and go to state 3
+
+    action                         shift and go to state 1
+
+state 1
+
+    (0) S' -> action .
+
+
+
+state 2
+
+    (1) action -> CATEGORY . SPACE ACTION SPACE options
+
+    SPACE           shift and go to state 4
+
+
+state 3
+
+    (2) action -> ACTION . SPACE options
+    (3) action -> ACTION .
+
+    SPACE           shift and go to state 5
+    $end            reduce using rule 3 (action -> ACTION .)
+
+
+state 4
+
+    (1) action -> CATEGORY SPACE . ACTION SPACE options
+
+    ACTION          shift and go to state 6
+
+
+state 5
+
+    (2) action -> ACTION SPACE . options
+    (4) options -> . option SPACE option
+    (5) options -> . option
+    (6) option -> . OPTIONNAME EQUAL OPTIONVAL
+    (7) option -> . OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
+    (8) option -> . OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+
+    OPTIONNAME      shift and go to state 8
+
+    options                        shift and go to state 9
+    option                         shift and go to state 7
+
+state 6
+
+    (1) action -> CATEGORY SPACE ACTION . SPACE options
+
+    SPACE           shift and go to state 10
+
+
+state 7
+
+    (4) options -> option . SPACE option
+    (5) options -> option .
+
+    SPACE           shift and go to state 11
+    $end            reduce using rule 5 (options -> option .)
+
+
+state 8
+
+    (6) option -> OPTIONNAME . EQUAL OPTIONVAL
+    (7) option -> OPTIONNAME . EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
+    (8) option -> OPTIONNAME . EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+
+    EQUAL           shift and go to state 12
+
+
+state 9
+
+    (2) action -> ACTION SPACE options .
+
+    $end            reduce using rule 2 (action -> ACTION SPACE options .)
+
+
+state 10
+
+    (1) action -> CATEGORY SPACE ACTION SPACE . options
+    (4) options -> . option SPACE option
+    (5) options -> . option
+    (6) option -> . OPTIONNAME EQUAL OPTIONVAL
+    (7) option -> . OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
+    (8) option -> . OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+
+    OPTIONNAME      shift and go to state 8
+
+    options                        shift and go to state 13
+    option                         shift and go to state 7
+
+state 11
+
+    (4) options -> option SPACE . option
+    (6) option -> . OPTIONNAME EQUAL OPTIONVAL
+    (7) option -> . OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
+    (8) option -> . OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+
+    OPTIONNAME      shift and go to state 8
+
+    option                         shift and go to state 14
+
+state 12
+
+    (6) option -> OPTIONNAME EQUAL . OPTIONVAL
+    (7) option -> OPTIONNAME EQUAL . QUOTESINGLE OPTIONVAL QUOTESINGLE
+    (8) option -> OPTIONNAME EQUAL . QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+
+    OPTIONVAL       shift and go to state 16
+    QUOTESINGLE     shift and go to state 17
+    QUOTEDOUBLE     shift and go to state 15
+
+
+state 13
+
+    (1) action -> CATEGORY SPACE ACTION SPACE options .
+
+    $end            reduce using rule 1 (action -> CATEGORY SPACE ACTION SPACE options .)
+
+
+state 14
+
+    (4) options -> option SPACE option .
+
+    $end            reduce using rule 4 (options -> option SPACE option .)
+
+
+state 15
+
+    (8) option -> OPTIONNAME EQUAL QUOTEDOUBLE . OPTIONVAL QUOTEDOUBLE
+
+    OPTIONVAL       shift and go to state 18
+
+
+state 16
+
+    (6) option -> OPTIONNAME EQUAL OPTIONVAL .
+
+    SPACE           reduce using rule 6 (option -> OPTIONNAME EQUAL OPTIONVAL .)
+    $end            reduce using rule 6 (option -> OPTIONNAME EQUAL OPTIONVAL .)
+
+
+state 17
+
+    (7) option -> OPTIONNAME EQUAL QUOTESINGLE . OPTIONVAL QUOTESINGLE
+
+    OPTIONVAL       shift and go to state 19
+
+
+state 18
+
+    (8) option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL . QUOTEDOUBLE
+
+    QUOTEDOUBLE     shift and go to state 20
+
+
+state 19
+
+    (7) option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL . QUOTESINGLE
+
+    QUOTESINGLE     shift and go to state 21
+
+
+state 20
+
+    (8) option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE .
+
+    SPACE           reduce using rule 8 (option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE .)
+    $end            reduce using rule 8 (option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE .)
+
+
+state 21
+
+    (7) option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE .
+
+    SPACE           reduce using rule 7 (option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE .)
+    $end            reduce using rule 7 (option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE .)
+
