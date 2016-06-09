@@ -16,10 +16,6 @@ dbclient = MongoClient('localhost', 27017)
 db = dbclient.outbit
 
 
-def plugin_command(action, options):
-    return json.dumps({ "response": "command output: %s, args: %s" % (action, options)})
-
-
 def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
@@ -55,35 +51,63 @@ def requires_auth(f):
     return decorated
 
 
-def action_help(action, options):
+def plugin_help(action, options):
     return json.dumps({"response": "  exit\n  quit\n  ping\n  help"})
 
 
-def action_ping(action, options):
+def plugin_ping(action, options):
     return json.dumps({"response": "  pong"})
 
 
-def action_add_user(username, password):
-    m = hashlib.md5()
-    m.update(password)
-    password_md5 = str(m.hexdigest())
-    post = {"username": username, "password_md5": password_md5}
-    return db.users.posts.insert_one(post)
+def plugin_users_add(action, options):
+    username = None
+    password = None
+
+    for option in options:
+        if "username=" in option:
+            username = option.split("=")[1]
+        if "password=" in option:
+            password = option.split("=")[1]
+
+    if username is None or password is None:
+        return json.dumps({"response": "  username and password are required options"})
+    else:
+        result = db.users.posts.find_one({"username": username})
+        if result is None:
+            m = hashlib.md5()
+            m.update(password)
+            password_md5 = str(m.hexdigest())
+            post = {"username": username, "password_md5": password_md5}
+            db.users.posts.insert_one(post)
+            return json.dumps({"response": "  created user %s" % username})
+        else:
+            return json.dumps({"response": "  user %s already exists" % username})
 
 
-def action_del_user(username):
+def plugin_users_del(action, options):
+    username = None
+
+    for option in options:
+        if "username=" in option:
+            username = option.split("=")[1]
+
     post = {"username": username}
-    return db.users.posts.delete_many(post)
+    result = db.users.posts.delete_many(post)
+    if result.deleted_count > 0:
+        return json.dumps({"response": "  deleted user %s" % username})
+    else:
+        return json.dumps({"response": "  user %s does not exist" % username})
 
 
-def action_list_users():
+def plugin_users_list(action, options):
     result = ""
     cursor = db.users.posts.find()
     for doc in list(cursor):
         result += "  %s\n" % doc["username"]
-    return result.rstrip() # Do not return the last character (carrage return)
+    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
-def action_actions_add(action, options):
+
+def plugin_actions_add(action, options):
     post = {}
     post["name"] = ""
     post["desc"] = ""
@@ -113,7 +137,12 @@ def action_actions_add(action, options):
         dat = json.dumps({"response": "  action %s already exists" % post["name"]})
     return dat
 
-def action_actions_del(action, options):
+
+def plugin_command(action, options):
+    return json.dumps({ "response": "command output: %s, args: %s" % (action, options)})
+
+
+def plugin_actions_del(action, options):
     name = None
     dat = None
     for option in options:
@@ -130,7 +159,8 @@ def action_actions_del(action, options):
         dat = json.dumps({"response": "  action %s does not exist" % name})
     return dat
 
-def action_actions_list(action, options):
+
+def plugin_actions_list(action, options):
     result = ""
     cursor = db.actions.find()
     for doc in list(cursor):
@@ -140,15 +170,21 @@ def action_actions_list(action, options):
 
 
 plugins = {"command": plugin_command,
-            "actions_list": action_actions_list,
-            "actions_del": action_actions_del,
-            "actions_add": action_actions_add,
-            "ping": action_ping,
-            "help": action_help}
+            "actions_list": plugin_actions_list,
+            "actions_del": plugin_actions_del,
+            "actions_add": plugin_actions_add,
+            "users_list": plugin_users_list,
+            "users_del": plugin_users_del,
+            "users_add": plugin_users_add,
+            "ping": plugin_ping,
+            "help": plugin_help}
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
                   {'category': '/actions', 'plugin': 'actions_del', 'action': 'del', 'desc': 'del actions'},
                   {'category': '/actions', 'plugin': 'actions_add', 'action': 'add', 'desc': 'add actions'},
+                  {'category': '/users', 'plugin': 'users_list', 'action': 'list', 'desc': 'list users'},
+                  {'category': '/users', 'plugin': 'users_del', 'action': 'del', 'desc': 'del users'},
+                  {'category': '/users', 'plugin': 'users_add', 'action': 'add', 'desc': 'add users'},
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
                   ]
@@ -174,44 +210,13 @@ def outbit_base():
     dat = None
     status = 200
 
-    if indata["category"] == "/users":
-        username = None
-        password = None
-        for option in indata["options"].split(","):
-            if "username=" in option:
-                username = option.split("=")[1]
-            if "password=" in option:
-                password = option.split("=")[1]
-
-        if indata["action"] == "add":
-            if username is None or password is None:
-                dat = json.dumps({"response": "  username and password are required options"})
-            else:
-                post = db.users.posts.find_one({"username": username})
-                if post is None:
-                    action_add_user(username, password)
-                    dat = json.dumps({"response": "  created user %s" % username})
-                else:
-                    dat = json.dumps({"response": "  user %s already exists" % username})
-        elif indata["action"] == "del":
-            result = action_del_user(username)
-            if result.deleted_count > 0:
-                dat = json.dumps({"response": "  deleted user %s" % username})
-            else:
-                dat = json.dumps({"response": "  user %s does not exist" % username})
-        elif indata["action"] == "list":
-            result = action_list_users()
-            dat = json.dumps({"response": result})
-        else:
-            dat = json.dumps({"response": "  unknown action"})
-    else:
-        dat = parse_action(indata["category"], indata["action"], indata["options"].split(","))
-        if dat is None:
-             # TESTING
-            print("Testing: %s" % indata)
-            dat = json.dumps({"response": "  action not found"})
-            # END TESTING
-            #status=403 TODO PUT THIS BACK AND REMOVE TESTING
+    dat = parse_action(indata["category"], indata["action"], indata["options"].split(","))
+    if dat is None:
+        # TESTING
+        print("Testing: %s" % indata)
+        dat = json.dumps({"response": "  action not found"})
+        # END TESTING
+        #status=403 TODO PUT THIS BACK AND REMOVE TESTING
 
     resp = Response(response=dat, status=status, mimetype="application/json")
     return(resp)
