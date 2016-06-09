@@ -156,8 +156,9 @@ class Cli(object):
             elif s == ord("\n"):
                 self.screen.addstr("\n")
                 if search_mode:
-                    self.shell_parse_line(match)
-                    self.history.append(match)
+                    if match is not None:
+                        self.shell_parse_line(match)
+                        self.history.append(match)
                 else:
                     self.shell_parse_line(line)
                     self.history.append(line)
@@ -189,6 +190,9 @@ class Cli(object):
                 line = ""
                 history_index = 0
             elif s == curses.KEY_UP:
+                if len(self.history) < 1:
+                    # prevent divide by zero when history is 0
+                    continue
                 history_index += 1
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
@@ -196,6 +200,9 @@ class Cli(object):
                 self.screen.clrtoeol()
                 line = self.history[-(history_index%len(self.history))]
             elif s == curses.KEY_DOWN:
+                if len(self.history) < 1:
+                    # prevent divide by zero when history is 0
+                    continue
                 history_index -= 1
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
