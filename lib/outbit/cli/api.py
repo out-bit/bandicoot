@@ -198,6 +198,14 @@ def plugin_plugins_list(action, options):
     return json.dumps({"response": "\n  ".join(plugins.keys())})
 
 
+def plugin_logs(action, options):
+    result = "  category\t\taction\t\toptions\n"
+    cursor = db.logs.find()
+    for doc in list(cursor):
+        result += "  %s\t\t%s\t\t%s\n" % (doc["category"], doc["action"], doc["options"])
+    return json.dumps({"response": result})
+
+
 plugins = {"command": plugin_command,
             "actions_list": plugin_actions_list,
             "actions_del": plugin_actions_del,
@@ -210,6 +218,7 @@ plugins = {"command": plugin_command,
             "roles_add": plugin_roles_add,
             "plugins_list": plugin_plugins_list,
             "ping": plugin_ping,
+            "logs": plugin_logs,
             "help": plugin_help}
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
@@ -223,6 +232,7 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/roles', 'plugin': 'roles_add', 'action': 'add', 'desc': 'add roles'},
                   {'category': '/plugins', 'plugin': 'plugins_list', 'action': 'list', 'desc': 'list plugins'},
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
+                  {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
                   ]
 
@@ -242,6 +252,10 @@ def outbit_base():
     indata = request.get_json()
     dat = None
     status = 200
+
+    # Audit Logging / History
+    post = {"category": indata["category"], "action": indata["action"], "options": indata["options"]}
+    db.logs.insert_one(post)
 
     dat = parse_action(indata["category"], indata["action"], indata["options"])
     if dat is None:
