@@ -140,7 +140,7 @@ class Cli(object):
         else:
             self.screen.addstr("Failed connecting to server %s\n" % self.url)
             self.screen.addstr("======================\n")
-            #sys.exit(1)
+            sys.exit(1)
         self.screen.addstr("======================\n")
 
     def login_prompt(self):
