@@ -10,15 +10,17 @@ Rule 4     actions -> ACTION
 Rule 5     options -> options SPACE option
 Rule 6     options -> option
 Rule 7     option -> ACTION EQUAL ACTION
-Rule 8     option -> ACTION EQUAL OPTIONVALS
-Rule 9     option -> ACTION EQUAL OPTIONVALD
+Rule 8     option -> ACTION EQUAL OPTIONVAL
+Rule 9     option -> ACTION EQUAL OPTIONVALS
+Rule 10    option -> ACTION EQUAL OPTIONVALD
 
 Terminals, with rules where they appear
 
-ACTION               : 3 4 7 7 8 9
-EQUAL                : 7 8 9
-OPTIONVALD           : 9
-OPTIONVALS           : 8
+ACTION               : 3 4 7 7 8 9 10
+EQUAL                : 7 8 9 10
+OPTIONVAL            : 8
+OPTIONVALD           : 10
+OPTIONVALS           : 9
 SPACE                : 1 3 5
 error                : 
 
@@ -75,8 +77,9 @@ state 4
     (5) options -> . options SPACE option
     (6) options -> . option
     (7) option -> . ACTION EQUAL ACTION
-    (8) option -> . ACTION EQUAL OPTIONVALS
-    (9) option -> . ACTION EQUAL OPTIONVALD
+    (8) option -> . ACTION EQUAL OPTIONVAL
+    (9) option -> . ACTION EQUAL OPTIONVALS
+    (10) option -> . ACTION EQUAL OPTIONVALD
 
     ACTION          shift and go to state 6
 
@@ -95,8 +98,9 @@ state 6
 
     (3) actions -> actions SPACE ACTION .
     (7) option -> ACTION . EQUAL ACTION
-    (8) option -> ACTION . EQUAL OPTIONVALS
-    (9) option -> ACTION . EQUAL OPTIONVALD
+    (8) option -> ACTION . EQUAL OPTIONVAL
+    (9) option -> ACTION . EQUAL OPTIONVALS
+    (10) option -> ACTION . EQUAL OPTIONVALD
 
     SPACE           reduce using rule 3 (actions -> actions SPACE ACTION .)
     $end            reduce using rule 3 (actions -> actions SPACE ACTION .)
@@ -115,11 +119,13 @@ state 7
 state 8
 
     (7) option -> ACTION EQUAL . ACTION
-    (8) option -> ACTION EQUAL . OPTIONVALS
-    (9) option -> ACTION EQUAL . OPTIONVALD
+    (8) option -> ACTION EQUAL . OPTIONVAL
+    (9) option -> ACTION EQUAL . OPTIONVALS
+    (10) option -> ACTION EQUAL . OPTIONVALD
 
     ACTION          shift and go to state 10
-    OPTIONVALS      shift and go to state 11
+    OPTIONVAL       shift and go to state 11
+    OPTIONVALS      shift and go to state 13
     OPTIONVALD      shift and go to state 12
 
 
@@ -127,12 +133,13 @@ state 9
 
     (5) options -> options SPACE . option
     (7) option -> . ACTION EQUAL ACTION
-    (8) option -> . ACTION EQUAL OPTIONVALS
-    (9) option -> . ACTION EQUAL OPTIONVALD
+    (8) option -> . ACTION EQUAL OPTIONVAL
+    (9) option -> . ACTION EQUAL OPTIONVALS
+    (10) option -> . ACTION EQUAL OPTIONVALD
 
-    ACTION          shift and go to state 14
+    ACTION          shift and go to state 15
 
-    option                         shift and go to state 13
+    option                         shift and go to state 14
 
 state 10
 
@@ -144,21 +151,29 @@ state 10
 
 state 11
 
-    (8) option -> ACTION EQUAL OPTIONVALS .
+    (8) option -> ACTION EQUAL OPTIONVAL .
 
-    SPACE           reduce using rule 8 (option -> ACTION EQUAL OPTIONVALS .)
-    $end            reduce using rule 8 (option -> ACTION EQUAL OPTIONVALS .)
+    SPACE           reduce using rule 8 (option -> ACTION EQUAL OPTIONVAL .)
+    $end            reduce using rule 8 (option -> ACTION EQUAL OPTIONVAL .)
 
 
 state 12
 
-    (9) option -> ACTION EQUAL OPTIONVALD .
+    (10) option -> ACTION EQUAL OPTIONVALD .
 
-    SPACE           reduce using rule 9 (option -> ACTION EQUAL OPTIONVALD .)
-    $end            reduce using rule 9 (option -> ACTION EQUAL OPTIONVALD .)
+    SPACE           reduce using rule 10 (option -> ACTION EQUAL OPTIONVALD .)
+    $end            reduce using rule 10 (option -> ACTION EQUAL OPTIONVALD .)
 
 
 state 13
+
+    (9) option -> ACTION EQUAL OPTIONVALS .
+
+    SPACE           reduce using rule 9 (option -> ACTION EQUAL OPTIONVALS .)
+    $end            reduce using rule 9 (option -> ACTION EQUAL OPTIONVALS .)
+
+
+state 14
 
     (5) options -> options SPACE option .
 
@@ -166,11 +181,12 @@ state 13
     $end            reduce using rule 5 (options -> options SPACE option .)
 
 
-state 14
+state 15
 
     (7) option -> ACTION . EQUAL ACTION
-    (8) option -> ACTION . EQUAL OPTIONVALS
-    (9) option -> ACTION . EQUAL OPTIONVALD
+    (8) option -> ACTION . EQUAL OPTIONVAL
+    (9) option -> ACTION . EQUAL OPTIONVALS
+    (10) option -> ACTION . EQUAL OPTIONVALD
 
     EQUAL           shift and go to state 8
 

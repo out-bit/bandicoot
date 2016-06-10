@@ -11,11 +11,12 @@ import ply.lex as lex
 
 
 # LEX tokens
-tokens = ("ACTION", "OPTIONVALS", "OPTIONVALD", "SPACE", "EQUAL")
+tokens = ("ACTION", "OPTIONVAL", "OPTIONVALS", "OPTIONVALD", "SPACE", "EQUAL")
 
 t_ACTION        =r'[a-zA-Z0-9]+'
-t_OPTIONVALS    =r"'[a-zA-Z0-9\s]+'"
-t_OPTIONVALD    =r'"[a-zA-Z0-9\s]+"'
+t_OPTIONVAL     =r'/[a-zA-Z0-9_/]+'
+t_OPTIONVALS    =r"'[a-zA-Z0-9_/\s]+'"
+t_OPTIONVALD    =r'"[a-zA-Z0-9_/\s]+"'
 t_SPACE         =r'\s+'
 t_EQUAL         =r'='
 
@@ -85,11 +86,12 @@ def p_options(t):
 
 def p_option(t):
     '''option : ACTION EQUAL ACTION
+              | ACTION EQUAL OPTIONVAL
               | ACTION EQUAL OPTIONVALS
               | ACTION EQUAL OPTIONVALD'''
     if t[0] is None:
         t[0] = {}
-    t[0][t[1]] = t[3]
+    t[0][t[1]] = t[3].strip("'").strip('"')
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
