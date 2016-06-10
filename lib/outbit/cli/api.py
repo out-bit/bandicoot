@@ -164,6 +164,36 @@ def plugin_actions_list(action, options):
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
+def plugin_roles_add(action, options):
+    if "name" not in options:
+        return json.dumps({"response": "  name is a required options"})
+    else:
+        result = db.roles.find_one({"name": options["name"]})
+        if result is None:
+            post = {"name": options["name"]}
+            db.roles.insert_one(post)
+            return json.dumps({"response": "  created role %s" % options["name"]})
+        else:
+            return json.dumps({"response": "  role %s already exists" % options["name"]})
+
+
+def plugin_roles_del(action, options):
+    post = {"name": options["name"]}
+    result = db.roles.delete_many(post)
+    if result.deleted_count > 0:
+        return json.dumps({"response": "  deleted role %s" % options["name"]})
+    else:
+        return json.dumps({"response": "  role %s does not exist" % options["name"]})
+
+
+def plugin_roles_list(action, options):
+    result = ""
+    cursor = db.roles.find()
+    for doc in list(cursor):
+        result += "  %s\n" % doc["name"]
+    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
+
+
 def plugin_plugins_list(action, options):
     return json.dumps({"response": "\n  ".join(plugins.keys())})
 
@@ -175,6 +205,9 @@ plugins = {"command": plugin_command,
             "users_list": plugin_users_list,
             "users_del": plugin_users_del,
             "users_add": plugin_users_add,
+            "roles_list": plugin_roles_list,
+            "roles_del": plugin_roles_del,
+            "roles_add": plugin_roles_add,
             "plugins_list": plugin_plugins_list,
             "ping": plugin_ping,
             "help": plugin_help}
@@ -185,6 +218,9 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/users', 'plugin': 'users_list', 'action': 'list', 'desc': 'list users'},
                   {'category': '/users', 'plugin': 'users_del', 'action': 'del', 'desc': 'del users'},
                   {'category': '/users', 'plugin': 'users_add', 'action': 'add', 'desc': 'add users'},
+                  {'category': '/roles', 'plugin': 'roles_list', 'action': 'list', 'desc': 'list roles'},
+                  {'category': '/roles', 'plugin': 'roles_del', 'action': 'del', 'desc': 'del roles'},
+                  {'category': '/roles', 'plugin': 'roles_add', 'action': 'add', 'desc': 'add roles'},
                   {'category': '/plugins', 'plugin': 'plugins_list', 'action': 'list', 'desc': 'list plugins'},
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
