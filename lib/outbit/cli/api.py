@@ -51,10 +51,6 @@ def requires_auth(f):
     return decorated
 
 
-def parse_options(options):
-    return options
-
-
 def plugin_help(action, options):
     cursor = db.actions.find()
     response = ""
@@ -205,7 +201,7 @@ def outbit_base():
     dat = None
     status = 200
 
-    dat = parse_action(indata["category"], indata["action"], parse_options(indata["options"]))
+    dat = parse_action(indata["category"], indata["action"], indata["options"])
     if dat is None:
         # TESTING
         print("Testing: %s" % indata)
