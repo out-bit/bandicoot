@@ -164,6 +164,10 @@ def plugin_actions_list(action, options):
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
+def plugin_plugins_list(action, options):
+    return json.dumps({"response": "\n  ".join(plugins.keys())})
+
+
 plugins = {"command": plugin_command,
             "actions_list": plugin_actions_list,
             "actions_del": plugin_actions_del,
@@ -171,6 +175,7 @@ plugins = {"command": plugin_command,
             "users_list": plugin_users_list,
             "users_del": plugin_users_del,
             "users_add": plugin_users_add,
+            "plugins_list": plugin_plugins_list,
             "ping": plugin_ping,
             "help": plugin_help}
 
@@ -180,6 +185,7 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/users', 'plugin': 'users_list', 'action': 'list', 'desc': 'list users'},
                   {'category': '/users', 'plugin': 'users_del', 'action': 'del', 'desc': 'del users'},
                   {'category': '/users', 'plugin': 'users_add', 'action': 'add', 'desc': 'add users'},
+                  {'category': '/plugins', 'plugin': 'plugins_list', 'action': 'list', 'desc': 'list plugins'},
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
                   ]
