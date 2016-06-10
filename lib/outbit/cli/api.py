@@ -51,18 +51,7 @@ def requires_auth(f):
     return decorated
 
 
-def parse_options(options_str):
-    options = {}
-    options_str = options_str.strip()
-
-    if options_str is None or options_str is "" or len(options_str) <= 0:
-        return options
-
-    for option in options_str.split(","):
-        if option is not None and option is not "" and len(option) >= 1:
-            (key, value) = option.split("=")
-            options[key] = value
-
+def parse_options(options):
     return options
 
 

@@ -6,6 +6,95 @@ import requests
 import json
 import getpass
 import curses
+import ply.yacc as yacc
+import ply.lex as lex
+
+
+# LEX tokens
+tokens = ("ACTION", "OPTIONVALS", "OPTIONVALD", "SPACE", "EQUAL")
+
+t_ACTION        =r'[a-zA-Z0-9]+'
+t_OPTIONVALS    =r"'[a-zA-Z0-9\s]+'"
+t_OPTIONVALD    =r'"[a-zA-Z0-9\s]+"'
+t_SPACE         =r'\s+'
+t_EQUAL         =r'='
+
+# Ignored characters
+t_ignore = "\n"
+
+def t_error(t):
+    print("Illegal character '%s'" % t.value[0])
+    t.lexer.skip(1)
+
+# Build the lexer
+lexer = lex.lex()
+
+parser_category = "/"
+parser_action = ""
+parser_options = {}
+
+# YACC parser
+precedence = (
+    ('left', 'SPACE'),
+    )
+
+def p_action_run(t):
+    '''action_run : actions SPACE options
+              | actions'''
+    global parser_category
+    global parser_action
+    global parser_options
+    if len(t) == 4:
+        parser_category = "/%s" % "/".join(t[1][:-1])
+        parser_action = t[1][-1]
+        parser_options = t[3]
+    elif len(t) == 2:
+        parser_category = "/%s" % "/".join(t[1][:-1])
+        parser_action = t[1][-1]
+    else:
+        print("error in action_run %d\n" % len(t))
+
+def p_actions(t):
+    '''actions : actions SPACE ACTION
+              | ACTION'''
+    if t[0] is None:
+        t[0] = []
+    if len(t) == 4:
+        if isinstance(t[1], list):
+            t[0] += t[1]
+        else:
+            t[0].append(t[1])
+        t[0].append(t[3])
+    elif len(t) == 2:
+        t[0].append(t[1])
+    else:
+        print("error in action %d\n" % len(t))
+
+def p_options(t):
+    '''options : options SPACE option
+               | option'''
+    if t[0] is None:
+        t[0] = {}
+    if len(t) == 4:
+        t[0].update(t[1])
+        t[0].update(t[3])
+    elif len(t) == 2:
+        t[0].update(t[1])
+    else:
+        print("error in options %d\n" % len(t))
+
+def p_option(t):
+    '''option : ACTION EQUAL ACTION
+              | ACTION EQUAL OPTIONVALS
+              | ACTION EQUAL OPTIONVALD'''
+    if t[0] is None:
+        t[0] = {}
+    t[0][t[1]] = t[3]
+
+def p_error(t):
+    print("Syntax error at '%s'" % t.value)
+
+parser = yacc.yacc()
 
 
 class Cli(object):
@@ -51,7 +140,7 @@ class Cli(object):
         else:
             self.screen.addstr("Failed connecting to server %s\n" % self.url)
             self.screen.addstr("======================\n")
-            sys.exit(1)
+            #sys.exit(1)
         self.screen.addstr("======================\n")
 
     def login_prompt(self):
@@ -87,30 +176,8 @@ class Cli(object):
             return None
 
     def get_action_from_command(self, line):
-        action_list = line.strip().split()
-        actionjson = {'category': "/", "action": "", "options": ""}
-        if len(action_list) == 1:
-            actionjson = {'category': "/", "action": action_list[0], "options": ""}
-        elif len(action_list) >= 2:
-            category = "/"
-            action = ""
-            options = ""
-            count = 0 # Count number of options
-            action_list_reverse = list(action_list)
-            action_list_reverse.reverse()
-            for node in action_list_reverse:
-                if category is "/" and action is "" and "=" in node:
-                    options += "%s," % node
-                    count += 1
-                elif category is "/" and action is "" and "=" not in node:
-                    action = node
-                    count += 1
-                else:
-                    category_range = len(action_list) - count
-                    category = "/%s" % "/".join(action_list[0:category_range])
-            actionjson = {'category': category, "action": action, "options": options}
-
-        return actionjson
+        parser.parse(line)
+        return {'category': parser_category, "action": parser_action, "options": parser_options}
 
     def startshell(self, arg):
         self.screen = curses.initscr()
