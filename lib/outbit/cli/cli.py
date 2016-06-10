@@ -91,7 +91,12 @@ def p_option(t):
               | ACTION EQUAL OPTIONVALD'''
     if t[0] is None:
         t[0] = {}
-    t[0][t[1]] = t[3].strip("'").strip('"')
+    if t[3][0] is "'":
+        t[0][t[1]] = t[3].strip("'")
+    elif t[3][0] is '"':
+        t[0][t[1]] = t[3].strip('"')
+    else:
+        t[0][t[1]] = t[3]
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
