@@ -5,9 +5,9 @@ _tabversion = '3.8'
 
 _lr_method = 'LALR'
 
-_lr_signature = '967A532B60FD8692683BCB00503F211D'
+_lr_signature = '70621E9646A5FA3A9E7D250D17A0DD72'
     
-_lr_action_items = {'CATEGORY':([0,],[2,]),'SPACE':([2,3,6,7,16,20,21,],[4,5,10,11,-6,-8,-7,]),'EQUAL':([8,],[12,]),'QUOTEDOUBLE':([12,18,],[15,20,]),'OPTIONVAL':([12,15,17,],[16,18,19,]),'ACTION':([0,4,],[3,6,]),'QUOTESINGLE':([12,19,],[17,21,]),'OPTIONNAME':([5,10,11,],[8,8,8,]),'$end':([1,3,7,9,13,14,16,20,21,],[0,-3,-5,-2,-1,-4,-6,-8,-7,]),}
+_lr_action_items = {'OPTIONVALD':([8,],[12,]),'SPACE':([1,3,5,6,7,10,11,12,13,],[-4,4,-6,-3,9,-7,-8,-9,-5,]),'EQUAL':([6,14,],[8,8,]),'OPTIONVALS':([8,],[11,]),'ACTION':([0,4,8,9,],[1,6,10,14,]),'$end':([1,2,3,5,6,7,10,11,12,13,],[-4,0,-2,-6,-3,-1,-7,-8,-9,-5,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -16,7 +16,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'action':([0,],[1,]),'options':([5,10,],[9,13,]),'option':([5,10,11,],[7,7,14,]),}
+_lr_goto_items = {'action_run':([0,],[2,]),'options':([4,],[7,]),'actions':([0,],[3,]),'option':([4,9,],[5,13,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -25,13 +25,14 @@ for _k, _v in _lr_goto_items.items():
        _lr_goto[_x][_k] = _y
 del _lr_goto_items
 _lr_productions = [
-  ("S' -> action","S'",1,None,None,None),
-  ('action -> CATEGORY SPACE ACTION SPACE options','action',5,'p_action','cli.py',38),
-  ('action -> ACTION SPACE options','action',3,'p_action','cli.py',39),
-  ('action -> ACTION','action',1,'p_action','cli.py',40),
-  ('options -> option SPACE option','options',3,'p_options','cli.py',57),
-  ('options -> option','options',1,'p_options','cli.py',58),
-  ('option -> OPTIONNAME EQUAL OPTIONVAL','option',3,'p_option','cli.py',62),
-  ('option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE','option',5,'p_option','cli.py',63),
-  ('option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE','option',5,'p_option','cli.py',64),
+  ("S' -> action_run","S'",1,None,None,None),
+  ('action_run -> actions SPACE options','action_run',3,'p_action_run','cli.py',42),
+  ('action_run -> actions','action_run',1,'p_action_run','cli.py',43),
+  ('actions -> actions SPACE ACTION','actions',3,'p_actions','cli.py',62),
+  ('actions -> ACTION','actions',1,'p_actions','cli.py',63),
+  ('options -> options SPACE option','options',3,'p_options','cli.py',80),
+  ('options -> option','options',1,'p_options','cli.py',81),
+  ('option -> ACTION EQUAL ACTION','option',3,'p_option','cli.py',98),
+  ('option -> ACTION EQUAL OPTIONVALS','option',3,'p_option','cli.py',99),
+  ('option -> ACTION EQUAL OPTIONVALD','option',3,'p_option','cli.py',100),
 ]

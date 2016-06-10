@@ -2,221 +2,175 @@ Created by PLY version 3.8 (http://www.dabeaz.com/ply)
 
 Grammar
 
-Rule 0     S' -> action
-Rule 1     action -> CATEGORY SPACE ACTION SPACE options
-Rule 2     action -> ACTION SPACE options
-Rule 3     action -> ACTION
-Rule 4     options -> option SPACE option
-Rule 5     options -> option
-Rule 6     option -> OPTIONNAME EQUAL OPTIONVAL
-Rule 7     option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
-Rule 8     option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+Rule 0     S' -> action_run
+Rule 1     action_run -> actions SPACE options
+Rule 2     action_run -> actions
+Rule 3     actions -> actions SPACE ACTION
+Rule 4     actions -> ACTION
+Rule 5     options -> options SPACE option
+Rule 6     options -> option
+Rule 7     option -> ACTION EQUAL ACTION
+Rule 8     option -> ACTION EQUAL OPTIONVALS
+Rule 9     option -> ACTION EQUAL OPTIONVALD
 
 Terminals, with rules where they appear
 
-ACTION               : 1 2 3
-CATEGORY             : 1
-EQUAL                : 6 7 8
-OPTIONNAME           : 6 7 8
-OPTIONVAL            : 6 7 8
-QUOTEDOUBLE          : 8 8
-QUOTESINGLE          : 7 7
-SPACE                : 1 1 2 4
+ACTION               : 3 4 7 7 8 9
+EQUAL                : 7 8 9
+OPTIONVALD           : 9
+OPTIONVALS           : 8
+SPACE                : 1 3 5
 error                : 
 
 Nonterminals, with rules where they appear
 
-action               : 0
-option               : 4 4 5
-options              : 1 2
+action_run           : 0
+actions              : 1 2 3
+option               : 5 6
+options              : 1 5
 
 Parsing method: LALR
 
 state 0
 
-    (0) S' -> . action
-    (1) action -> . CATEGORY SPACE ACTION SPACE options
-    (2) action -> . ACTION SPACE options
-    (3) action -> . ACTION
+    (0) S' -> . action_run
+    (1) action_run -> . actions SPACE options
+    (2) action_run -> . actions
+    (3) actions -> . actions SPACE ACTION
+    (4) actions -> . ACTION
 
-    CATEGORY        shift and go to state 2
-    ACTION          shift and go to state 3
+    ACTION          shift and go to state 1
 
-    action                         shift and go to state 1
+    action_run                     shift and go to state 2
+    actions                        shift and go to state 3
 
 state 1
 
-    (0) S' -> action .
+    (4) actions -> ACTION .
 
+    SPACE           reduce using rule 4 (actions -> ACTION .)
+    $end            reduce using rule 4 (actions -> ACTION .)
 
 
 state 2
 
-    (1) action -> CATEGORY . SPACE ACTION SPACE options
+    (0) S' -> action_run .
 
-    SPACE           shift and go to state 4
 
 
 state 3
 
-    (2) action -> ACTION . SPACE options
-    (3) action -> ACTION .
+    (1) action_run -> actions . SPACE options
+    (2) action_run -> actions .
+    (3) actions -> actions . SPACE ACTION
 
-    SPACE           shift and go to state 5
-    $end            reduce using rule 3 (action -> ACTION .)
+    SPACE           shift and go to state 4
+    $end            reduce using rule 2 (action_run -> actions .)
 
 
 state 4
 
-    (1) action -> CATEGORY SPACE . ACTION SPACE options
+    (1) action_run -> actions SPACE . options
+    (3) actions -> actions SPACE . ACTION
+    (5) options -> . options SPACE option
+    (6) options -> . option
+    (7) option -> . ACTION EQUAL ACTION
+    (8) option -> . ACTION EQUAL OPTIONVALS
+    (9) option -> . ACTION EQUAL OPTIONVALD
 
     ACTION          shift and go to state 6
 
+    options                        shift and go to state 7
+    option                         shift and go to state 5
 
 state 5
 
-    (2) action -> ACTION SPACE . options
-    (4) options -> . option SPACE option
-    (5) options -> . option
-    (6) option -> . OPTIONNAME EQUAL OPTIONVAL
-    (7) option -> . OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
-    (8) option -> . OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+    (6) options -> option .
 
-    OPTIONNAME      shift and go to state 8
+    SPACE           reduce using rule 6 (options -> option .)
+    $end            reduce using rule 6 (options -> option .)
 
-    options                        shift and go to state 9
-    option                         shift and go to state 7
 
 state 6
 
-    (1) action -> CATEGORY SPACE ACTION . SPACE options
+    (3) actions -> actions SPACE ACTION .
+    (7) option -> ACTION . EQUAL ACTION
+    (8) option -> ACTION . EQUAL OPTIONVALS
+    (9) option -> ACTION . EQUAL OPTIONVALD
 
-    SPACE           shift and go to state 10
+    SPACE           reduce using rule 3 (actions -> actions SPACE ACTION .)
+    $end            reduce using rule 3 (actions -> actions SPACE ACTION .)
+    EQUAL           shift and go to state 8
 
 
 state 7
 
-    (4) options -> option . SPACE option
-    (5) options -> option .
+    (1) action_run -> actions SPACE options .
+    (5) options -> options . SPACE option
 
-    SPACE           shift and go to state 11
-    $end            reduce using rule 5 (options -> option .)
+    $end            reduce using rule 1 (action_run -> actions SPACE options .)
+    SPACE           shift and go to state 9
 
 
 state 8
 
-    (6) option -> OPTIONNAME . EQUAL OPTIONVAL
-    (7) option -> OPTIONNAME . EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
-    (8) option -> OPTIONNAME . EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+    (7) option -> ACTION EQUAL . ACTION
+    (8) option -> ACTION EQUAL . OPTIONVALS
+    (9) option -> ACTION EQUAL . OPTIONVALD
 
-    EQUAL           shift and go to state 12
+    ACTION          shift and go to state 10
+    OPTIONVALS      shift and go to state 11
+    OPTIONVALD      shift and go to state 12
 
 
 state 9
 
-    (2) action -> ACTION SPACE options .
+    (5) options -> options SPACE . option
+    (7) option -> . ACTION EQUAL ACTION
+    (8) option -> . ACTION EQUAL OPTIONVALS
+    (9) option -> . ACTION EQUAL OPTIONVALD
 
-    $end            reduce using rule 2 (action -> ACTION SPACE options .)
+    ACTION          shift and go to state 14
 
+    option                         shift and go to state 13
 
 state 10
 
-    (1) action -> CATEGORY SPACE ACTION SPACE . options
-    (4) options -> . option SPACE option
-    (5) options -> . option
-    (6) option -> . OPTIONNAME EQUAL OPTIONVAL
-    (7) option -> . OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
-    (8) option -> . OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+    (7) option -> ACTION EQUAL ACTION .
 
-    OPTIONNAME      shift and go to state 8
+    SPACE           reduce using rule 7 (option -> ACTION EQUAL ACTION .)
+    $end            reduce using rule 7 (option -> ACTION EQUAL ACTION .)
 
-    options                        shift and go to state 13
-    option                         shift and go to state 7
 
 state 11
 
-    (4) options -> option SPACE . option
-    (6) option -> . OPTIONNAME EQUAL OPTIONVAL
-    (7) option -> . OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
-    (8) option -> . OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+    (8) option -> ACTION EQUAL OPTIONVALS .
 
-    OPTIONNAME      shift and go to state 8
+    SPACE           reduce using rule 8 (option -> ACTION EQUAL OPTIONVALS .)
+    $end            reduce using rule 8 (option -> ACTION EQUAL OPTIONVALS .)
 
-    option                         shift and go to state 14
 
 state 12
 
-    (6) option -> OPTIONNAME EQUAL . OPTIONVAL
-    (7) option -> OPTIONNAME EQUAL . QUOTESINGLE OPTIONVAL QUOTESINGLE
-    (8) option -> OPTIONNAME EQUAL . QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE
+    (9) option -> ACTION EQUAL OPTIONVALD .
 
-    OPTIONVAL       shift and go to state 16
-    QUOTESINGLE     shift and go to state 17
-    QUOTEDOUBLE     shift and go to state 15
+    SPACE           reduce using rule 9 (option -> ACTION EQUAL OPTIONVALD .)
+    $end            reduce using rule 9 (option -> ACTION EQUAL OPTIONVALD .)
 
 
 state 13
 
-    (1) action -> CATEGORY SPACE ACTION SPACE options .
+    (5) options -> options SPACE option .
 
-    $end            reduce using rule 1 (action -> CATEGORY SPACE ACTION SPACE options .)
+    SPACE           reduce using rule 5 (options -> options SPACE option .)
+    $end            reduce using rule 5 (options -> options SPACE option .)
 
 
 state 14
 
-    (4) options -> option SPACE option .
+    (7) option -> ACTION . EQUAL ACTION
+    (8) option -> ACTION . EQUAL OPTIONVALS
+    (9) option -> ACTION . EQUAL OPTIONVALD
 
-    $end            reduce using rule 4 (options -> option SPACE option .)
-
-
-state 15
-
-    (8) option -> OPTIONNAME EQUAL QUOTEDOUBLE . OPTIONVAL QUOTEDOUBLE
-
-    OPTIONVAL       shift and go to state 18
-
-
-state 16
-
-    (6) option -> OPTIONNAME EQUAL OPTIONVAL .
-
-    SPACE           reduce using rule 6 (option -> OPTIONNAME EQUAL OPTIONVAL .)
-    $end            reduce using rule 6 (option -> OPTIONNAME EQUAL OPTIONVAL .)
-
-
-state 17
-
-    (7) option -> OPTIONNAME EQUAL QUOTESINGLE . OPTIONVAL QUOTESINGLE
-
-    OPTIONVAL       shift and go to state 19
-
-
-state 18
-
-    (8) option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL . QUOTEDOUBLE
-
-    QUOTEDOUBLE     shift and go to state 20
-
-
-state 19
-
-    (7) option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL . QUOTESINGLE
-
-    QUOTESINGLE     shift and go to state 21
-
-
-state 20
-
-    (8) option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE .
-
-    SPACE           reduce using rule 8 (option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE .)
-    $end            reduce using rule 8 (option -> OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE .)
-
-
-state 21
-
-    (7) option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE .
-
-    SPACE           reduce using rule 7 (option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE .)
-    $end            reduce using rule 7 (option -> OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE .)
+    EQUAL           shift and go to state 8
 

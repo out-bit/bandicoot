@@ -11,16 +11,13 @@ import ply.lex as lex
 
 
 # LEX tokens
-tokens = ("CATEGORY", "ACTION", "OPTIONNAME", "OPTIONVAL", "SPACE", "EQUAL", "QUOTESINGLE", "QUOTEDOUBLE")
+tokens = ("ACTION", "OPTIONVALS", "OPTIONVALD", "SPACE", "EQUAL")
 
-t_CATEGORY      =r'[a-zA-Z0-9]+'
 t_ACTION        =r'[a-zA-Z0-9]+'
-t_OPTIONNAME    =r'[a-zA-Z0-9]+'
-t_OPTIONVAL     =r'[a-zA-Z0-9]+' # later will include spaces
+t_OPTIONVALS    =r"'[a-zA-Z0-9\s]+'"
+t_OPTIONVALD    =r'"[a-zA-Z0-9\s]+"'
 t_SPACE         =r'\s+'
 t_EQUAL         =r'='
-t_QUOTESINGLE   =r"'"
-t_QUOTEDOUBLE   =r'"'
 
 # Ignored characters
 t_ignore = "\n"
@@ -37,44 +34,62 @@ parser_action = ""
 parser_options = {}
 
 # YACC parser
-def p_action(t):
-    '''action : CATEGORY SPACE ACTION SPACE options
-              | ACTION SPACE options
-              | ACTION'''
-    print("action: %s\n" % t[1])
-    global parser_action
+precedence = (
+    ('left', 'SPACE'),
+    )
+
+def p_action_run(t):
+    '''action_run : actions SPACE options
+              | actions'''
     global parser_category
+    global parser_action
     global parser_options
-    parser_action = t[1]
-    if len(t) == 6:
-        parser_category = t[1]
-        parser_action = t[3]
-        parser_options = t[5]
-    elif len(t) == 4:
-        parser_action = t[1]
+    if len(t) == 4:
+        parser_category = "/%s" % "/".join(t[1][:-1])
+        parser_action = t[1][-1]
         parser_options = t[3]
     elif len(t) == 2:
-        parser_action = t[1]
+        parser_category = "/%s" % "/".join(t[1][:-1])
+        parser_action = t[1][-1]
+    else:
+        print("error in action_run %d\n" % len(t))
+
+def p_actions(t):
+    '''actions : actions SPACE ACTION
+              | ACTION'''
+    if t[0] is None:
+        t[0] = []
+    if len(t) == 4:
+        if isinstance(t[1], list):
+            t[0] += t[1]
+        else:
+            t[0].append(t[1])
+        t[0].append(t[3])
+    elif len(t) == 2:
+        t[0].append(t[1])
+    else:
+        print("error in action %d\n" % len(t))
 
 def p_options(t):
-    '''options : option SPACE option
+    '''options : options SPACE option
                | option'''
-    print("options: %s\n" % t[1])
-
-def p_option(t):
-    '''option : OPTIONNAME EQUAL OPTIONVAL
-              | OPTIONNAME EQUAL QUOTESINGLE OPTIONVAL QUOTESINGLE
-              | OPTIONNAME EQUAL QUOTEDOUBLE OPTIONVAL QUOTEDOUBLE'''
-    print("option: %s\n" % t[1])
     if t[0] is None:
         t[0] = {}
-    if t[3] == "'":
-        t[0][t[1]] = t[6]
-    elif t[3] == '"':
-        t[0][t[1]] = t[6]
+    if len(t) == 4:
+        t[0].update(t[1])
+        t[0].update(t[3])
+    elif len(t) == 2:
+        t[0].update(t[1])
     else:
-        print("option test: %s, %s\n" % (t[1], t[5]))
-        t[0][t[1]] = t[5]
+        print("error in options %d\n" % len(t))
+
+def p_option(t):
+    '''option : ACTION EQUAL ACTION
+              | ACTION EQUAL OPTIONVALS
+              | ACTION EQUAL OPTIONVALD'''
+    if t[0] is None:
+        t[0] = {}
+    t[0][t[1]] = t[3]
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
@@ -162,7 +177,6 @@ class Cli(object):
 
     def get_action_from_command(self, line):
         parser.parse(line)
-        print("category: %s, action: %s, options: %s" % (parser_category, parser_action, parser_options))
         return {'category': parser_category, "action": parser_action, "options": parser_options}
 
     def startshell(self, arg):
