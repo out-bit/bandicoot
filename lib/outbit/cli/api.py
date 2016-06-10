@@ -25,7 +25,7 @@ def check_auth(username, password):
     m.update(password)
     password_md5 = m.hexdigest()
 
-    post = db.users.posts.find_one({"username": username})
+    post = db.users.find_one({"username": username})
 
     if post["password_md5"] == password_md5:
         valid_auth = True
@@ -71,13 +71,13 @@ def plugin_users_add(action, options):
     if "username" not in options or "password" not in options:
         return json.dumps({"response": "  username and password are required options"})
     else:
-        result = db.users.posts.find_one({"username": options["username"]})
+        result = db.users.find_one({"username": options["username"]})
         if result is None:
             m = hashlib.md5()
             m.update(options["password"])
             password_md5 = str(m.hexdigest())
             post = {"username": options["username"], "password_md5": password_md5}
-            db.users.posts.insert_one(post)
+            db.users.insert_one(post)
             return json.dumps({"response": "  created user %s" % options["username"]})
         else:
             return json.dumps({"response": "  user %s already exists" % options["username"]})
@@ -85,7 +85,7 @@ def plugin_users_add(action, options):
 
 def plugin_users_del(action, options):
     post = {"username": options["username"]}
-    result = db.users.posts.delete_many(post)
+    result = db.users.delete_many(post)
     if result.deleted_count > 0:
         return json.dumps({"response": "  deleted user %s" % options["username"]})
     else:
@@ -94,7 +94,7 @@ def plugin_users_del(action, options):
 
 def plugin_users_list(action, options):
     result = ""
-    cursor = db.users.posts.find()
+    cursor = db.users.find()
     for doc in list(cursor):
         result += "  %s\n" % doc["username"]
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
@@ -290,9 +290,9 @@ class Cli(object):
         # First Time Defaults, Setup superadmin if it doesnt exist
         default_user = "superadmin"
         default_password = "superadmin"
-        post = db.users.posts.find_one({"username": default_user})
+        post = db.users.find_one({"username": default_user})
         if post is None:
-            action_add_user(default_user, default_password)
+            plugin_users_add("/users/add",{"username": default_user, "password": default_password})
 
         # Start API Server
         print("Starting outbit api server on %s://%s:%d" % ("https" if
