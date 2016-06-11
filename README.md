@@ -29,8 +29,6 @@ easy_install outbit
 Usage
 ===========
 
-### Usage
-
 Start the API server on your localhost or on a dedicated server
 ```shell
 $ outbit-api
