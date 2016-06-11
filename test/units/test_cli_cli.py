@@ -28,6 +28,39 @@ class TestCli(unittest.TestCase):
         cli.p_action_run(t)
         assert(cli.parser_category == "/users" and cli.parser_action == "del" and "username" in cli.parser_options)
 
+    def test_p_actions_str(self):
+        t = []
+        t.append(None)
+        t.append("help")
+        cli.p_actions(t)
+        assert(t[0] == ["help"])
+
+    def test_p_actions_list(self):
+        t = []
+        t.append(None)
+        t.append(["users"])
+        t.append(" ")
+        t.append("list")
+        cli.p_actions(t)
+        print(t)
+        assert(t[0] == ["users", "list"])
+
+    def test_p_options_1(self):
+        t = []
+        t.append(None)
+        t.append({"username": "jdoe"})
+        cli.p_options(t)
+        assert(t[0] == {"username": "jdoe"})
+
+    def test_p_options_2(self):
+        t = []
+        t.append(None)
+        t.append({"username": "jdoe"})
+        t.append(" ")
+        t.append({"password": "jdoe"})
+        cli.p_options(t)
+        assert(t[0] == {"username": "jdoe", "password": "jdoe"})
+
     def test_project(self):
         # Test No Path Given (Hello Test)
         sys.argv[1] = ""
