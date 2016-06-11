@@ -31,14 +31,36 @@ Usage
 
 ### Usage
 
-$ outbit
-  Username: xxxxxx
-  Password: xxxxxx
+Start the API server on your localhost or on a dedicated server
+```shell
+$ outbit-api
+```
 
-user@outbit> help
-  webserver
-  apps
-  useraccounts
- 
-user@outbit> help webserver
-  webserver restart  [all|group|host]
+Login to the outbit shell
+```shell
+$ outbit -u superadmin
+  Password: superadmin
+```
+
+```shell
+======================
+Welcome To outbit
+Connecting to Server http://127.0.0.1:8088
+Connected to Server http://127.0.0.1:8088
+======================
+outbit> help
+  actions list          list actions
+  actions del           del actions
+  actions add           add actions
+  users list            list users
+  users del             del users
+  users add             add users
+  roles list            list roles
+  roles del             del roles
+  roles add             add roles
+  plugins list          list plugins
+  ping                  verify connectivity
+  logs                  show the history log
+  help                  print usage
+outbit> exit
+```
