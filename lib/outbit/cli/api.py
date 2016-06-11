@@ -84,6 +84,8 @@ def plugin_users_add(action, options):
 
 
 def plugin_users_del(action, options):
+    if "username" not in options:
+        return json.dumps({"response": "  name option is required"})
     post = {"username": options["username"]}
     result = db.users.delete_many(post)
     if result.deleted_count > 0:
@@ -146,6 +148,7 @@ def plugin_actions_del(action, options):
 
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
+
     post = {"name": options["name"]}
     result = db.actions.delete_many(post)
     if result.deleted_count > 0:

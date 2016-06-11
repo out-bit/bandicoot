@@ -19,6 +19,10 @@ class TestCli(unittest.TestCase):
         result = api.plugin_ping(None, None)
         assert(result == json.dumps({"response": "  pong"}))
 
+    def test_plugin_users_del(self):
+        result = api.plugin_users_del(None, {})
+        assert(result == json.dumps({"response": "  name option is required"}))
+
     def test_plugin_users_add(self):
         result_uonly = api.plugin_users_add(None, {"username": "jdoe"})
         result_ponly = api.plugin_users_add(None, {"password": "jdoe"})
