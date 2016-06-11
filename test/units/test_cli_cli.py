@@ -61,6 +61,15 @@ class TestCli(unittest.TestCase):
         cli.p_options(t)
         assert(t[0] == {"username": "jdoe", "password": "jdoe"})
 
+    def test_p_option(self):
+        t = []
+        t.append(None)
+        t.append("username")
+        t.append("=")
+        t.append("jdoe")
+        cli.p_option(t)
+        assert(t[0] == {"username": "jdoe"})
+
     def test_project(self):
         # Test No Path Given (Hello Test)
         sys.argv[1] = ""
