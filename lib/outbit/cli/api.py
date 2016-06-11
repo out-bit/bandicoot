@@ -145,7 +145,7 @@ def plugin_actions_del(action, options):
     dat = None
 
     if "name" not in options:
-        dat = json.dumps({"response": "  name option is required"})
+        return json.dumps({"response": "  name option is required"})
     post = {"name": options["name"]}
     result = db.actions.delete_many(post)
     if result.deleted_count > 0:
@@ -166,7 +166,7 @@ def plugin_actions_list(action, options):
 
 def plugin_roles_add(action, options):
     if "name" not in options:
-        return json.dumps({"response": "  name is a required options"})
+        return json.dumps({"response": "  name option is required"})
     else:
         result = db.roles.find_one({"name": options["name"]})
         if result is None:
@@ -178,12 +178,15 @@ def plugin_roles_add(action, options):
 
 
 def plugin_roles_del(action, options):
-    post = {"name": options["name"]}
-    result = db.roles.delete_many(post)
-    if result.deleted_count > 0:
-        return json.dumps({"response": "  deleted role %s" % options["name"]})
+    if "name" not in options:
+        return json.dumps({"response": "  name option is required"})
     else:
-        return json.dumps({"response": "  role %s does not exist" % options["name"]})
+        post = {"name": options["name"]}
+        result = db.roles.delete_many(post)
+        if result.deleted_count > 0:
+            return json.dumps({"response": "  deleted role %s" % options["name"]})
+        else:
+            return json.dumps({"response": "  role %s does not exist" % options["name"]})
 
 
 def plugin_roles_list(action, options):
