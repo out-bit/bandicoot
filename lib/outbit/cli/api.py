@@ -4,6 +4,7 @@ import sys
 import os
 import json
 import hashlib
+import subprocess
 from functools import wraps
 from flask import Flask, Response, request
 from pymongo import MongoClient
@@ -103,44 +104,33 @@ def plugin_users_list(action, options):
 
 
 def plugin_actions_add(action, options):
-    post = {}
-    post["name"] = ""
-    post["desc"] = ""
-    post["category"] = ""
-    post["action"] = ""
-    post["chdir"] = ""
-    post["command"] = ""
     dat = None
-
-    if "name" in options:
-        post["name"] = options["name"]
-    if "desc" in options:
-        post["desc"] = options["desc"]
-    if "category" in options:
-        post["category"] =options["category"] 
-    if "action" in options:
-        post["action"] = options["action"]
-    if "chdir" in options:
-        post["chdir"] = options["chdir"]
-    if "plugin" in options:
-        post["plugin"] = options["plugin"]
 
     for requiredopt in ["name", "category", "action", "plugin"]:
         if requiredopt not in options:
             dat = json.dumps({"response": "  %s option is required" % requiredopt})
             return dat
 
-    find_result = db.actions.find_one({"name": post["name"]})
+    find_result = db.actions.find_one({"name": options["name"]})
     if find_result is None:
-        result = db.actions.insert_one(post)
-        dat = json.dumps({"response": "  created action %s" % post["name"]})
+        result = db.actions.insert_one(options)
+        dat = json.dumps({"response": "  created action %s" % options["name"]})
     else:
-        dat = json.dumps({"response": "  action %s already exists" % post["name"]})
+        dat = json.dumps({"response": "  action %s already exists" % options["name"]})
     return dat
 
 
 def plugin_command(action, options):
-    return json.dumps({ "response": "command output: %s, args: %s" % (action, options)})
+    result = ""
+    if "command_run" not in action:
+        return json.dumps({"response": "  command_run required in action"})
+    cmd = action["command_run"].split()
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    for line in p.stdout:
+        result += "  %s\n" % line
+    p.wait()
+    result += "  return code: %d\n"  % p.returncode
+    return json.dumps({ "response": result})
 
 
 def plugin_actions_del(action, options):

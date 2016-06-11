@@ -40,6 +40,7 @@ $ outbit -u superadmin
   Password: superadmin
 ```
 
+Add a "hello world" action that prints hello world
 ```shell
 ======================
 Welcome To outbit
@@ -60,5 +61,28 @@ outbit> help
   ping                  verify connectivity
   logs                  show the history log
   help                  print usage
+
+outbit> actions add category=/testing name=helloworld plugin=command action=helloworld desc="print hello world" command_run="echo 'hello world'"
+
+outbit> help
+  actions list          list actions
+  actions del           del actions
+  actions add           add actions
+  users list            list users
+  users del             del users
+  users add             add users
+  roles list            list roles
+  roles del             del roles
+  roles add             add roles
+  plugins list          list plugins
+  ping                  verify connectivity
+  logs                  show the history log
+  help                  print usage
+  testing helloworld           print hello world
+
+outbit> testing helloworld
+  hello world
+  return code: 0
+
 outbit> exit
 ```
