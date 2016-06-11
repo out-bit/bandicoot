@@ -1,11 +1,20 @@
 import nose
+import outbit
 from outbit.cli import api
 import unittest
 import sys
 import os
 import json
+import mock
 
 class TestCli(unittest.TestCase):
+    @mock.patch("outbit.cli.api.db")
+    def test_plugin_help(self, mock_test):
+        tester = mock.Mock()
+        mock_test.return_value = tester
+        result = outbit.cli.api.plugin_help(None, None)
+        assert("users list" in result)
+
     def test_plugin_ping(self):
         result = api.plugin_ping(None, None)
         assert(result == json.dumps({"response": "  pong"}))
