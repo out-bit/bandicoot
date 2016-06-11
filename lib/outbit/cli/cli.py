@@ -303,8 +303,11 @@ class Cli(object):
             data = self.run_action(actionjson)
             if data is not None:
                 self.screen.addstr(data["response"])
+                return data["response"]
             else:
-                self.screen.addstr("outbit - Failed To Get Response From Server\n")
+                response = "outbit - Failed To Get Response From Server\n"
+                self.screen.addstr(response)
+                return(response)
 
     def run(self):
         """ EntryPoint Of Application """
