@@ -171,10 +171,8 @@ class Cli(object):
                 if search_mode:
                     if match is not None:
                         self.shell_parse_line(match)
-                        self.history.append(match)
                 else:
                     self.shell_parse_line(line)
-                    self.history.append(line)
                 self.screen.addstr("\noutbit> ")
                 line = ""
                 history_index = 0
@@ -238,6 +236,9 @@ class Cli(object):
         else:
             # Server Side Handles Command Response
             # outbit> [category ..] action [option1=something ..]
+            if line is not None and len(line) > 0:
+                self.history.append(line)
+
             actionjson = self.get_action_from_command(line)
             data = self.run_action(actionjson)
             if data is not None:

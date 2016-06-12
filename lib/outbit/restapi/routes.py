@@ -54,7 +54,9 @@ def outbit_base():
 
     # Audit Logging / History
     post = {"category": indata["category"], "action": indata["action"], "options": indata["options"]}
-    outbit.cli.api.db.logs.insert_one(post)
+    if post["category"] is not None and post["action"] is not None and post["options"] is not None:
+        # Only Log Valid Requests
+        outbit.cli.api.db.logs.insert_one(post)
 
     dat = outbit.cli.api.parse_action(indata["category"], indata["action"], indata["options"])
     if dat is None:
