@@ -1,221 +1,29 @@
 """ Command Line Interface Module """
 import optparse
 import sys
-import os
-import json
-import hashlib
-import subprocess
-from functools import wraps
-from flask import Flask, Response, request
 from pymongo import MongoClient
+from outbit.restapi import routes
+from outbit.plugins import builtins
 
-
-app = Flask(__name__)
-app.secret_key = os.urandom(24)
 
 dbclient = MongoClient('localhost', 27017)
 db = dbclient.outbit
 
 
-def check_auth(username, password):
-    """This function is called to check if a username /
-    password combination is valid.
-    """
-    valid_auth = False
-    m = hashlib.md5()
-    m.update(password)
-    password_md5 = m.hexdigest()
-
-    post = db.users.find_one({"username": username})
-
-    if post["password_md5"] == password_md5:
-        valid_auth = True
-
-    return valid_auth
-
-
-def authenticate():
-    """Sends a 401 response that enables basic auth"""
-    return Response(
-    'Could not verify your access level for that URL.\n'
-    'You have to login with proper credentials', 401,
-    {'WWW-Authenticate': 'Basic realm="Login Required"'})
-
-
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return authenticate()
-        return f(*args, **kwargs)
-    return decorated
-
-
-def plugin_help(action, options):
-    cursor = db.actions.find()
-    response = ""
-    for dbaction in builtin_actions + list(cursor):
-        category_str = dbaction["category"].strip("/").replace("/", " ")
-        if category_str is None or len(category_str) <= 0:
-            response += "  %s \t\t\t%-60s\n" % (dbaction["action"], dbaction["desc"])
-        else:
-            response += "  %s %s \t\t%-60s\n" % (dbaction["category"].strip("/").replace("/", " "), dbaction["action"], dbaction["desc"])
-    return json.dumps({"response": response})
-
-
-def plugin_ping(action, options):
-    return json.dumps({"response": "  pong"})
-
-
-def plugin_users_add(action, options):
-    if "username" not in options or "password" not in options:
-        return json.dumps({"response": "  username and password are required options"})
-    else:
-        result = db.users.find_one({"username": options["username"]})
-        if result is None:
-            m = hashlib.md5()
-            m.update(options["password"])
-            password_md5 = str(m.hexdigest())
-            post = {"username": options["username"], "password_md5": password_md5}
-            db.users.insert_one(post)
-            return json.dumps({"response": "  created user %s" % options["username"]})
-        else:
-            return json.dumps({"response": "  user %s already exists" % options["username"]})
-
-
-def plugin_users_del(action, options):
-    if "username" not in options:
-        return json.dumps({"response": "  name option is required"})
-    post = {"username": options["username"]}
-    result = db.users.delete_many(post)
-    if result.deleted_count > 0:
-        return json.dumps({"response": "  deleted user %s" % options["username"]})
-    else:
-        return json.dumps({"response": "  user %s does not exist" % options["username"]})
-
-
-def plugin_users_list(action, options):
-    result = ""
-    cursor = db.users.find()
-    for doc in list(cursor):
-        result += "  %s\n" % doc["username"]
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
-
-
-def plugin_actions_add(action, options):
-    dat = None
-
-    for requiredopt in ["name", "category", "action", "plugin"]:
-        if requiredopt not in options:
-            dat = json.dumps({"response": "  %s option is required" % requiredopt})
-            return dat
-
-    find_result = db.actions.find_one({"name": options["name"]})
-    if find_result is None:
-        result = db.actions.insert_one(options)
-        dat = json.dumps({"response": "  created action %s" % options["name"]})
-    else:
-        dat = json.dumps({"response": "  action %s already exists" % options["name"]})
-    return dat
-
-
-def plugin_command(action, options):
-    result = ""
-    if "command_run" not in action:
-        return json.dumps({"response": "  command_run required in action"})
-    cmd = action["command_run"].split()
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    for line in p.stdout:
-        result += "  %s\n" % line
-    p.wait()
-    result += "  return code: %d\n"  % p.returncode
-    return json.dumps({ "response": result})
-
-
-def plugin_actions_del(action, options):
-    dat = None
-
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
-
-    post = {"name": options["name"]}
-    result = db.actions.delete_many(post)
-    if result.deleted_count > 0:
-        dat = json.dumps({"response": "  deleted action %s" % options["name"]})
-    else:
-        dat = json.dumps({"response": "  action %s does not exist" % options["name"]})
-    return dat
-
-
-def plugin_actions_list(action, options):
-    result = ""
-    cursor = db.actions.find()
-    for doc in list(cursor):
-        #result += "  %s\n" % doc["name"]
-        result += "  %s\n" % doc
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
-
-
-def plugin_roles_add(action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
-    else:
-        result = db.roles.find_one({"name": options["name"]})
-        if result is None:
-            post = {"name": options["name"]}
-            db.roles.insert_one(post)
-            return json.dumps({"response": "  created role %s" % options["name"]})
-        else:
-            return json.dumps({"response": "  role %s already exists" % options["name"]})
-
-
-def plugin_roles_del(action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
-    else:
-        post = {"name": options["name"]}
-        result = db.roles.delete_many(post)
-        if result.deleted_count > 0:
-            return json.dumps({"response": "  deleted role %s" % options["name"]})
-        else:
-            return json.dumps({"response": "  role %s does not exist" % options["name"]})
-
-
-def plugin_roles_list(action, options):
-    result = ""
-    cursor = db.roles.find()
-    for doc in list(cursor):
-        result += "  %s\n" % doc["name"]
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
-
-
-def plugin_plugins_list(action, options):
-    return json.dumps({"response": "\n  ".join(plugins.keys())})
-
-
-def plugin_logs(action, options):
-    result = "  category\t\taction\t\toptions\n"
-    cursor = db.logs.find()
-    for doc in list(cursor):
-        result += "  %s\t\t%s\t\t%s\n" % (doc["category"], doc["action"], doc["options"])
-    return json.dumps({"response": result})
-
-
-plugins = {"command": plugin_command,
-            "actions_list": plugin_actions_list,
-            "actions_del": plugin_actions_del,
-            "actions_add": plugin_actions_add,
-            "users_list": plugin_users_list,
-            "users_del": plugin_users_del,
-            "users_add": plugin_users_add,
-            "roles_list": plugin_roles_list,
-            "roles_del": plugin_roles_del,
-            "roles_add": plugin_roles_add,
-            "plugins_list": plugin_plugins_list,
-            "ping": plugin_ping,
-            "logs": plugin_logs,
-            "help": plugin_help}
+plugins = {"command": builtins.plugin_command,
+            "actions_list": builtins.plugin_actions_list,
+            "actions_del": builtins.plugin_actions_del,
+            "actions_add": builtins.plugin_actions_add,
+            "users_list": builtins.plugin_users_list,
+            "users_del": builtins.plugin_users_del,
+            "users_add": builtins.plugin_users_add,
+            "roles_list": builtins.plugin_roles_list,
+            "roles_del": builtins.plugin_roles_del,
+            "roles_add": builtins.plugin_roles_add,
+            "plugins_list": builtins.plugin_plugins_list,
+            "ping": builtins.plugin_ping,
+            "logs": builtins.plugin_logs,
+            "help": builtins.plugin_help}
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
                   {'category': '/actions', 'plugin': 'actions_del', 'action': 'del', 'desc': 'del actions'},
@@ -240,29 +48,6 @@ def parse_action(category, action, options):
             if "plugin" in dbaction:
                 return plugins[dbaction["plugin"]](dbaction, options)
     return None
-
-
-@app.route("/", methods=["POST"])
-@requires_auth
-def outbit_base():
-    indata = request.get_json()
-    dat = None
-    status = 200
-
-    # Audit Logging / History
-    post = {"category": indata["category"], "action": indata["action"], "options": indata["options"]}
-    db.logs.insert_one(post)
-
-    dat = parse_action(indata["category"], indata["action"], indata["options"])
-    if dat is None:
-        # TESTING
-        print("Testing: %s" % indata)
-        dat = json.dumps({"response": "  action not found"})
-        # END TESTING
-        #status=403 TODO PUT THIS BACK AND REMOVE TESTING
-
-    resp = Response(response=dat, status=status, mimetype="application/json")
-    return(resp)
 
 
 class Cli(object):
@@ -311,7 +96,7 @@ class Cli(object):
             print("Does not support SSL yet")
             sys.exit(1)
         else:
-            app.run(host=self.server, port=self.port, debug=self.is_debug)
+            routes.app.run(host=self.server, port=self.port, debug=self.is_debug)
 
 
 
