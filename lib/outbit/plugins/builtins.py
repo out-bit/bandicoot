@@ -101,6 +101,17 @@ def plugin_command(action, options):
     return json.dumps({ "response": result})
 
 
+def plugin_actions_edit(action, options):
+    if "name" not in options:
+        return json.dumps({"response": "  name option is required"})
+    result = outbit.cli.api.db.actions.update_one({"name": options["name"]},
+            {"$set": options})
+    if result.matched_count > 0:
+        return json.dumps({"response": "  modified action %s" % options["name"]})
+    else:
+        return json.dumps({"response": "  action %s does not exist" % options["name"]})
+
+
 def plugin_actions_del(action, options):
     dat = None
 
@@ -136,6 +147,17 @@ def plugin_roles_add(action, options):
             return json.dumps({"response": "  created role %s" % options["name"]})
         else:
             return json.dumps({"response": "  role %s already exists" % options["name"]})
+
+
+def plugin_roles_edit(action, options):
+    if "name" not in options:
+        return json.dumps({"response": "  name option is required"})
+    result = outbit.cli.api.db.roles.update_one({"name": options["name"]},
+            {"$set": options})
+    if result.matched_count > 0:
+        return json.dumps({"response": "  modified role %s" % options["name"]})
+    else:
+        return json.dumps({"response": "  role %s does not exist" % options["name"]})
 
 
 def plugin_roles_del(action, options):
