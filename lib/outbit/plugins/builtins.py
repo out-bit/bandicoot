@@ -13,6 +13,10 @@ def plugin_help(action, options):
             response += "  %s \t\t\t%-60s\n" % (dbaction["action"], dbaction["desc"])
         else:
             response += "  %s %s \t\t%-60s\n" % (dbaction["category"].strip("/").replace("/", " "), dbaction["action"], dbaction["desc"])
+
+    # Append the exit builtin implemented on the client side
+    response += "  exit \t\t\n"
+
     return json.dumps({"response": response})
 
 
