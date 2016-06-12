@@ -119,8 +119,11 @@ class Cli(object):
             return None
 
     def get_action_from_command(self, line):
-        yacc.parser.parse(line)
-        return {'category': yacc.parser_category, "action": yacc.parser_action, "options": yacc.parser_options}
+        if line is not None and len(line) > 0:
+            yacc.parser.parse(line)
+            return {'category': yacc.parser_category, "action": yacc.parser_action, "options": yacc.parser_options}
+        else:
+            return {'category': None, "action": None, "options": None}
 
     def startshell(self, arg):
         self.screen = curses.initscr()
