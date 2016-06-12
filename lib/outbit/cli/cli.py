@@ -49,14 +49,14 @@ class Cli(object):
         if "pong" in self.action_ping():
             self.screen.addstr("Connected to Server %s\n" % self.url)
         else:
-            self.screen.addstr("Failed connecting to server %s\n" % self.url)
-            self.screen.addstr("======================\n")
+            print("Failed connecting to server %s\n" % self.url)
             sys.exit(1)
         self.screen.addstr("======================\n")
 
     def login_prompt(self):
-        failed_auths = 0
         auth_success = False
+        default_username = "superadmin"
+        default_pw = "superadmin"
 
         if self.user is None:
             self.user = raw_input("Username: ")
@@ -66,9 +66,17 @@ class Cli(object):
                 self.password = getpass.getpass()
             if "pong" in self.action_ping():
                 auth_success = True
+                if self.user == default_username and self.password == default_pw:
+                    for change_trycount in [1, 2, 3]:
+                        print("Changing Password From Default")
+                        new_password = getpass.getpass("Enter New Password: ")
+                        new_password_repeat = getpass.getpass("Enter New Password Again: ")
+                        if new_password == new_password_repeat:
+                            if self.action_changepw(self.user, new_password) is not "":
+                                self.password = new_password
+                                break
                 break
             else:
-                failed_auths += 1
                 self.password = None
 
         if auth_success == False:
@@ -78,6 +86,14 @@ class Cli(object):
 
     def exit(self):
         sys.exit(0)
+
+    def action_changepw(self, username, password):
+        data = self.run_action(self.get_action_from_command("users edit username='%s' password='%s'"
+            % (username, password)))
+        if data is not None:
+            return data["response"]
+        else:
+            return ""
 
     def action_ping(self):
         data = self.run_action(self.get_action_from_command("ping"))
