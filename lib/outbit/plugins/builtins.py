@@ -47,6 +47,22 @@ def plugin_users_del(action, options):
         return json.dumps({"response": "  user %s does not exist" % options["username"]})
 
 
+def plugin_users_edit(action, options):
+    if "username" not in options:
+        return json.dumps({"response": "  name option is required"})
+    if "password" not in options:
+        return json.dumps({"response": "  password option is required"})
+    m = hashlib.md5()
+    m.update(options["password"])
+    password_md5 = str(m.hexdigest())
+    result = outbit.cli.api.db.users.update_one({"username": options["username"]},
+            {"$set": {"password_md5": password_md5},})
+    if result.matched_count > 0:
+        return json.dumps({"response": "  modified user %s" % options["username"]})
+    else:
+        return json.dumps({"response": "  user %s does not exist" % options["username"]})
+
+
 def plugin_users_list(action, options):
     result = ""
     cursor = outbit.cli.api.db.users.find()
