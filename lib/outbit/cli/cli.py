@@ -138,6 +138,9 @@ class Cli(object):
         self.screen.keypad(1)
         self.screen.scrollok(1)
 
+        # left and right key
+        cursor_offset = 0
+
         # ctrl-u
         history_index = 0
 
@@ -151,7 +154,22 @@ class Cli(object):
 
             # Ascii
             if s >= 32 and s <= 126:
-                line += chr(s)
+                if cursor_offset >= 0:
+                    # cursor at end of line
+                    line += chr(s)
+                    self.screen.addstr(chr(s))
+                elif cursor_offset <= len(line)*-1:
+                    # cursor at beginning of line
+                    line = chr(s) + line
+                    self.screen.insstr(chr(s))
+                    (y, x) = self.screen.getyx()
+                    self.screen.move(y, x+1)
+                else:
+                    # cursor in the middle of the line
+                    line = line[:len(line)+cursor_offset] + chr(s) + line[len(line)+cursor_offset:]
+                    self.screen.insstr(chr(s))
+                    (y, x) = self.screen.getyx()
+                    self.screen.move(y, x+1)
                 if search_mode:
                     match = None
                     for item in reversed(self.history):
@@ -168,11 +186,11 @@ class Cli(object):
                         self.screen.addstr(y, len("(reverse-i-search)`':"), match)
                         self.screen.clrtoeol()
                         last_match = match
-                else:
-                    self.screen.addstr(chr(s))
                 history_index = 0
             # Finished With Line Input
             elif s == ord("\n"):
+                (y, x) = self.screen.getyx()
+                self.screen.move(y, len("outbit> ")+len(line))
                 self.screen.addstr("\n")
                 if search_mode:
                     if match is not None:
@@ -182,14 +200,14 @@ class Cli(object):
                 self.screen.addstr("\noutbit> ")
                 line = ""
                 history_index = 0
+                cursor_offset = 0
                 search_mode = False
             # Backspace
             elif s == curses.KEY_BACKSPACE or s == 127 or s == curses.erasechar():
-                line = line[:-1]
                 (y, x) = self.screen.getyx()
-                self.screen.addstr(y, 0, "outbit> ")
-                self.screen.addstr(y, len("outbit> "), line)
-                self.screen.clrtoeol()
+                if len(line) > 0 and x > len("outbit> "):
+                    line = line[:len(line)+cursor_offset-1] + line[len(line)+cursor_offset:]
+                    self.screen.delch(y, x-1)
                 history_index = 0
             # Ctrl-u, clear line
             elif s == 21:
@@ -211,6 +229,7 @@ class Cli(object):
                     # prevent divide by zero when history is 0
                     continue
                 history_index += 1
+                cursor_offset = 0
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
@@ -221,14 +240,26 @@ class Cli(object):
                     # prevent divide by zero when history is 0
                     continue
                 history_index -= 1
+                cursor_offset = 0
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
                 self.screen.clrtoeol()
                 line = self.history[-(history_index%len(self.history))]
+            elif s == curses.KEY_LEFT:
+                if cursor_offset > len(line)*-1:
+                    cursor_offset -= 1
+                    (y, x) = self.screen.getyx()
+                    self.screen.move(y, x-1)
+            elif s == curses.KEY_RIGHT:
+                if cursor_offset < 0:
+                    cursor_offset += 1
+                    (y, x) = self.screen.getyx()
+                    self.screen.move(y, x+1)
             else:
-                #self.screen.addstr("Out of range: %d" % s)
+                #self.screen.ddstr("Out of range: %d" % s)
                 history_index = 0
+                cursor_offset = 0
 
         curses.endwin()
 
