@@ -120,7 +120,13 @@ class Cli(object):
 
     def get_action_from_command(self, line):
         if line is not None and len(line) > 0:
+            # Reset Parser Variables
+            yacc.parser_category = None
+            yacc.parser_action = None
+            yacc.parser_options = None
+            # Parse line input
             yacc.parser.parse(line)
+            # Return Action Object
             return {'category': yacc.parser_category, "action": yacc.parser_action, "options": yacc.parser_options}
         else:
             return {'category': None, "action": None, "options": None}

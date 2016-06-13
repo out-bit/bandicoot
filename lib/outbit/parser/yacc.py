@@ -2,9 +2,9 @@ from outbit.parser.lex import *
 import ply.yacc as yacc
 
 
-parser_category = "/"
-parser_action = ""
-parser_options = {}
+parser_category = None
+parser_action = None
+parser_options = None
 
 # YACC parser
 precedence = (
@@ -71,6 +71,11 @@ def p_option(t):
         t[0][t[1]] = t[3]
 
 def p_error(t):
-    print("Syntax error at '%s'" % t.value)
+    global parser_category
+    global parser_action
+    global parser_options
+    parser_category = None
+    parser_action = None
+    parser_options = None
 
 parser = yacc.yacc()
