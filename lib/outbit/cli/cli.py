@@ -221,7 +221,7 @@ class Cli(object):
                 self.screen.clrtoeol()
                 line = self.history[-(history_index%len(self.history))]
             else:
-                self.screen.addstr("Out of range: %d" % s)
+                #self.screen.addstr("Out of range: %d" % s)
                 history_index = 0
 
         curses.endwin()
