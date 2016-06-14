@@ -39,6 +39,7 @@ class Cli(object):
         self.server = options.server
         self.port = options.port
         self.is_secure = options.is_secure
+        self.password = None
 
         # Assign values from conf
         outbit_config_locations = [os.path.expanduser("~")+"/.outbit.conf", "/etc/outbit.conf"]
@@ -52,6 +53,8 @@ class Cli(object):
                         print("%s\n" % excep)
         if self.user is None and "user" in outbit_conf_obj:
             self.user = str(outbit_conf_obj["user"])
+        if self.password is None and "password" in outbit_conf_obj:
+            self.password = str(outbit_conf_obj["password"])
         if self.server is None and "server" in outbit_conf_obj:
             self.server = str(outbit_conf_obj["server"])
         if self.port is None and "port" in outbit_conf_obj:
@@ -68,7 +71,6 @@ class Cli(object):
             self.port = 8088
 
         self.url = "%s://%s:%d" % ("https" if self.is_secure else "http", str(self.server), int(self.port))
-        self.password = None
         self.screen = None
         self.history = []
 
