@@ -21,7 +21,7 @@ def check_auth(username, password):
 
     post = outbit.cli.api.db.users.find_one({"username": username})
 
-    if post["password_md5"] == password_md5:
+    if "password_md5" in post and post["password_md5"] == password_md5:
         valid_auth = True
 
     return valid_auth
@@ -51,6 +51,7 @@ def outbit_base():
     indata = request.get_json()
     dat = None
     status = 200
+    username = request.authorization.username
 
     # Audit Logging / History
     post = {"category": indata["category"], "action": indata["action"], "options": indata["options"]}
@@ -58,7 +59,7 @@ def outbit_base():
         # Only Log Valid Requests
         outbit.cli.api.db.logs.insert_one(post)
 
-    dat = outbit.cli.api.parse_action(indata["category"], indata["action"], indata["options"])
+    dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
     if dat is None:
         # TESTING
         print("Testing: %s" % indata)

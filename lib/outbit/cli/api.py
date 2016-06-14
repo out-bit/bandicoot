@@ -3,6 +3,9 @@ import optparse
 import sys
 import os
 import yaml
+import re
+import json
+import hashlib
 from pymongo import MongoClient
 from outbit.restapi import routes
 from outbit.plugins import builtins
@@ -49,12 +52,36 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   ]
 
 
-def parse_action(category, action, options):
+def roles_has_permission(user, action, options):
+    # Ping is always allowed
+    if action["category"] == "/" and action["action"] == "ping":
+        return True
+    # Help is always allowed
+    if action["category"] == "/" and action["action"] == "help":
+        return True
+
+    if action["category"][-1:] == "/":
+        action_str = "%s%s" % (action["category"], action["action"])
+    else:
+        action_str = "%s/%s" % (action["category"], action["action"])
+    cursor = db.roles.find()
+    for doc in list(cursor):
+        if user in list(doc["users"].split(",")):
+            for action in list(doc["actions"].split(",")):
+                if re.match(r"^%s" % action, action_str):
+                    return True
+    return False
+
+
+def parse_action(user, category, action, options):
     cursor = db.actions.find()
     for dbaction in builtin_actions + list(cursor):
         if dbaction["category"] == category and dbaction["action"] == action:
             if "plugin" in dbaction:
-                return plugins[dbaction["plugin"]](dbaction, options)
+                if not roles_has_permission(user, dbaction, options):
+                    return json.dumps({"response": "  you do not have permission to run this action"})
+                else:
+                    return plugins[dbaction["plugin"]](user, dbaction, options)
     return None
 
 
@@ -118,9 +145,20 @@ class Cli(object):
         # First Time Defaults, Setup superadmin if it doesnt exist
         default_user = "superadmin"
         default_password = "superadmin"
+        default_role = "super"
+        # Create default user
         post = db.users.find_one({"username": default_user})
         if post is None:
-            plugin_users_add("/users/add",{"username": default_user, "password": default_password})
+            m = hashlib.md5()
+            m.update(default_password)
+            password_md5 = str(m.hexdigest())
+            post = {"username": default_user, "password_md5": password_md5}
+            db.users.insert_one(post)
+        # Create default role
+        post = db.roles.find_one({"name": default_role})
+        if post is None:
+            post = {"name": default_role, "users": default_user, "actions": "/"}
+            db.roles.insert_one(post)
 
         # Start API Server
         print("Starting outbit api server on %s://%s:%d" % ("https" if
