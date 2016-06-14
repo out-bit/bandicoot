@@ -39,7 +39,15 @@ class Cli(object):
         self.server = options.server
         self.port = options.port
         self.is_secure = options.is_secure
+        self.interactive_mode = True
+        self.noninteractive_commands = []
         self.password = None
+
+        # Non-Interactive Command Parsing
+        if len(args) > 0:
+            self.interactive_mode = False
+            for command in args:
+                self.noninteractive_commands.append(command)
 
         # Assign values from conf
         outbit_config_locations = [os.path.expanduser("~")+"/.outbit.conf", "/etc/outbit.conf"]
@@ -226,9 +234,11 @@ class Cli(object):
                 self.screen.addstr("\n")
                 if search_mode:
                     if match is not None:
-                        self.shell_parse_line(match)
+                        result = self.shell_parse_line(match)
+                        self.screen.addstr(result)
                 else:
-                    self.shell_parse_line(line)
+                    result = self.shell_parse_line(line)
+                    self.screen.addstr(result)
                 self.screen.addstr("\noutbit> ")
                 line = ""
                 history_index = 0
@@ -311,14 +321,16 @@ class Cli(object):
             actionjson = self.get_action_from_command(line)
             data = self.run_action(actionjson)
             if data is not None:
-                self.screen.addstr(data["response"])
                 return data["response"]
             else:
                 response = "outbit - Failed To Get Response From Server\n"
-                self.screen.addstr(response)
                 return(response)
 
     def run(self):
         """ EntryPoint Of Application """
         self.login_prompt()
-        curses.wrapper(self.startshell)
+        if self.interactive_mode:
+            curses.wrapper(self.startshell)
+        else:
+            for command in self.noninteractive_commands:
+                print(self.shell_parse_line(command))
