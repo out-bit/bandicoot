@@ -4,6 +4,7 @@ import sys
 import os
 import requests
 import json
+import yaml
 import getpass
 import curses
 from outbit.parser import yacc
@@ -19,25 +20,54 @@ class Cli(object):
         parser.add_option("-u", "--user", dest="user",
                           help="outbit username",
                           metavar="USER",
-                          default="superadmin")
+                          default=None)
         parser.add_option("-s", "--server", dest="server",
                           help="IP address or hostname of outbit-api server",
                           metavar="SERVER",
-                          default="127.0.0.1")
+                          default=None)
         parser.add_option("-p", "--port", dest="port",
                           help="tcp port of outbit-api server",
                           metavar="PORT",
-                          default="8088")
+                          default=None)
         parser.add_option("-t", "--secure", dest="is_secure",
                           help="Use SSL",
                           metavar="SECURE",
                           action="store_true")
+        # Assign values from cli
         (options, args) = parser.parse_args()
         self.user = options.user
         self.server = options.server
-        self.port = int(options.port)
+        self.port = options.port
         self.is_secure = options.is_secure
-        self.url = "%s://%s:%d" % ("https" if self.is_secure else "http", self.server, self.port)
+
+        # Assign values from conf
+        outbit_config_locations = [os.path.expanduser("~")+"/.outbit.conf", "/etc/outbit.conf"]
+        outbit_conf_obj = None
+        for outbit_conf in outbit_config_locations:
+            if os.path.isfile(outbit_conf):
+                with open(outbit_conf, 'r') as stream:
+                    try:
+                        outbit_conf_obj = yaml.load(stream)
+                    except yaml.YAMLError as excep:
+                        print("%s\n" % excep)
+        if self.user is None and "user" in outbit_conf_obj:
+            self.user = str(outbit_conf_obj["user"])
+        elif self.server is None and "server" in outbit_conf_obj:
+            self.server = str(outbit_conf_obj["server"])
+        elif self.port is None and "port" in outbit_conf_obj:
+            self.port = int(outbit_conf_obj["port"])
+        elif self.is_secure == False and "is_secure" in outbit_conf_obj:
+            self.is_secure = bool(outbit_conf_obj["is_secure"])
+
+        # Assign Default values if they were not specified at the cli or in the conf
+        if self.user is None:
+            self.user = "superadmin"
+        if self.server is None:
+            self.server = "127.0.0.1"
+        if self.port is None:
+            self.port = 8088
+
+        self.url = "%s://%s:%d" % ("https" if self.is_secure else "http", str(self.server), int(self.port))
         self.password = None
         self.screen = None
         self.history = []
