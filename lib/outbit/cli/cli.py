@@ -42,7 +42,7 @@ class Cli(object):
 
         # Assign values from conf
         outbit_config_locations = [os.path.expanduser("~")+"/.outbit.conf", "/etc/outbit.conf"]
-        outbit_conf_obj = None
+        outbit_conf_obj = {}
         for outbit_conf in outbit_config_locations:
             if os.path.isfile(outbit_conf):
                 with open(outbit_conf, 'r') as stream:
@@ -52,11 +52,11 @@ class Cli(object):
                         print("%s\n" % excep)
         if self.user is None and "user" in outbit_conf_obj:
             self.user = str(outbit_conf_obj["user"])
-        elif self.server is None and "server" in outbit_conf_obj:
+        if self.server is None and "server" in outbit_conf_obj:
             self.server = str(outbit_conf_obj["server"])
-        elif self.port is None and "port" in outbit_conf_obj:
+        if self.port is None and "port" in outbit_conf_obj:
             self.port = int(outbit_conf_obj["port"])
-        elif self.is_secure == False and "is_secure" in outbit_conf_obj:
+        if self.is_secure == False and "is_secure" in outbit_conf_obj:
             self.is_secure = bool(outbit_conf_obj["is_secure"])
 
         # Assign Default values if they were not specified at the cli or in the conf

@@ -1,6 +1,8 @@
 """ Command Line Interface Module """
 import optparse
 import sys
+import os
+import yaml
 from pymongo import MongoClient
 from outbit.restapi import routes
 from outbit.plugins import builtins
@@ -66,11 +68,11 @@ class Cli(object):
         parser.add_option("-s", "--server", dest="server",
                           help="IP address or hostname of outbit-api server",
                           metavar="SERVER",
-                          default="127.0.0.1")
+                          default=None)
         parser.add_option("-p", "--port", dest="port",
                           help="tcp port of outbit-api server",
                           metavar="PORT",
-                          default="8088")
+                          default=None)
         parser.add_option("-t", "--secure", dest="is_secure",
                           help="Use SSL",
                           metavar="SECURE",
@@ -81,9 +83,34 @@ class Cli(object):
                           action="store_true")
         (options, args) = parser.parse_args()
         self.server = options.server
-        self.port = int(options.port)
+        self.port = options.port
         self.is_secure = options.is_secure
         self.is_debug = options.is_debug
+
+        # Assign values from conf
+        outbit_config_locations = [os.path.expanduser("~")+"/.outbit-api.conf", "/etc/outbit-api.conf"]
+        outbit_conf_obj = {}
+        for outbit_conf in outbit_config_locations:
+            if os.path.isfile(outbit_conf):
+                with open(outbit_conf, 'r') as stream:
+                    try:
+                        outbit_conf_obj = yaml.load(stream)
+                    except yaml.YAMLError as excep:
+                        print("%s\n" % excep)
+        if self.server is None and "server" in outbit_conf_obj:
+            self.server = str(outbit_conf_obj["server"])
+        if self.port is None and "port" in outbit_conf_obj:
+            self.port = int(outbit_conf_obj["port"])
+        if self.is_secure == False and "is_secure" in outbit_conf_obj:
+            self.is_secure = bool(outbit_conf_obj["is_secure"])
+        if self.is_debug == False and "is_debug" in outbit_conf_obj:
+            self.is_debug = bool(outbit_conf_obj["is_debug"])
+
+        # Assign Default values if they were not specified at the cli or in the conf
+        if self.server is None:
+            self.server = "127.0.0.1"
+        if self.port is None:
+            self.port = 8088
 
     def run(self):
         """ EntryPoint Of Application """
