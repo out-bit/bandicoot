@@ -43,7 +43,7 @@ def plugin_users_add(user, action, options):
 
 def plugin_users_del(user, action, options):
     if "username" not in options:
-        return json.dumps({"response": "  name option is required"})
+        return json.dumps({"response": "  username option is required"})
     post = {"username": options["username"]}
     result = outbit.cli.api.db.users.delete_many(post)
     if result.deleted_count > 0:
