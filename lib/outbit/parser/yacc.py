@@ -5,6 +5,7 @@ import ply.yacc as yacc
 parser_category = None
 parser_action = None
 parser_options = None
+parser_error = None
 
 # YACC parser
 precedence = (
@@ -74,8 +75,14 @@ def p_error(t):
     global parser_category
     global parser_action
     global parser_options
+    global parser_error
     parser_category = None
     parser_action = None
     parser_options = None
+    parser_error = None
+    if t:
+        parser_error = "Syntax error at token %s" % parser.token()
+    else:
+        parser_error = "Syntax error at EOF"
 
 parser = yacc.yacc()

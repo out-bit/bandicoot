@@ -164,6 +164,7 @@ class Cli(object):
             yacc.parser_category = None
             yacc.parser_action = None
             yacc.parser_options = None
+            yacc.parser_error = None
             # Parse line input
             yacc.parser.parse(line)
             # Return Action Object
@@ -319,7 +320,10 @@ class Cli(object):
                 self.history.append(line)
 
             actionjson = self.get_action_from_command(line)
-            data = self.run_action(actionjson)
+            if yacc.parser_error is None:
+                data = self.run_action(actionjson)
+            else:
+                data = {"response": yacc.parser_error}
             if data is not None:
                 return data["response"]
             else:
