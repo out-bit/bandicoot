@@ -20,7 +20,7 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_users_del(self):
         result = builtins.plugin_users_del(None, None, {})
-        assert(result == json.dumps({"response": "  name option is required"}))
+        assert(result == json.dumps({"response": "  username option is required"}))
 
     def test_plugin_users_add(self):
         result_uonly = builtins.plugin_users_add(None, None, {"username": "jdoe"})

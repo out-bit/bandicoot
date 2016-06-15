@@ -54,7 +54,7 @@ def plugin_users_del(user, action, options):
 
 def plugin_users_edit(user, action, options):
     if "username" not in options:
-        return json.dumps({"response": "  name option is required"})
+        return json.dumps({"response": "  username option is required"})
     if "password" not in options:
         return json.dumps({"response": "  password option is required"})
     m = hashlib.md5()
