@@ -148,7 +148,7 @@ def plugin_roles_add(user, action, options):
     else:
         result = outbit.cli.api.db.roles.find_one({"name": options["name"]})
         if result is None:
-            post = {"name": options["name"]}
+            post = options
             outbit.cli.api.db.roles.insert_one(post)
             return json.dumps({"response": "  created role %s" % options["name"]})
         else:
@@ -182,6 +182,51 @@ def plugin_roles_list(user, action, options):
     result = ""
     cursor = outbit.cli.api.db.roles.find()
     for doc in list(cursor):
+        result += "  %s\n" % doc
+    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
+
+
+def plugin_secrets_add(user, action, options):
+    if "name" not in options:
+        return json.dumps({"response": "  name option is required"})
+    else:
+        result = outbit.cli.api.db.secrets.find_one({"name": options["name"]})
+        if result is None:
+            post = options
+            outbit.cli.api.db.secrets.insert_one(post)
+            return json.dumps({"response": "  created secret %s" % options["name"]})
+        else:
+            return json.dumps({"response": "  secret %s already exists" % options["name"]})
+
+
+def plugin_secrets_edit(user, action, options):
+    if "name" not in options:
+        return json.dumps({"response": "  name option is required"})
+    result = outbit.cli.api.db.secrets.update_one({"name": options["name"]},
+            {"$set": options})
+    if result.matched_count > 0:
+        return json.dumps({"response": "  modified secret %s" % options["name"]})
+    else:
+        return json.dumps({"response": "  secret %s does not exist" % options["name"]})
+
+
+def plugin_secrets_del(user, action, options):
+    if "name" not in options:
+        return json.dumps({"response": "  name option is required"})
+    else:
+        post = {"name": options["name"]}
+        result = outbit.cli.api.db.secrets.delete_many(post)
+        if result.deleted_count > 0:
+            return json.dumps({"response": "  deleted secret %s" % options["name"]})
+        else:
+            return json.dumps({"response": "  secret %s does not exist" % options["name"]})
+
+
+def plugin_secrets_list(user, action, options):
+    result = ""
+    cursor = outbit.cli.api.db.secrets.find()
+    for doc in list(cursor):
+        doc["secret"] = "..." # do not print encrypted secret
         result += "  %s\n" % doc
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 

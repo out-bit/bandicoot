@@ -67,6 +67,9 @@ def outbit_base():
     status = 200
     username = request.authorization.username
 
+    # Encrypt indata values that are sensitive
+    outbit.cli.api.encrypt_dict(indata["options"])
+
     # Run Action
     dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
     if dat is None:

@@ -9,10 +9,14 @@ import hashlib
 from pymongo import MongoClient
 from outbit.restapi import routes
 from outbit.plugins import builtins
+from Crypto.Cipher import AES
+import binascii
+from jinja2 import Template
 
 
 dbclient = MongoClient('localhost', 27017)
 db = dbclient.outbit
+encryption_password = None
 
 
 plugins = {"command": builtins.plugin_command,
@@ -28,6 +32,10 @@ plugins = {"command": builtins.plugin_command,
             "roles_del": builtins.plugin_roles_del,
             "roles_edit": builtins.plugin_roles_edit,
             "roles_add": builtins.plugin_roles_add,
+            "secrets_list": builtins.plugin_secrets_list,
+            "secrets_del": builtins.plugin_secrets_del,
+            "secrets_edit": builtins.plugin_secrets_edit,
+            "secrets_add": builtins.plugin_secrets_add,
             "plugins_list": builtins.plugin_plugins_list,
             "ping": builtins.plugin_ping,
             "logs": builtins.plugin_logs,
@@ -45,11 +53,56 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/roles', 'plugin': 'roles_del', 'action': 'del', 'desc': 'del roles'},
                   {'category': '/roles', 'plugin': 'roles_edit', 'action': 'edit', 'desc': 'edit roles'},
                   {'category': '/roles', 'plugin': 'roles_add', 'action': 'add', 'desc': 'add roles'},
+                  {'category': '/secrets', 'plugin': 'secrets_list', 'action': 'list', 'desc': 'list secrets'},
+                  {'category': '/secrets', 'plugin': 'secrets_del', 'action': 'del', 'desc': 'del secrets'},
+                  {'category': '/secrets', 'plugin': 'secrets_edit', 'action': 'edit', 'desc': 'edit secrets'},
+                  {'category': '/secrets', 'plugin': 'secrets_add', 'action': 'add', 'desc': 'add secrets'},
                   {'category': '/plugins', 'plugin': 'plugins_list', 'action': 'list', 'desc': 'list plugins'},
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
                   ]
+
+
+def encrypt_dict(dictobj):
+    # encrypt sensitive option vals
+    for key in ["secret"]:
+        if dictobj is not None and key in dictobj:
+            dictobj[key] = encrypt_str(dictobj[key])
+
+
+def decrypt_dict(dictobj):
+    for key in ["secret"]:
+        if dictobj is not None and key in dictobj:
+            dictobj[key] = decrypt_str(dictobj[key])
+
+
+def encrypt_str(text):
+    global encryption_password
+    if encryption_password is not None:
+        encryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
+        return str(binascii.b2a_base64(encryption_suite.encrypt(text)))
+    return str(text)
+
+
+def decrypt_str(text):
+    global encryption_password
+    if encryption_password is not None:
+        decryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
+        return str(decryption_suite.decrypt(binascii.a2b_base64(text)))
+    return str(text)
+
+
+def secret_has_permission(user, secret):
+    cursor = db.roles.find()
+    for doc in list(cursor):
+        if user in list(doc["users"].split(",")):
+            if "secrets" not in doc:
+                # No secrets option, give them access to all secrets
+                return True
+            if secret in list(doc["secrets"].split(",")):
+                return True
+    return False
 
 
 def roles_has_permission(user, action, options):
@@ -73,6 +126,26 @@ def roles_has_permission(user, action, options):
     return False
 
 
+def render_secrets(user, dictobj):
+    secrets = {}
+
+    if dictobj is None:
+        return None
+
+    cursor = db.secrets.find()
+    for doc in list(cursor):
+        decrypt_dict(doc)
+        if secret_has_permission(user, doc["name"]):
+            secrets[doc["name"]] = doc["secret"]
+
+    for key in dictobj:
+        if isinstance(dictobj[key], basestring):
+            t = Template(dictobj[key])
+            dictobj[key] = t.render(secrets)
+
+    return dictobj
+
+
 def parse_action(user, category, action, options):
     cursor = db.actions.find()
     for dbaction in builtin_actions + list(cursor):
@@ -81,6 +154,10 @@ def parse_action(user, category, action, options):
                 if not roles_has_permission(user, dbaction, options):
                     return json.dumps({"response": "  you do not have permission to run this action"})
                 else:
+                    # Admin functions do not allow secrets
+                    if dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]:
+                        render_secrets(user, dbaction)
+                        render_secrets(user, options)
                     return plugins[dbaction["plugin"]](user, dbaction, options)
     return None
 
@@ -113,6 +190,7 @@ class Cli(object):
         self.port = options.port
         self.is_secure = options.is_secure
         self.is_debug = options.is_debug
+        global encryption_password
 
         # Assign values from conf
         outbit_config_locations = [os.path.expanduser("~")+"/.outbit-api.conf", "/etc/outbit-api.conf"]
@@ -132,6 +210,8 @@ class Cli(object):
             self.is_secure = bool(outbit_conf_obj["is_secure"])
         if self.is_debug == False and "is_debug" in outbit_conf_obj:
             self.is_debug = bool(outbit_conf_obj["is_debug"])
+        if encryption_password is None and "encryption_password" in outbit_conf_obj:
+            encryption_password = str(outbit_conf_obj["encryption_password"])
 
         # Assign Default values if they were not specified at the cli or in the conf
         if self.server is None:
