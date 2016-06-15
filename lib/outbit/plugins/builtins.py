@@ -197,6 +197,9 @@ def plugin_logs(user, action, options):
         # Backward compat when user field did not exist
         if "user" not in doc:
             doc["user"] = "unknown"
+        # Backward compat when result field did not exist
+        if "result" not in doc:
+            doc["result"] = "unknown"
         # Backward compat when date field did not exist
         if "date" not in doc:
             doc["date"] = datetime.date(1970, 1, 1) # unknown

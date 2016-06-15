@@ -67,9 +67,7 @@ def outbit_base():
     status = 200
     username = request.authorization.username
 
-    # Audit Logging / History
-    log_action(username, {"category": indata["category"], "action": indata["action"], "options": indata["options"]})
-
+    # Run Action
     dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
     if dat is None:
         # TESTING
@@ -78,5 +76,9 @@ def outbit_base():
         # END TESTING
         #status=403 TODO PUT THIS BACK AND REMOVE TESTING
 
+    # Audit Logging / History
+    log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
+
+    # http response
     resp = Response(response=dat, status=status, mimetype="application/json")
     return(resp)
