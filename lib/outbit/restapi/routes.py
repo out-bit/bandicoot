@@ -4,6 +4,7 @@ from functools import wraps
 import hashlib
 import outbit.cli.api
 import json
+import datetime
 
 
 app = Flask(__name__)
@@ -45,6 +46,19 @@ def requires_auth(f):
     return decorated
 
 
+def log_action(username, post):
+    if post["category"] is not None and post["action"] is not None:
+        if post["options"] is not None:
+            # Filter sensitive information from options
+            for option in ["password", "secret"]:
+                if option in post["options"]:
+                    post["options"][option] = "..."
+        # Only Log Valid Requests
+        post["date"] = datetime.datetime.utcnow()
+        post["user"] = username
+        outbit.cli.api.db.logs.insert_one(post)
+
+
 @app.route("/", methods=["POST"])
 @requires_auth
 def outbit_base():
@@ -54,10 +68,7 @@ def outbit_base():
     username = request.authorization.username
 
     # Audit Logging / History
-    post = {"category": indata["category"], "action": indata["action"], "options": indata["options"]}
-    if post["category"] is not None and post["action"] is not None and post["options"] is not None:
-        # Only Log Valid Requests
-        outbit.cli.api.db.logs.insert_one(post)
+    log_action(username, {"category": indata["category"], "action": indata["action"], "options": indata["options"]})
 
     dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
     if dat is None:

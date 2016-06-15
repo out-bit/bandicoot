@@ -2,6 +2,7 @@ import outbit.cli.api
 import json
 import subprocess
 import hashlib
+import datetime
 
 
 def plugin_help(user, action, options):
@@ -191,7 +192,13 @@ def plugin_plugins_list(user, action, options):
 
 def plugin_logs(user, action, options):
     result = "  category\t\taction\t\toptions\n"
-    cursor = outbit.cli.api.db.logs.find()
+    cursor = outbit.cli.api.db.logs.find().sort("date", 1)
     for doc in list(cursor):
-        result += "  %s\t\t%s\t\t%s\n" % (doc["category"], doc["action"], doc["options"])
+        # Backward compat when user field did not exist
+        if "user" not in doc:
+            doc["user"] = "unknown"
+        # Backward compat when date field did not exist
+        if "date" not in doc:
+            doc["date"] = datetime.date(1970, 1, 1) # unknown
+        result += "  %s\t%s\t%s\t%s\t%s\n" % (doc["user"], doc["category"], doc["action"], doc["options"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
     return json.dumps({"response": result})
