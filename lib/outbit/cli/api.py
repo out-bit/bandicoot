@@ -12,6 +12,7 @@ from outbit.plugins import builtins
 from Crypto.Cipher import AES
 import binascii
 from jinja2 import Template
+import ssl
 
 
 dbclient = MongoClient('localhost', 27017)
@@ -244,8 +245,12 @@ class Cli(object):
         print("Starting outbit api server on %s://%s:%d" % ("https" if
             self.is_secure else "http", self.server, self.port))
         if self.is_secure:
-            print("Does not support SSL yet")
-            sys.exit(1)
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            key_file = "/usr/local/etc/openssl/certs/outbit.key"
+            crt_file = "/usr/local/etc/openssl/certs/outbit.crt"
+            context.check_hostname = False
+            context.load_cert_chain(certfile=crt_file, keyfile=key_file)
+            routes.app.run(host=self.server, ssl_context=context, port=self.port, debug=self.is_debug)
         else:
             routes.app.run(host=self.server, port=self.port, debug=self.is_debug)
 
