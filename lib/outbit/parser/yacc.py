@@ -81,7 +81,7 @@ def p_error(t):
     parser_options = None
     parser_error = None
     if t:
-        parser_error = "Syntax error at token %s" % parser.token()
+        parser_error = "Syntax error at character: '%s', column: %d" % (str(parser.token().value), int(parser.token().lexpos))
     else:
         parser_error = "Syntax error at EOF"
 
