@@ -207,10 +207,10 @@ class Cli(object):
             self.server = str(outbit_conf_obj["server"])
         if self.port is None and "port" in outbit_conf_obj:
             self.port = int(outbit_conf_obj["port"])
-        if self.is_secure == False and "is_secure" in outbit_conf_obj:
-            self.is_secure = bool(outbit_conf_obj["is_secure"])
-        if self.is_debug == False and "is_debug" in outbit_conf_obj:
-            self.is_debug = bool(outbit_conf_obj["is_debug"])
+        if self.is_secure == False and "secure" in outbit_conf_obj:
+            self.is_secure = bool(outbit_conf_obj["secure"])
+        if self.is_debug == False and "debug" in outbit_conf_obj:
+            self.is_debug = bool(outbit_conf_obj["debug"])
         if encryption_password is None and "encryption_password" in outbit_conf_obj:
             encryption_password = str(outbit_conf_obj["encryption_password"])
 

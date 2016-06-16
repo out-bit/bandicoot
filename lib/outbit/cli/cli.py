@@ -33,12 +33,17 @@ class Cli(object):
                           help="Use SSL",
                           metavar="SECURE",
                           action="store_true")
+        parser.add_option("-v", "--ssl_verify", dest="is_ssl_verify",
+                          help="Use SSL",
+                          metavar="SECURE",
+                          action="store_true")
         # Assign values from cli
         (options, args) = parser.parse_args()
         self.user = options.user
         self.server = options.server
         self.port = options.port
         self.is_secure = options.is_secure
+        self.is_ssl_verify = options.is_ssl_verify
         self.interactive_mode = True
         self.noninteractive_commands = []
         self.password = None
@@ -67,8 +72,10 @@ class Cli(object):
             self.server = str(outbit_conf_obj["server"])
         if self.port is None and "port" in outbit_conf_obj:
             self.port = int(outbit_conf_obj["port"])
-        if self.is_secure == False and "is_secure" in outbit_conf_obj:
-            self.is_secure = bool(outbit_conf_obj["is_secure"])
+        if self.is_secure == False and "secure" in outbit_conf_obj:
+            self.is_secure = bool(outbit_conf_obj["secure"])
+        if self.is_ssl_verify == False and "ssl_verify" in outbit_conf_obj:
+            self.is_ssl_verify = bool(outbit_conf_obj["ssl_verify"])
 
         # Assign Default values if they were not specified at the cli or in the conf
         if self.user is None:
