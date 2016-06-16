@@ -5,6 +5,21 @@ import sys
 import os
 
 class TestCli(unittest.TestCase):
+    def test_p_action_run_help_lexskip(self):
+        yacc.parser.parse("^%$help")
+        # skip characters not known
+        assert(yacc.parser_category == "/" and yacc.parser_action == "help")
+
+    def test_p_action_run_help_parseerror_eof(self):
+        yacc.parser.parse("=")
+        # action is missing
+        assert(yacc.parser_error == "Syntax error at EOF")
+
+    def test_p_action_run_help_parseerror_line(self):
+        yacc.parser.parse("help=something list=something")
+        # action is missing
+        assert(yacc.parser_error == "Syntax error at character: 'something', column: 5")
+
     def test_p_action_run_help(self):
         t = []
         t.append(None)
