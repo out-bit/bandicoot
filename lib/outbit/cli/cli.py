@@ -34,8 +34,8 @@ class Cli(object):
                           metavar="SECURE",
                           action="store_true")
         parser.add_option("-v", "--ssl_verify", dest="is_ssl_verify",
-                          help="Use SSL",
-                          metavar="SECURE",
+                          help="Verify Certificate",
+                          metavar="VERIFY",
                           action="store_true")
         # Assign values from cli
         (options, args) = parser.parse_args()
