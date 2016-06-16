@@ -186,11 +186,21 @@ class Cli(object):
                           help="Debug Mode",
                           metavar="DEBUG",
                           action="store_true")
+        parser.add_option("-k", "--ssl_key", dest="ssl_key",
+                          help="SSL key",
+                          metavar="SSLKEY",
+                          default=None)
+        parser.add_option("-c", "--ssl_crt", dest="ssl_crt",
+                          help="SSL certificate",
+                          metavar="SSLCRT",
+                          default=None)
         (options, args) = parser.parse_args()
         self.server = options.server
         self.port = options.port
         self.is_secure = options.is_secure
         self.is_debug = options.is_debug
+        self.ssl_key = options.ssl_key
+        self.ssl_crt = options.ssl_crt
         global encryption_password
 
         # Assign values from conf
@@ -213,12 +223,20 @@ class Cli(object):
             self.is_debug = bool(outbit_conf_obj["debug"])
         if encryption_password is None and "encryption_password" in outbit_conf_obj:
             encryption_password = str(outbit_conf_obj["encryption_password"])
+        if self.ssl_key == None and "ssl_key" in outbit_conf_obj:
+            self.ssl_key = bool(outbit_conf_obj["ssl_key"])
+        if self.ssl_crt == None and "ssl_crt" in outbit_conf_obj:
+            self.ssl_crt = bool(outbit_conf_obj["ssl_crt"])
 
         # Assign Default values if they were not specified at the cli or in the conf
         if self.server is None:
             self.server = "127.0.0.1"
         if self.port is None:
             self.port = 8088
+        if self.ssl_key is None:
+            self.ssl_key = "/usr/local/etc/openssl/certs/outbit.key"
+        if self.ssl_crt is None:
+            self.ssl_crt = "/usr/local/etc/openssl/certs/outbit.crt"
 
     def run(self):
         """ EntryPoint Of Application """
@@ -246,10 +264,8 @@ class Cli(object):
             self.is_secure else "http", self.server, self.port))
         if self.is_secure:
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            key_file = "/usr/local/etc/openssl/certs/outbit.key"
-            crt_file = "/usr/local/etc/openssl/certs/outbit.crt"
             context.check_hostname = False
-            context.load_cert_chain(certfile=crt_file, keyfile=key_file)
+            context.load_cert_chain(certfile=self.ssl_crt, keyfile=self.ssl_key)
             routes.app.run(host=self.server, ssl_context=context, port=self.port, debug=self.is_debug)
         else:
             routes.app.run(host=self.server, port=self.port, debug=self.is_debug)
