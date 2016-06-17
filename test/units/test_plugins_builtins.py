@@ -19,20 +19,30 @@ class TestCli(unittest.TestCase):
         outbit.cli.api.db = outbit.cli.api.dbclient.conn["outbit"]
 
     def mock_db_basic_database(self):
+        outbit.cli.api.db.users.insert_one({"username": "deleteme", "password_md5": "md5test"})
         outbit.cli.api.db.users.insert_one({"username": "jdoe1", "password_md5": "md5test"})
         outbit.cli.api.db.users.insert_one({"username": "jdoe2", "password_md5": "md5test"})
         outbit.cli.api.db.users.insert_one({"username": "jdoe3", "password_md5": "md5test"})
         outbit.cli.api.db.users.insert_one({"username": "jdoe4", "password_md5": "md5test"})
+
+        outbit.cli.api.db.actions.insert_one({"name": "deleteme", "category": "/testing", "action": "pwd", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test pwd"})
         outbit.cli.api.db.actions.insert_one({"name": "test_action1", "category": "/testing", "action": "pwd", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test pwd"})
         outbit.cli.api.db.actions.insert_one({"name": "test_action2", "category": "/testing", "action": "ls", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test ls"})
-        outbit.cli.api.db.roles.insert_one({"name": "test_role1", "users": "jdoe2", "category": "/", "secrets": "test_secret1"})
-        outbit.cli.api.db.roles.insert_one({"name": "test_role2", "users": "jdoe3", "category": "/testing", "secrets": "test_secret2"})
+
+        outbit.cli.api.db.roles.insert_one({"name": "deleteme", "users": "jdoe2", "actions": "/", "secrets": "test_secret1"})
+        outbit.cli.api.db.roles.insert_one({"name": "test_role1", "users": "jdoe2", "actions": "/", "secrets": "test_secret1"})
+        outbit.cli.api.db.roles.insert_one({"name": "test_role2", "users": "jdoe3", "actions": "/testing", "secrets": "test_secret2"})
+
+        outbit.cli.api.db.secrets.insert_one({"name": "deleteme", "secret": "foundme1"})
         outbit.cli.api.db.secrets.insert_one({"name": "test_secret1", "secret": "foundme1"})
         outbit.cli.api.db.secrets.insert_one({"name": "test_secret2", "secret": "foundme2"})
 
-    @mock.patch("outbit.cli.api.db")
-    def test_plugin_help(self, mock_test):
-        result = builtins.plugin_help("jdoe3", {}, {})
+    def test_plugin_help_unprivuser(self):
+        result = builtins.plugin_help("jdoe3", {"category": "/", "actions": "help"}, {})
+        assert("exit" in result)
+
+    def test_plugin_help_privuser(self):
+        result = builtins.plugin_help("jdoe2", {"category": "/", "actions": "help"}, {})
         assert("exit" in result)
 
     def test_plugin_ping(self):
@@ -48,8 +58,8 @@ class TestCli(unittest.TestCase):
         assert(result == json.dumps({"response": "  user user_nomatch does not exist"}))
 
     def test_plugin_users_del(self):
-        result = builtins.plugin_users_del("jdoe3", {}, {"username": "jdoe1"})
-        assert(result == json.dumps({"response": "  deleted user jdoe1"}))
+        result = builtins.plugin_users_del("jdoe3", {}, {"username": "deleteme"})
+        assert(result == json.dumps({"response": "  deleted user deleteme"}))
 
     def test_plugin_users_add(self):
         result = builtins.plugin_users_add("jdoe3", None, {"username": "add_test", "password": "a"})
@@ -65,6 +75,22 @@ class TestCli(unittest.TestCase):
         result_ponly = builtins.plugin_users_add(None, None, {"password": "jdoe"})
         assert(result_uonly == json.dumps({"response": "  username and password are required options"})
             and result_ponly == json.dumps({"response": "  username and password are required options"}))
+
+    def test_plugin_users_edit_name_missing(self):
+        result = builtins.plugin_users_edit(None, None, {"password": "a"})
+        assert (result == json.dumps({"response": "  username option is required"}))
+
+    def test_plugin_users_edit_passwd_missing(self):
+        result = builtins.plugin_users_edit(None, None, {"username": "a"})
+        assert (result == json.dumps({"response": "  password option is required"}))
+
+    def test_plugin_users_edit_nouser(self):
+        result = builtins.plugin_users_edit(None, None, {"username": "no_user", "password": "newpw"})
+        assert (result == json.dumps({"response": "  user no_user does not exist"}))
+
+    def test_plugin_users_edit(self):
+        result = builtins.plugin_users_edit(None, None, {"username": "jdoe2", "password": "newpw"})
+        assert (result == json.dumps({"response": "  modified user jdoe2"}))
 
     def test_plugin_actions_add_name_missing(self):
         result = builtins.plugin_actions_add(None, None, {"category": "/"})
