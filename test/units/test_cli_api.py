@@ -2,9 +2,38 @@ import nose
 from outbit.cli import api
 import sys
 import unittest
+import mongomock
 
 
 class TestCli(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        self.mock_db_setup()
+        self.mock_db_basic_database()
+        unittest.TestCase.__init__(self, *args, **kwargs)
+
+    def mock_db_setup(self):
+        api.dbclient = mongomock.MongoClient()
+        api.db = api.dbclient.conn["outbit"]
+
+    def mock_db_basic_database(self):
+        api.db.users.insert_one({"username": "jdoe1", "password_md5": "md5test"})
+        api.db.users.insert_one({"username": "jdoe2", "password_md5": "md5test"})
+        api.db.secrets.insert_one({"name": "test_secret1", "secret": "test"})
+        api.db.roles.insert_one({"name": "test_role1", "users": "jdoe1", "actions": "/", "secrets": "test_secret1"})
+
+    def test_render_secrets_nonedict(self):
+        assert(api.render_secrets("jdoe1", None) == None)
+
+    def test_render_secrets_noperm(self):
+        testobj = {"a": "hello {{ test_secret1 }}", "b": "no render"}
+        api.render_secrets("jdoe2", testobj)
+        assert(testobj["a"] == "hello ")
+
+#    def test_render_secrets(self):
+#        testobj = {"a": "hello {{ test_secret1 }}", "b": "no render"}
+#        api.render_secrets("jdoe1", testobj)
+#        assert(testobj["a"] == "hello test")
+
     def test_encrypt_str(self):
         # enable encryption pw
         orig = api.encryption_password
