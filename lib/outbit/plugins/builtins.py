@@ -80,7 +80,7 @@ def plugin_users_list(user, action, options):
 def plugin_actions_add(user, action, options):
     dat = None
 
-    for requiredopt in ["name", "category", "action", "plugin"]:
+    for requiredopt in ["name", "category", "action", "plugin", "desc"]:
         if requiredopt not in options:
             dat = json.dumps({"response": "  %s option is required" % requiredopt})
             return dat

@@ -112,9 +112,30 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_actions_add(None, None, {"name": "jaction", "category": "/", "action": "test"})
         assert(result == json.dumps({"response": "  plugin option is required"}))
 
+    def test_plugin_actions_add_disc_missing(self):
+        result = builtins.plugin_actions_add(None, None, {"name": "jaction", "category": "/", "action": "test", "plugin": "command"})
+        assert(result == json.dumps({"response": "  desc option is required"}))
+
+    def test_plugin_actions_add_already_exists(self):
+        result = builtins.plugin_actions_add(None, None, {"name": "test_action1", "category": "/", "action": "test", "plugin": "command", "desc": "test"})
+        print(result)
+        assert(result == json.dumps({"response": "  action test_action1 already exists"}))
+
+    def test_plugin_actions_add(self):
+        result = builtins.plugin_actions_add(None, None, {"name": "add_test", "category": "/", "action": "test", "plugin": "command", "desc": "test"})
+        assert(result == json.dumps({"response": "  created action add_test"}))
+
     def test_plugin_actions_del_name_missing(self):
         result = builtins.plugin_actions_del(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_actions_del_noaction(self):
+        result = builtins.plugin_actions_del(None, None, {"name": "noaction"})
+        assert(result == json.dumps({"response": "  action noaction does not exist"}))
+
+    def test_plugin_actions_del(self):
+        result = builtins.plugin_actions_del(None, None, {"name": "deleteme"})
+        assert(result == json.dumps({"response": "  deleted action deleteme"}))
 
     def test_plugin_actions_edit_name_missing(self):
         result = builtins.plugin_actions_edit(None, None, {})
@@ -124,10 +145,38 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_roles_add(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
 
-    def test_plugin_roles_del(self):
+    def test_plugin_roles_del_name_missing(self):
         result = builtins.plugin_roles_del(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
 
+    def test_plugin_roles_del_noaction(self):
+        result = builtins.plugin_roles_del(None, None, {"name": "noaction"})
+        assert(result == json.dumps({"response": "  role noaction does not exist"}))
+
+    def test_plugin_roles_del(self):
+        result = builtins.plugin_roles_del(None, None, {"name": "deleteme"})
+        assert(result == json.dumps({"response": "  deleted role deleteme"}))
+
     def test_plugin_roles_edit_name_missing(self):
         result = builtins.plugin_roles_edit(None, None, {})
+        assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_secrets_add(self):
+        result = builtins.plugin_secrets_add(None, None, {})
+        assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_secrets_del_name_missing(self):
+        result = builtins.plugin_secrets_del(None, None, {})
+        assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_secrets_del_noaction(self):
+        result = builtins.plugin_secrets_del(None, None, {"name": "noaction"})
+        assert(result == json.dumps({"response": "  secret noaction does not exist"}))
+
+    def test_plugin_secrets_del(self):
+        result = builtins.plugin_secrets_del(None, None, {"name": "deleteme"})
+        assert(result == json.dumps({"response": "  deleted secret deleteme"}))
+
+    def test_plugin_secrets_edit_name_missing(self):
+        result = builtins.plugin_secrets_edit(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
