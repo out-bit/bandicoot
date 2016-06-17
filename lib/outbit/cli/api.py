@@ -90,7 +90,7 @@ def decrypt_str(text):
     global encryption_password
     if encryption_password is not None:
         decryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
-        return str(decryption_suite.decrypt(binascii.a2b_base64(text)))
+        return str(decryption_suite.decrypt(binascii.a2b_base64(str(text))))
     return str(text)
 
 
