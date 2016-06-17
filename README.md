@@ -4,10 +4,10 @@
 [![Coverage Status](https://coveralls.io/repos/github/starboarder2001/outbit/badge.svg?branch=develop)](https://coveralls.io/github/starboarder2001/outbit?branch=develop)
 [![Gitter IM](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/starboarder2001/outbit)
 
-Description
+outbit
 ===========
 
-outbit - The UI for the Data Center or Cloud.
+outbit provides a simple UI (CLI and eventually a web based GUI) for orchestrating changes or applying configurations in a datacenter or cloud environment.  outbit provides a layer on top of Ansible (other DevOps tools can be added in the future) that allows you to easily wrap up automated tasks and provide a simple way to execute them.  The role based access control allows you to implement seperations of duties and limit specific actions to be executed by specific roles.  The logging feature allows you to track the history of changes in the environment.  outbit is an alternative to tools such as Ansible Tower, Foreman, and rundeck.
 
 Installation
 ===========
