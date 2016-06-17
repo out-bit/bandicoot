@@ -92,6 +92,10 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_users_edit(None, None, {"username": "jdoe2", "password": "newpw"})
         assert (result == json.dumps({"response": "  modified user jdoe2"}))
 
+    def test_plugin_users_list(self):
+        result = builtins.plugin_users_list(None, None, {})
+        assert (result == json.dumps({"response": "  jdoe1\n  jdoe2\n  jdoe3\n  jdoe4\n  add_test"}))
+
     def test_plugin_actions_add_name_missing(self):
         result = builtins.plugin_actions_add(None, None, {"category": "/"})
         assert(result == json.dumps({"response": "  name option is required"}))
@@ -108,8 +112,12 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_actions_add(None, None, {"name": "jaction", "category": "/", "action": "test"})
         assert(result == json.dumps({"response": "  plugin option is required"}))
 
-    def test_plugin_actions_del(self):
+    def test_plugin_actions_del_name_missing(self):
         result = builtins.plugin_actions_del(None, None, {})
+        assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_actions_edit_name_missing(self):
+        result = builtins.plugin_actions_edit(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
 
     def test_plugin_roles_add(self):
@@ -118,4 +126,8 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_roles_del(self):
         result = builtins.plugin_roles_del(None, None, {})
+        assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_roles_edit_name_missing(self):
+        result = builtins.plugin_roles_edit(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
