@@ -33,7 +33,7 @@ def plugin_users_add(user, action, options):
         result = outbit.cli.api.db.users.find_one({"username": options["username"]})
         if result is None:
             m = hashlib.md5()
-            m.update(options["password"])
+            m.update(str(options["password"]))
             password_md5 = str(m.hexdigest())
             post = {"username": options["username"], "password_md5": password_md5}
             outbit.cli.api.db.users.insert_one(post)
