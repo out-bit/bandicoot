@@ -35,7 +35,7 @@ class TestCli(unittest.TestCase):
     def test_parser_category_and_action(self):
         yacc.parser.parse('testing this users del username="something"')
         # action is missing
-        assert(yacc.parser_category == "/users/this/users" and yacc.parser_action == "del"
+        assert(yacc.parser_category == "/testing/this/users" and yacc.parser_action == "del"
                 and yacc.parser_options["username"] == "something")
 
     def test_p_action_run_help(self):

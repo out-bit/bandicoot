@@ -141,9 +141,25 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_actions_edit(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
 
-    def test_plugin_roles_add(self):
+    def test_plugin_actions_edit_noaction(self):
+        result = builtins.plugin_actions_edit(None, None, {"name": "noaction"})
+        assert(result == json.dumps({"response": "  action noaction does not exist"}))
+
+    def test_plugin_actions_edit(self):
+        result = builtins.plugin_actions_edit(None, None, {"name": "test_action1"})
+        assert(result == json.dumps({"response": "  modified action test_action1"}))
+
+    def test_plugin_roles_add_name_missing(self):
         result = builtins.plugin_roles_add(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_roles_add_already_exists(self):
+        result = builtins.plugin_roles_add(None, None, {"name": "test_role1"})
+        assert(result == json.dumps({"response": "  role test_role1 already exists"}))
+
+    def test_plugin_roles_add(self):
+        result = builtins.plugin_roles_add(None, None, {"name": "add_test"})
+        assert(result == json.dumps({"response": "  created role add_test"}))
 
     def test_plugin_roles_del_name_missing(self):
         result = builtins.plugin_roles_del(None, None, {})
@@ -161,9 +177,25 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_roles_edit(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
 
-    def test_plugin_secrets_add(self):
+    def test_plugin_roles_edit_noaction(self):
+        result = builtins.plugin_roles_edit(None, None, {"name": "norole"})
+        assert(result == json.dumps({"response": "  role norole does not exist"}))
+
+    def test_plugin_roles_edit(self):
+        result = builtins.plugin_roles_edit(None, None, {"name": "test_role1"})
+        assert(result == json.dumps({"response": "  modified role test_role1"}))
+
+    def test_plugin_secrets_add_name_missing(self):
         result = builtins.plugin_secrets_add(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_secrets_add_already_exists(self):
+        result = builtins.plugin_secrets_add(None, None, {"name": "test_secret1"})
+        assert(result == json.dumps({"response": "  secret test_secret1 already exists"}))
+
+    def test_plugin_secrets_add(self):
+        result = builtins.plugin_secrets_add(None, None, {"name": "add_test"})
+        assert(result == json.dumps({"response": "  created secret add_test"}))
 
     def test_plugin_secrets_del_name_missing(self):
         result = builtins.plugin_secrets_del(None, None, {})
@@ -180,3 +212,24 @@ class TestCli(unittest.TestCase):
     def test_plugin_secrets_edit_name_missing(self):
         result = builtins.plugin_secrets_edit(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
+
+    def test_plugin_secrets_edit_noaction(self):
+        result = builtins.plugin_secrets_edit(None, None, {"name": "nosecret"})
+        assert(result == json.dumps({"response": "  secret nosecret does not exist"}))
+
+    def test_plugin_secrets_edit(self):
+        result = builtins.plugin_secrets_edit(None, None, {"name": "test_secret1"})
+        assert(result == json.dumps({"response": "  modified secret test_secret1"}))
+
+    def test_plugin_command_commandrun_missing(self):
+        result = builtins.plugin_command(None, {}, {})
+        assert(result == json.dumps({"response": "  command_run required in action"}))
+
+    def test_plugin_command(self):
+        result = builtins.plugin_command(None, {"command_run": "echo 'hello world'"}, {})
+        assert(result == json.dumps({"response": "  'hello world'\n\n  return code: 0\n"}))
+
+    def test_plugin_plugins_list(self):
+        result = builtins.plugin_plugins_list(None, {}, {})
+        print(result)
+        assert(result == json.dumps({"response": "actions_list\n  roles_list\n  secrets_edit\n  help\n  actions_edit\n  logs\n  actions_add\n  users_list\n  roles_add\n  secrets_add\n  roles_edit\n  users_del\n  actions_del\n  roles_del\n  secrets_list\n  command\n  users_edit\n  ping\n  users_add\n  secrets_del\n  plugins_list"}))
