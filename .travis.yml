@@ -17,6 +17,7 @@ install:
     - pip install pycrypto
     - pip install coveralls
     - pip install mock
+    - pip install mongomock
 
 # Run Tests
 script:
