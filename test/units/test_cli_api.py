@@ -3,6 +3,7 @@ from outbit.cli import api
 import sys
 import unittest
 import mongomock
+import json
 
 
 class TestCli(unittest.TestCase):
@@ -33,6 +34,10 @@ class TestCli(unittest.TestCase):
 #        testobj = {"a": "hello {{ test_secret1 }}", "b": "no render"}
 #        api.render_secrets("jdoe1", testobj)
 #        assert(testobj["a"] == "hello test")
+
+    def test_parse_action_noperm(self):
+        response = api.parse_action("jdoe2", "/users", "list", {})
+        assert(response == json.dumps({"response": "  you do not have permission to run this action"}))
 
     def test_encrypt_str(self):
         # enable encryption pw
