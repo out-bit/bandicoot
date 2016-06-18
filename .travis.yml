@@ -18,6 +18,7 @@ install:
     - pip install coveralls
     - pip install mock
     - pip install mongomock
+    - pip install requests-mock
 
 # Run Tests
 script:

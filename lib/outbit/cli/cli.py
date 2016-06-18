@@ -9,6 +9,8 @@ import getpass
 import curses
 from outbit.parser import yacc
 
+session = requests.Session()
+
 
 class Cli(object):
     """ outbit CLI """
@@ -157,7 +159,7 @@ class Cli(object):
         self.exit()
 
     def run_action(self, actionjson):
-        r = requests.post(self.url, verify=False, headers={'Content-Type': 'application/json'},
+        r = session.post(self.url, verify=False, headers={'Content-Type': 'application/json'},
             auth=(self.user, self.password), data=json.dumps(actionjson))
 
         if r.status_code == requests.codes.ok:
