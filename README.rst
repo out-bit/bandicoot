@@ -29,36 +29,39 @@ outbit provides a simple UI (CLI and eventually a web based GUI) for orchestrati
 Installation
 ============
 
-.. sourcecode:: bash
-
-    pip install outbit
-
-or
+Install outbit client only. This is if you already have a dedicated outbit api server.
 
 .. sourcecode:: bash
 
-    easy_install outbit
+    $ pip install outbit
+
+Install outbit client and api server.
+
+.. sourcecode:: bash
+
+  $ pip install outbit
+  $ outbit-api-install
 
 Usage
 ============
 
-Start the API server on your localhost or on a dedicated server
+Start the API server on your localhost or on a dedicated ip.
 
 .. sourcecode:: bash
 
-    $ outbit-api
+    $ outbit-api -s 127.0.0.1
 
 Login to the outbit shell. On the first login you will be prompted to change the default password.
 
 .. sourcecode:: bash
 
-    $ outbit -u superadmin
+    $ outbit -u superadmin -s 127.0.0.1
       Password: superadmin
       Changing Password From Default
       Enter New Password: **********
       Enter New Password Again: **********
 
-Add a "hello world" action that prints hello world
+Example of adding a "hello world" action that prints hello world.
 
 .. sourcecode:: bash
 
