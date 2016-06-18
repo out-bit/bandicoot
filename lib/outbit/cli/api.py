@@ -13,6 +13,8 @@ from Crypto.Cipher import AES
 import binascii
 from jinja2 import Template
 import ssl
+import logging
+from logging.handlers import RotatingFileHandler
 
 
 dbclient = MongoClient('localhost', 27017)
@@ -241,6 +243,15 @@ class Cli(object):
     def run(self):
         """ EntryPoint Of Application """
 
+        # Setup logging to logfile (only if the file was touched)
+        if os.path.isfile("/var/log/outbit.log"):
+            handler = RotatingFileHandler('/var/log/outbit.log', maxBytes=10000, backupCount=1)
+            handler.setLevel(logging.INFO)
+            routes.app.logger.addHandler(handler)
+            # Disable stdout logging since its logging to a log file
+            log = logging.getLogger('werkzeug')
+            log.disabled = True
+
         # First Time Defaults, Setup superadmin if it doesnt exist
         default_user = "superadmin"
         default_password = "superadmin"
@@ -260,7 +271,7 @@ class Cli(object):
             db.roles.insert_one(post)
 
         # Start API Server
-        print("Starting outbit api server on %s://%s:%d" % ("https" if
+        routes.app.logger.info("Starting outbit api server on %s://%s:%d" % ("https" if
             self.is_secure else "http", self.server, self.port))
         if self.is_secure:
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)

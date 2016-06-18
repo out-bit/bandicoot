@@ -73,11 +73,7 @@ def outbit_base():
     # Run Action
     dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
     if dat is None:
-        # TESTING
-        print("Testing: %s" % indata)
         dat = json.dumps({"response": "  action not found"})
-        # END TESTING
-        #status=403 TODO PUT THIS BACK AND REMOVE TESTING
 
     # Audit Logging / History
     log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
