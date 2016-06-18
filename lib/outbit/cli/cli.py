@@ -319,6 +319,11 @@ class Cli(object):
 
     def shell_parse_line(self, line):
         line = line.strip()
+
+        # Return nothing for an empty line
+        if len(line) <= 0:
+            return("")
+
         action = line.split()
         if self.is_action_quit(action):
             # outbit> quit
