@@ -137,8 +137,10 @@ def plugin_actions_list(user, action, options):
     result = ""
     cursor = outbit.cli.api.db.actions.find()
     for doc in list(cursor):
-        #result += "  %s\n" % doc["name"]
-        result += "  %s\n" % doc
+        for key in sorted(doc):
+            if key not in ["_id"]:
+                result += '  %s="%s" ' % (key, doc[key])
+        result += "\n"
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
@@ -182,7 +184,10 @@ def plugin_roles_list(user, action, options):
     result = ""
     cursor = outbit.cli.api.db.roles.find()
     for doc in list(cursor):
-        result += "  %s\n" % doc
+        for key in sorted(doc):
+            if key not in ["_id"]:
+                result += '  %s="%s" ' % (key, doc[key])
+        result += "\n"
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
@@ -226,8 +231,12 @@ def plugin_secrets_list(user, action, options):
     result = ""
     cursor = outbit.cli.api.db.secrets.find()
     for doc in list(cursor):
-        doc["secret"] = "..." # do not print encrypted secret
-        result += "  %s\n" % doc
+        if "secret" in doc:
+            doc["secret"] = "..." # do not print encrypted secret
+        for key in sorted(doc):
+            if key not in ["_id"]:
+                result += '  %s="%s" ' % (key, doc[key])
+        result += "\n"
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 

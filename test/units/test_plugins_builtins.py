@@ -63,7 +63,6 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_users_add(self):
         result = builtins.plugin_users_add("jdoe3", None, {"username": "add_test", "password": "a"})
-        print(result)
         assert (result == json.dumps({"response": "  created user add_test"}))
 
     def test_plugin_users_add_already_exists(self):
@@ -118,7 +117,6 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_actions_add_already_exists(self):
         result = builtins.plugin_actions_add(None, None, {"name": "test_action1", "category": "/", "action": "test", "plugin": "command", "desc": "test"})
-        print(result)
         assert(result == json.dumps({"response": "  action test_action1 already exists"}))
 
     def test_plugin_actions_add(self):
@@ -148,6 +146,10 @@ class TestCli(unittest.TestCase):
     def test_plugin_actions_edit(self):
         result = builtins.plugin_actions_edit(None, None, {"name": "test_action1"})
         assert(result == json.dumps({"response": "  modified action test_action1"}))
+
+    def test_plugin_actions_list(self):
+        result = builtins.plugin_actions_list(None, None, {})
+        assert (result == json.dumps({"response": "  action=\"pwd\"   category=\"/testing\"   command_run=\"echo 'hello world'\"   desc=\"test pwd\"   name=\"test_action1\"   plugin=\"command\" \n  action=\"ls\"   category=\"/testing\"   command_run=\"echo 'hello world'\"   desc=\"test ls\"   name=\"test_action2\"   plugin=\"command\" \n  action=\"test\"   category=\"/\"   desc=\"test\"   name=\"add_test\"   plugin=\"command\""}) )
 
     def test_plugin_roles_add_name_missing(self):
         result = builtins.plugin_roles_add(None, None, {})
@@ -185,6 +187,10 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_roles_edit(None, None, {"name": "test_role1"})
         assert(result == json.dumps({"response": "  modified role test_role1"}))
 
+    def test_plugin_roles_list(self):
+        result = builtins.plugin_roles_list(None, None, {})
+        assert (result == json.dumps({"response": "  actions=\"/\"   name=\"test_role1\"   secrets=\"test_secret1\"   users=\"jdoe2\" \n  actions=\"/testing\"   name=\"test_role2\"   secrets=\"test_secret2\"   users=\"jdoe3\" \n  name=\"add_test\""}) )
+
     def test_plugin_secrets_add_name_missing(self):
         result = builtins.plugin_secrets_add(None, None, {})
         assert(result == json.dumps({"response": "  name option is required"}))
@@ -220,6 +226,10 @@ class TestCli(unittest.TestCase):
     def test_plugin_secrets_edit(self):
         result = builtins.plugin_secrets_edit(None, None, {"name": "test_secret1"})
         assert(result == json.dumps({"response": "  modified secret test_secret1"}))
+
+    def test_plugin_secrets_list(self):
+        result = builtins.plugin_secrets_list(None, None, {})
+        assert (result == json.dumps({"response": "  name=\"test_secret1\"   secret=\"...\" \n  name=\"test_secret2\"   secret=\"...\" \n  name=\"add_test\""}) )
 
     def test_plugin_command_commandrun_missing(self):
         result = builtins.plugin_command(None, {}, {})
