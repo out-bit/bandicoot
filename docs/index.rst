@@ -9,8 +9,17 @@ Welcome to outbit's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 5
 
+   whyoutbit
+   gettingstarted
+   config_files
+   users
+   secrets
+   roles
+   actions
+   plugins
+   logs
 
 .. include:: ../README.rst
 
