@@ -40,7 +40,7 @@ Install outbit client and api server.
 .. sourcecode:: bash
 
   $ pip install outbit
-  $ outbit-api-install
+  $ sudo outbit-api-install
 
 Usage
 ============
