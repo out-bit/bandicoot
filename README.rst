@@ -48,12 +48,15 @@ Start the API server on your localhost or on a dedicated server
 
     $ outbit-api
 
-Login to the outbit shell
+Login to the outbit shell. On the first login you will be prompted to change the default password.
 
 .. sourcecode:: bash
 
     $ outbit -u superadmin
       Password: superadmin
+      Changing Password From Default
+      Enter New Password: **********
+      Enter New Password Again: **********
 
 Add a "hello world" action that prints hello world
 
