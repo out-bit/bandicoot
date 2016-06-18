@@ -49,6 +49,7 @@ class Cli(object):
         self.interactive_mode = True
         self.noninteractive_commands = []
         self.password = None
+        self.app_running = True
 
         # Non-Interactive Command Parsing
         if len(args) > 0:
@@ -99,7 +100,7 @@ class Cli(object):
             self.screen.addstr("Connected to Server %s\n" % self.url)
         else:
             print("Failed connecting to server %s\n" % self.url)
-            sys.exit(1)
+            self.exit(1)
         self.screen.addstr("======================\n")
 
     def login_prompt(self):
@@ -130,11 +131,12 @@ class Cli(object):
 
         if auth_success == False:
             print("Login Failed\n")
-            sys.exit(1)
+            self.exit(1)
 
 
-    def exit(self):
-        sys.exit(0)
+    def exit(self, val):
+        sys.exit(val)
+        self.app_running = False # For unit testing
 
     def action_changepw(self, username, password):
         data = self.run_action(self.get_action_from_command("users edit username='%s' password='%s'"
@@ -156,7 +158,7 @@ class Cli(object):
 
     def action_quit(self):
         self.screen.addstr("  Goodbye!\n")
-        self.exit()
+        self.exit(0)
 
     def run_action(self, actionjson):
         r = session.post(self.url, verify=False, headers={'Content-Type': 'application/json'},
@@ -199,7 +201,7 @@ class Cli(object):
         last_match = None
 
         line = ""
-        while True:
+        while self.app_running:
             s = self.screen.getch()
 
             # Ascii
