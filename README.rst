@@ -18,7 +18,7 @@
     :target: https://coveralls.io/r/starboarder2001/outbit?branch=develop
 
 .. image:: https://readthedocs.org/projects/outbit/badge/?version=develop
-    :target: http://outbit.readthedocs.org/en/latest/?badge=develop
+    :target: http://outbit.readthedocs.org/en/develop/?badge=develop
     :alt: Documentation Status
 
 outbit
