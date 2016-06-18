@@ -1,3 +1,6 @@
+outbit
+============
+
 .. image:: https://secure.travis-ci.org/starboarder2001/outbit.png?branch=develop
         :target: http://travis-ci.org/starboarder2001/outbit
         :alt: Travis CI
@@ -20,9 +23,6 @@
 .. image:: https://readthedocs.org/projects/outbit/badge/?version=develop
     :target: http://outbit.readthedocs.org/en/develop/?badge=develop
     :alt: Documentation Status
-
-outbit
-============
 
 outbit provides a simple UI (CLI and eventually a web based GUI) for orchestrating changes or applying configurations in a datacenter or cloud environment.  outbit provides a layer on top of Ansible (other DevOps tools can be added in the future) that allows you to easily wrap up automated tasks and provide a simple way to execute them.  The role based access control allows you to implement seperations of duties and limit specific actions to be executed by specific roles.  The logging feature allows you to track the history of changes in the environment.  outbit is an alternative to tools such as Ansible Tower, Foreman, and rundeck.
 
