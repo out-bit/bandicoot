@@ -62,37 +62,53 @@ Add a "hello world" action that prints hello world
     outbit> help
       actions list          list actions
       actions del           del actions
+      actions edit          edit actions
       actions add           add actions
       users list            list users
       users del             del users
+      users edit            edit users
       users add             add users
       roles list            list roles
       roles del             del roles
+      roles edit            edit roles
       roles add             add roles
+      secrets list          list secrets
+      secrets del           del secrets
+      secrets edit          edit secrets
+      secrets add           add secrets
       plugins list          list plugins
       ping                  verify connectivity
       logs                  show the history log
       help                  print usage
+      exit
 
-    outbit> actions add category=/testing name=helloworld plugin=command action=helloworld desc="print hello world" command_run="echo 'hello world'"
+    outbit> actions add name=helloworld category=/hello action=world plugin=command desc="print hello world" command_run="echo 'hello world'"
 
     outbit> help
       actions list          list actions
       actions del           del actions
+      actions edit          edit actions
       actions add           add actions
       users list            list users
       users del             del users
+      users edit            edit users
       users add             add users
       roles list            list roles
       roles del             del roles
+      roles edit            edit roles
       roles add             add roles
+      secrets list          list secrets
+      secrets del           del secrets
+      secrets edit          edit secrets
+      secrets add           add secrets
       plugins list          list plugins
       ping                  verify connectivity
       logs                  show the history log
       help                  print usage
-      testing helloworld           print hello world
+      hello world           print hello world
+      exit
 
-    outbit> testing helloworld
+    outbit> hello world
       hello world
       return code: 0
 
