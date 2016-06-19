@@ -4,6 +4,7 @@ Users
 The users command is used to manage user accounts that can login and interact with outbit.
 
 .. sourcecode:: bash
+
     outbit> users list
       superadmin
     outbit> users add username=jdoe1 password=jdoe1

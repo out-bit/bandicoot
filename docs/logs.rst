@@ -4,6 +4,7 @@ Logs
 The logs command will display the history of everything run by outbit.
 
 .. sourcecode:: bash
+
     outbit> logs
       username      category    action  options date
       superadmin    /users      list    None    06/18/2016 14:20

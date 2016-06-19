@@ -4,6 +4,7 @@ Secrets
 The secrets command is used to manage passwords, ssh keys, git keys, credentials, and other sensitive information that might be required by an action.  These values are not visible to users after they are stored in the database, but actions users can execute may access them.
 
 .. sourcecode:: bash
+
     outbit> secrets add name=neptune_rootpw secret='verysecretpassword' desc="root pw for neptune server"
       created secret neptune_rootpw
     outbit> secrets add name=neptune_rootpw secret="newpassword" desc="root pw for neptune server"

@@ -20,7 +20,7 @@ Starting The API server on your localhost or on a dedicated ip.
 
     $ outbit-api -s 127.0.0.1
 
-Logging into to the outbit shell. On the first login you will be prompted to change the default password.
+Logging into the outbit shell. On the first login you will be prompted to change the default password.
 
 .. sourcecode:: bash
 
@@ -32,7 +32,7 @@ Logging into to the outbit shell. On the first login you will be prompted to cha
 
 outit CLI Basics
 
-The help command will display all the available actions available to run.
+The help command will display all the commands available to run.
 
 .. sourcecode:: bash
 

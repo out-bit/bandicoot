@@ -4,6 +4,7 @@ Plugins
 The plugins command will show plugins that are available to use in user defined actions.
 
 .. sourcecode:: bash
+
     outbit> plugins list
       roles_list
       secrets_edit
