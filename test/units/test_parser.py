@@ -6,7 +6,7 @@ import os
 
 class TestCli(unittest.TestCase):
     def test_lexskip(self):
-        yacc.parser.parse("^%$help")
+        yacc.parser.parse("help?'")
         # skip characters not known
         assert(yacc.parser_category == "/" and yacc.parser_action == "help")
 
