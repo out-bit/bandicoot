@@ -42,9 +42,19 @@
         - mongodb
         - openssl
 
-    - name: Linux Start mongodb
+    - name: Linux Install mongodb extras required for Centos/REDHAT
+      package: name={{item}} state=installed
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+      with_items:
+        - mongodb-server
+
+    - name: Linux Debian/Ubuntu Start mongodb
       service: name=mongodb state=started enabled=yes
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+    - name: Linux CentOS/Redhat Start mongodb
+      service: name=mongod state=started enabled=yes
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
     - name: Linux Check if SSL cert exists
       stat: path=/etc/ssl/certs/outbit.crt
