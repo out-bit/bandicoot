@@ -2,14 +2,12 @@ Getting Started with outbit
 ==================
 
 Installing outbit Client
-============
 
 .. sourcecode:: bash
 
     $ pip install outbit
 
 Installing outbit API Server
-============
 
 .. sourcecode:: bash
 
@@ -17,14 +15,12 @@ Installing outbit API Server
   $ sudo outbit-api-install
 
 Starting The API server on your localhost or on a dedicated ip.
-============
 
 .. sourcecode:: bash
 
     $ outbit-api -s 127.0.0.1
 
 Logging into to the outbit shell. On the first login you will be prompted to change the default password.
-============
 
 .. sourcecode:: bash
 
@@ -35,7 +31,6 @@ Logging into to the outbit shell. On the first login you will be prompted to cha
       Enter New Password Again: **********
 
 outit CLI Basics
-============
 
 The help command will display all the available actions available to run.
 
@@ -76,7 +71,6 @@ The logs command will display the history of actions performed.
     outbit> logs
 
 outbit CLI Non-Interactive Usage
-============
 
 You can run commands with outbit from the bash shell without entering the interactive outbit shell.
 
