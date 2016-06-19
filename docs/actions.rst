@@ -1,4 +1,4 @@
-outbit Actions
+Actions
 ==================
 
 The actions command is used to create user defined actions.  This is how the functionality of outbit is extended and customized for each environment.
