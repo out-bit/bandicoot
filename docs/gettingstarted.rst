@@ -66,6 +66,7 @@ The exit command will exit the application.
     outbit> exit
 
 The logs command will display the history of actions performed.
+
 .. sourcecode:: bash
 
     outbit> logs
