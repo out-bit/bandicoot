@@ -22,6 +22,21 @@
       changed_when: False
       when: ansible_distribution == 'MacOSX'
 
-    - name: Create self-signed SSL cert
+    - name: OSX Create self-signed SSL cert
       shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /usr/local/etc/openssl/certs/outbit.key -out /usr/local/etc/openssl/certs/outbit.crt -extensions v3_ca creates=/usr/local/etc/openssl/certs/outbit.crt'
       when: ansible_distribution == 'MacOSX'
+
+    - name: Linux Install mongodb and openssl
+      package: name={{item}} state=installed
+      when: ansible_distribution == 'Debian'
+      with_items:
+        - mongodb
+        - openssl
+
+    - name: Linux Start mongodb
+      service: name=mongodb state=started enabled=yes
+      when: ansible_distribution == 'Debian'
+
+    - name: Linux Create self-signed SSL cert
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/ssl/localcerts/outbit.key -out /etc/ssl/localcerts/outbit.crt -extensions v3_ca creates=/etc/ssl/localcerts/outbit.crt'
+      when: ansible_distribution == 'Debian'
