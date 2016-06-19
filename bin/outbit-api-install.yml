@@ -23,7 +23,7 @@
       when: ansible_distribution == 'MacOSX'
 
     - name: OSX Create self-signed SSL cert
-      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /usr/local/etc/openssl/certs/outbit.key -out /usr/local/etc/openssl/certs/outbit.crt -extensions v3_ca'
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /usr/local/etc/openssl/certs/outbit.key -out /usr/local/etc/openssl/certs/outbit.crt -extensions v3_ca'
       when: ansible_distribution == 'MacOSX' and st.stat.exists == False
 
     - name: Linux Install mongodb and openssl
@@ -45,5 +45,5 @@
       when: ansible_distribution == 'Debian'
 
     - name: Linux Create self-signed SSL cert
-      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/ssl/private/outbit.key -out /etc/ssl/private/outbit.crt -extensions v3_ca'
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /etc/ssl/private/outbit.key -out /etc/ssl/private/outbit.crt -extensions v3_ca'
       when: ansible_distribution == 'Debian' and st.stat.exists == False
