@@ -1,4 +1,4 @@
-outbit Users
+Users
 ==================
 
 The users command is used to manage user accounts that can login and interact with outbit.

@@ -1,4 +1,4 @@
-outbit Logs
+Logs
 ==================
 
 The logs command will display the history of everything run by outbit.
