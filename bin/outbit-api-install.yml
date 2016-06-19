@@ -38,12 +38,12 @@
       when: ansible_distribution == 'Debian'
 
     - name: Linux Check if SSL cert exists
-      stat: path=/etc/ssl/localcerts/outbit.key
+      stat: path=/etc/ssl/private/outbit.key
       always_run: yes
       changed_when: False
       register: st
       when: ansible_distribution == 'Debian'
 
     - name: Linux Create self-signed SSL cert
-      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/ssl/localcerts/outbit.key -out /etc/ssl/localcerts/outbit.crt -extensions v3_ca creates=/etc/ssl/localcerts/outbit.crt'
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/ssl/private/outbit.key -out /etc/ssl/private/outbit.crt -extensions v3_ca creates=/etc/ssl/private/outbit.crt'
       when: ansible_distribution == 'Debian' and st.stat.exists
