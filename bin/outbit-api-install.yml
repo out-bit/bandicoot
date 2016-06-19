@@ -26,6 +26,15 @@
       shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /usr/local/etc/openssl/certs/outbit.key -out /usr/local/etc/openssl/certs/outbit.crt -extensions v3_ca'
       when: ansible_distribution == 'MacOSX' and st.stat.exists == False
 
+    - name: RedHat/CentOS Linux make sure EPEL is installed
+      yum: name="http://download.fedoraproject.org/pub/epel/{{ansible_distribution_major_version}}/x86_64/epel-release-7-6.noarch.rpm" state=installed
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+      register: rh_epel
+
+    - name: RedHat/CentOS Linux import EPEL keys
+      command: "rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6"
+      when:  rh_epel.changed
+
     - name: Linux Install mongodb and openssl
       package: name={{item}} state=installed
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
