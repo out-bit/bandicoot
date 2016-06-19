@@ -15,9 +15,16 @@
       changed_when: False
       when: ansible_distribution == 'MacOSX'
 
-#    - name: OSX Create self-signed SSL cert
-#      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /usr/local/etc/openssl/certs/outbit.key -out /usr/local/etc/openssl/certs/outbit.crt -extensions v3_ca creates=/usr/local/etc/openssl/certs/outbit.crt'
-#      when: ansible_distribution == 'MacOSX'
+    - name: OSX Check if SSL cert exists
+      always_run: yes
+      changed_when: False
+      stat: path=/usr/local/etc/openssl/certs/outbit.key
+      register: st
+      when: ansible_distribution == 'MacOSX'
+
+    - name: OSX Create self-signed SSL cert
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /usr/local/etc/openssl/certs/outbit.key -out /usr/local/etc/openssl/certs/outbit.crt -extensions v3_ca creates=/usr/local/etc/openssl/certs/outbit.crt'
+      when: ansible_distribution == 'MacOSX' and st.stat.isreg
 
     - name: Linux Install mongodb and openssl
       package: name={{item}} state=installed
@@ -30,6 +37,13 @@
       service: name=mongodb state=started enabled=yes
       when: ansible_distribution == 'Debian'
 
-#    - name: Linux Create self-signed SSL cert
-#      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/ssl/localcerts/outbit.key -out /etc/ssl/localcerts/outbit.crt -extensions v3_ca creates=/etc/ssl/localcerts/outbit.crt'
-#      when: ansible_distribution == 'Debian'
+    - name: Linux Check if SSL cert exists
+      stat: path=/etc/ssl/localcerts/outbit.key
+      always_run: yes
+      changed_when: False
+      register: st
+      when: ansible_distribution == 'Debian'
+
+    - name: Linux Create self-signed SSL cert
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/ssl/localcerts/outbit.key -out /etc/ssl/localcerts/outbit.crt -extensions v3_ca creates=/etc/ssl/localcerts/outbit.crt'
+      when: ansible_distribution == 'Debian' and st.stat.isreg
