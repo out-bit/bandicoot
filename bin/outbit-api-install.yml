@@ -32,7 +32,7 @@
       register: rh_epel
 
     - name: RedHat/CentOS Linux import EPEL keys
-      command: "rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6"
+      command: "rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-{{ansible_distribution_major_version}}"
       when:  rh_epel.changed
 
     - name: Linux Install mongodb and openssl
