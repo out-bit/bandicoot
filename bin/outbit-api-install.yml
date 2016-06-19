@@ -50,7 +50,7 @@
 
     - name: Linux Debian/Ubuntu Start mongodb
       service: name=mongodb state=started enabled=yes
-      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
     - name: Linux CentOS/Redhat Start mongodb
       service: name=mongod state=started enabled=yes
