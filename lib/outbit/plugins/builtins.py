@@ -4,6 +4,12 @@ import subprocess
 import hashlib
 import datetime
 
+def category_fix(options):
+    if "category" in options:
+        options["category"] = options["category"].rstrip("/")
+        if options["category"][0] != "/":
+            options["category"] = "/" + options["category"]
+
 
 def plugin_help(user, action, options):
     cursor = outbit.cli.api.db.actions.find()
@@ -85,6 +91,8 @@ def plugin_actions_add(user, action, options):
             dat = json.dumps({"response": "  %s option is required" % requiredopt})
             return dat
 
+    category_fix(options)
+    
     find_result = outbit.cli.api.db.actions.find_one({"name": options["name"]})
     if find_result is None:
         result = outbit.cli.api.db.actions.insert_one(options)
@@ -110,6 +118,9 @@ def plugin_command(user, action, options):
 def plugin_actions_edit(user, action, options):
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
+
+    category_fix(options)
+
     result = outbit.cli.api.db.actions.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
