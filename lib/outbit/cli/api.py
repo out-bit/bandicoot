@@ -132,7 +132,7 @@ def roles_has_permission(user, action, options):
 def render_secrets(user, dictobj):
     secrets = {}
 
-    if dictobj is None:
+    if dictobj is None or user is None:
         return None
 
     cursor = db.secrets.find()
@@ -141,10 +141,17 @@ def render_secrets(user, dictobj):
         if secret_has_permission(user, doc["name"]):
             secrets[doc["name"]] = doc["secret"]
 
+    return render_vars("secret", secrets, dictobj)
+
+
+def render_vars(varname, vardict, dictobj):
+    if dictobj is None or vardict is None:
+        return None
+
     for key in dictobj:
         if isinstance(dictobj[key], basestring):
             t = Template(dictobj[key])
-            dictobj[key] = t.render(secrets)
+            dictobj[key] = t.render({varname: vardict})
 
     return dictobj
 
@@ -159,6 +166,7 @@ def parse_action(user, category, action, options):
                 else:
                     # Admin functions do not allow secrets
                     if dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]:
+                        render_vars("option", options, dbaction)
                         render_secrets(user, dbaction)
                         render_secrets(user, options)
                     return plugins[dbaction["plugin"]](user, dbaction, options)
