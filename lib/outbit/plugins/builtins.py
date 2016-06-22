@@ -8,8 +8,9 @@ def category_fix(options):
     if "category" in options:
         if options["category"] != "/":
             options["category"] = options["category"].rstrip("/")
-            if options["category"][0] != "/":
-                options["category"] = "/" + options["category"]
+            if len(options["category"]) >= 1:
+                if options["category"][0] != "/":
+                    options["category"] = "/" + options["category"]
 
 
 def plugin_help(user, action, options):
