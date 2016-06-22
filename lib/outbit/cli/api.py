@@ -132,11 +132,14 @@ def roles_has_permission(user, action, options):
 
 
 def clean_all_secrets():
-    for filename in glob("/tmp/outbit/*"):
-        os.remove(filename)
+    if not os.path.isdir("/tmp/outbit/"):
+        os.mkdir("/tmp/outbit")
 
     # Make sure directory permissions are secure
     os.chmod("/tmp/outbit/", 0700)
+
+    for filename in glob("/tmp/outbit/*"):
+        os.remove(filename)
 
 
 def clean_secrets(secrets):
