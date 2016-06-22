@@ -15,6 +15,8 @@ from jinja2 import Template
 import ssl
 import logging
 from logging.handlers import RotatingFileHandler
+import time
+from glob import glob
 
 
 dbclient = MongoClient('localhost', 27017)
@@ -129,8 +131,40 @@ def roles_has_permission(user, action, options):
     return False
 
 
+def clean_all_secrets():
+    for filename in glob("/tmp/outbit/*"):
+        os.remove(filename)
+
+
+def clean_secrets(secrets):
+
+    if secrets is None:
+        return None
+
+    for filename in secrets:
+        # Temp File must exist
+        if os.path.isfile(filename):
+            # Delete secret files
+            os.remove(filename)
+
+
+def render_secret_file(name, secret):
+    filepath = "/tmp/outbit/"
+    filename = "%s.%s" % (name, time.time())
+    fullpath = "%s%s" % (filepath, filename)
+
+    if not os.path.isdir(filepath):
+        os.mkdir(filepath)
+
+    with open(fullpath, "w") as textfile:
+        textfile.write(secret)
+
+    return fullpath
+
+
 def render_secrets(user, dictobj):
     secrets = {}
+    tmp_secret_files = []
 
     if dictobj is None or user is None:
         return None
@@ -139,9 +173,14 @@ def render_secrets(user, dictobj):
     for doc in list(cursor):
         decrypt_dict(doc)
         if secret_has_permission(user, doc["name"]):
-            secrets[doc["name"]] = doc["secret"]
+            if "type" in doc and doc["type"] == "file":
+                secrets[doc["name"]] = render_secret_file(doc["name"], doc["secret"])
+                tmp_secret_files.append(secrets[doc["name"]])
+            else:
+                secrets[doc["name"]] = doc["secret"]
 
-    return render_vars("secret", secrets, dictobj)
+    render_vars("secret", secrets, dictobj)
+    return tmp_secret_files
 
 
 def render_vars(varname, vardict, dictobj):
@@ -152,8 +191,6 @@ def render_vars(varname, vardict, dictobj):
         if isinstance(dictobj[key], basestring):
             t = Template(dictobj[key])
             dictobj[key] = t.render({varname: vardict})
-
-    return dictobj
 
 
 def parse_action(user, category, action, options):
@@ -167,9 +204,14 @@ def parse_action(user, category, action, options):
                     # Admin functions do not allow secrets
                     if dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]:
                         render_vars("option", options, dbaction)
-                        render_secrets(user, dbaction)
-                        render_secrets(user, options)
-                    return plugins[dbaction["plugin"]](user, dbaction, options)
+                        tmp_files_dbaction = render_secrets(user, dbaction)
+                        tmp_files_options = render_secrets(user, options)
+                        response = plugins[dbaction["plugin"]](user, dbaction, options)
+                        clean_secrets(tmp_files_dbaction)
+                        clean_secrets(tmp_files_options)
+                        return response
+                    else:
+                        return plugins[dbaction["plugin"]](user, dbaction, options)
     return None
 
 
@@ -247,6 +289,9 @@ class Cli(object):
             self.ssl_key = "/usr/local/etc/openssl/certs/outbit.key"
         if self.ssl_crt is None:
             self.ssl_crt = "/usr/local/etc/openssl/certs/outbit.crt"
+
+        # Clean any left over secret files
+        clean_all_secrets()
 
     def run(self):
         """ EntryPoint Of Application """
