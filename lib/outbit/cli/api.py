@@ -135,6 +135,9 @@ def clean_all_secrets():
     for filename in glob("/tmp/outbit/*"):
         os.remove(filename)
 
+    # Make sure directory permissions are secure
+    os.chmod("/tmp/outbit/", 0700)
+
 
 def clean_secrets(secrets):
 
@@ -158,6 +161,8 @@ def render_secret_file(name, secret):
 
     with open(fullpath, "w") as textfile:
         textfile.write(secret)
+
+    os.chmod(fullpath, 0700)
 
     return fullpath
 
