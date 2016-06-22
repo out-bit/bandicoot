@@ -4,6 +4,7 @@ import subprocess
 import hashlib
 import datetime
 
+
 def category_fix(options):
     if "category" in options:
         if options["category"] != "/":
