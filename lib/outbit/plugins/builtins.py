@@ -6,9 +6,10 @@ import datetime
 
 def category_fix(options):
     if "category" in options:
-        options["category"] = options["category"].rstrip("/")
-        if options["category"][0] != "/":
-            options["category"] = "/" + options["category"]
+        if options["category"] != "/":
+            options["category"] = options["category"].rstrip("/")
+            if options["category"][0] != "/":
+                options["category"] = "/" + options["category"]
 
 
 def plugin_help(user, action, options):
@@ -92,7 +93,7 @@ def plugin_actions_add(user, action, options):
             return dat
 
     category_fix(options)
-    
+
     find_result = outbit.cli.api.db.actions.find_one({"name": options["name"]})
     if find_result is None:
         result = outbit.cli.api.db.actions.insert_one(options)
