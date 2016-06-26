@@ -241,7 +241,9 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_plugins_list(self):
         result = builtins.plugin_plugins_list(None, {}, {})
-        assert(result == json.dumps({"response": "actions_list\n  roles_list\n  secrets_edit\n  help\n  actions_edit\n  logs\n  actions_add\n  users_list\n  roles_add\n  secrets_add\n  roles_edit\n  users_del\n  actions_del\n  roles_del\n  secrets_list\n  command\n  users_edit\n  ping\n  users_add\n  secrets_del\n  plugins_list"}))
+        resp_list = [x.encode("UTF8") for x in json.loads(result)["response"].split()]
+        map(str.strip, resp_list)
+        assert( "actions_list" in resp_list and "roles_list" in resp_list)
 
     def test_plugin_logs(self):
         result = builtins.plugin_logs(None, {}, {})

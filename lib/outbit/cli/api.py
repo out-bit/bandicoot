@@ -17,6 +17,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import time
 from glob import glob
+import shutil
 
 
 dbclient = MongoClient('localhost', 27017)
@@ -44,7 +45,8 @@ plugins = {"command": builtins.plugin_command,
             "plugins_list": builtins.plugin_plugins_list,
             "ping": builtins.plugin_ping,
             "logs": builtins.plugin_logs,
-            "help": builtins.plugin_help}
+            "help": builtins.plugin_help,
+            "ansible": builtins.plugin_ansible}
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
                   {'category': '/actions', 'plugin': 'actions_del', 'action': 'del', 'desc': 'del actions'},
@@ -139,7 +141,10 @@ def clean_all_secrets():
     os.chmod("/tmp/outbit/", 0700)
 
     for filename in glob("/tmp/outbit/*"):
-        os.remove(filename)
+        if os.path.isdir(filename):
+            shutil.rmtree(filename)
+        else:
+            os.remove(filename)
 
 
 def clean_secrets(secrets):

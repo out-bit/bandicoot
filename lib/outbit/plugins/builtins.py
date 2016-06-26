@@ -4,6 +4,8 @@ import subprocess
 import hashlib
 import datetime
 import re
+import shutil
+import time
 
 
 def options_validator(option_list, regexp):
@@ -292,3 +294,38 @@ def plugin_logs(user, action, options):
             doc["date"] = datetime.date(1970, 1, 1) # unknown
         result += "  %s\t%s\t%s\t%s\t%s\n" % (doc["user"], doc["category"], doc["action"], doc["options"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
     return json.dumps({"response": result})
+
+
+@options_validator(option_list=["sudo", "playbook"], regexp=r'^[a-zA-Z0-9_\-]+$')
+def plugin_ansible(user, action, options):
+    result = ""
+    ansible_options = ""
+    temp_location = "/tmp/outbit/%s" % str(time.time())
+
+    # Required options to be included in action
+    for option in ["source_url", "playbook"]:
+        if option not in action:
+            return json.dumps({"response": "  %s required in action" % option})
+
+    # Sudo
+    if "sudo" in action and action["sudo"] == "yes":
+        ansible_options += "-s "
+
+    # Git
+    cmd = str("git clone %s %s" % (action["source_url"], temp_location)).split()
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    for line in p.stdout:
+        result += "  %s\n" % line
+    p.wait()
+
+    # Ansible
+    cmd = str("ansible-playbook %s %s" % (ansible_options, action["playbook"])).split()
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=temp_location)
+    for line in p.stdout:
+        result += "  %s\n" % line
+    p.wait()
+
+    # Delete temporary git directory
+    shutil.rmtree(temp_location)
+
+    return json.dumps({ "response": result})
