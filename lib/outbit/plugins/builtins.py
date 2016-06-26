@@ -296,7 +296,6 @@ def plugin_logs(user, action, options):
     return json.dumps({"response": result})
 
 
-@options_validator(option_list=["sudo", "playbook"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_ansible(user, action, options):
     result = ""
     ansible_options = ""
