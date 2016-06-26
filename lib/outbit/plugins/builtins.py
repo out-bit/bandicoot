@@ -3,6 +3,21 @@ import json
 import subprocess
 import hashlib
 import datetime
+import re
+
+
+def options_validator(option_list, regexp):
+    def wrap(f):
+        def wrapped_f(*args):
+            user = args[0]
+            action = args[1]
+            options = args[2]
+            for key in options:
+                if key in option_list and not re.match(regexp, options[key]):
+                    return json.dumps({"response": "  option %s=%s has invalid characters" % (key, options[key])})
+            return f(*args)
+        return wrapped_f
+    return wrap
 
 
 def category_fix(options):
@@ -86,6 +101,8 @@ def plugin_users_list(user, action, options):
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
+@options_validator(option_list=["name", "plugin", "action"], regexp=r'^[a-zA-Z0-9_\-]+$')
+@options_validator(option_list=["category"], regexp=r'^[a-zA-Z0-9_\-/]+$')
 def plugin_actions_add(user, action, options):
     dat = None
 
@@ -118,6 +135,8 @@ def plugin_command(user, action, options):
     return json.dumps({ "response": result})
 
 
+@options_validator(option_list=["name", "plugin", "action"], regexp=r'^[a-zA-Z0-9_\-]+$')
+@options_validator(option_list=["category"], regexp=r'^[a-zA-Z0-9_\-/]+$')
 def plugin_actions_edit(user, action, options):
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
