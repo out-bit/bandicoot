@@ -220,9 +220,26 @@ def parse_action(user, category, action, options):
                         tmp_files_dbaction = render_secrets(user, dbaction)
                         tmp_files_options = render_secrets(user, options)
                         response = plugins[dbaction["plugin"]](user, dbaction, options)
+                        response = json.loads(response)
                         clean_secrets(tmp_files_dbaction)
                         clean_secrets(tmp_files_options)
-                        return response
+
+                        # Async
+                        if "response" not in response:
+                            if "queue_id" not in response:
+                                return json.dumps({"response": "  error: expected async queue id but found none"})
+                            # Running async
+                            job = builtins.running_queue[response["queue_id"]]
+                            response["response"] = ""
+                            while (job["process"].is_alive()):
+                                bufferstr = job["queue"].get()
+                                if bufferstr != builtins.EOF:
+                                    response["response"] += "".join(bufferstr)
+                                else:
+                                    # EOF
+                                    break
+
+                        return json.dumps(response)
                     else:
                         return plugins[dbaction["plugin"]](user, dbaction, options)
     return None

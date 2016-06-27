@@ -6,6 +6,29 @@ import datetime
 import re
 import shutil
 import time
+from multiprocessing import Process, Queue
+import sys
+
+
+running_queue = {}
+running_queue_count = 0
+EOF = -1
+
+
+def queue_support():
+    def wrap(f):
+        def wrapped_f(*args):
+            global running_queue
+            global running_queue_count
+            queue_id = running_queue_count
+            q = Queue()
+            p = Process(target=f, args=args+(q,))
+            running_queue[queue_id] = {"queue": q, "process": p}
+            running_queue_count += 1
+            p.start()
+            return json.dumps({"queue_id": queue_id})
+        return wrapped_f
+    return wrap
 
 
 def options_validator(option_list, regexp):
@@ -296,8 +319,8 @@ def plugin_logs(user, action, options):
     return json.dumps({"response": result})
 
 
-def plugin_ansible(user, action, options):
-    result = ""
+@queue_support()
+def plugin_ansible(user, action, options, q):
     ansible_options = ""
     temp_location = "/tmp/outbit/%s" % str(time.time())
 
@@ -314,17 +337,18 @@ def plugin_ansible(user, action, options):
     cmd = str("git clone %s %s" % (action["source_url"], temp_location)).split()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in p.stdout:
-        result += "  %s\n" % line
+        q.put("  %s\n" % line)
     p.wait()
 
     # Ansible
     cmd = str("ansible-playbook %s %s" % (ansible_options, action["playbook"])).split()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=temp_location)
     for line in p.stdout:
-        result += "  %s\n" % line
+        q.put("  %s\n" % line)
     p.wait()
 
     # Delete temporary git directory
     shutil.rmtree(temp_location)
 
-    return json.dumps({ "response": result})
+    q.put(EOF)
+    sys.exit(0)
