@@ -8,9 +8,21 @@ import yaml
 import getpass
 import curses
 import time
+import signal
 from outbit.parser import yacc
 
 session = requests.Session()
+sig_bg_pressed = 0
+
+
+# catch ctrl-z
+def sig_background(signum, frame):
+    global sig_bg_pressed
+    sig_bg_pressed = 1
+
+
+# signal for ctrl-z
+signal.signal(signal.SIGTSTP, sig_background)
 
 
 class Cli(object):
@@ -319,11 +331,15 @@ class Cli(object):
         curses.endwin()
 
     def blocking_get_response_queued_job(self, queue_id):
+        global sig_bg_pressed
+        sig_bg_pressed = 0 # Reset ctrl-z state0
+
         data = {"response": "  "}
         last_response = ""
-        self.screen.addstr("\nJob is running. Press ctrl-z to background job.\n")
+        self.screen.addstr("\nJob is running with id=%s. Press ctrl-z to background job.\n" % str(queue_id))
         self.screen.refresh()
-        while True:
+
+        while sig_bg_pressed == 0:
             data = self.run_action(self.get_action_from_command("jobs status id=%s" % str(queue_id)))
             if data is None or "response" not in data or data["response"] == -1:
                 break
@@ -363,7 +379,12 @@ class Cli(object):
                 data = {"response": yacc.parser_error}
             if data is not None:
                 if "response" in data:
-                    return data["response"]
+                    if data["response"] == -1: # EOF for async calls
+                        # async call, EOF reached, return nothing
+                        return ""
+                    else:
+                        # text returned
+                        return data["response"]
                 elif "queue_id" in data:
                     return self.blocking_get_response_queued_job(data["queue_id"])
                 else:

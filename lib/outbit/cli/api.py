@@ -47,6 +47,7 @@ plugins = {"command": builtins.plugin_command,
             "logs": builtins.plugin_logs,
             "help": builtins.plugin_help,
             "ansible": builtins.plugin_ansible,
+            "jobs_list": builtins.plugin_jobs_list,
             "jobs_status": builtins.plugin_jobs_status}
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
@@ -69,6 +70,7 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
+                  {'category': '/jobs', 'plugin': 'jobs_list', 'action': 'list', 'desc': 'list jobs'},
                   {'category': '/jobs', 'plugin': 'jobs_status', 'action': 'status', 'desc': 'get status of job'},
                   ]
 

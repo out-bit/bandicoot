@@ -375,3 +375,11 @@ def plugin_jobs_status(user, action, options):
             pass
 
         return json.dumps({"response": running_queue[int_id]["response"]})
+
+
+def plugin_jobs_list(user, action, options):
+    result = "  Job ID\tIs Running?\n"
+    for job_id in running_queue:
+        result += "  %s\t\t%s\n" % (str(job_id), str(running_queue[job_id]["running"]))
+
+    return json.dumps({"response": result})
