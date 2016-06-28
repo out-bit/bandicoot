@@ -46,7 +46,10 @@ plugins = {"command": builtins.plugin_command,
             "ping": builtins.plugin_ping,
             "logs": builtins.plugin_logs,
             "help": builtins.plugin_help,
-            "ansible": builtins.plugin_ansible}
+            "ansible": builtins.plugin_ansible,
+            "jobs_list": builtins.plugin_jobs_list,
+            "jobs_status": builtins.plugin_jobs_status,
+            "jobs_kill": builtins.plugin_jobs_kill}
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
                   {'category': '/actions', 'plugin': 'actions_del', 'action': 'del', 'desc': 'del actions'},
@@ -68,6 +71,9 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
+                  {'category': '/jobs', 'plugin': 'jobs_list', 'action': 'list', 'desc': 'list jobs'},
+                  {'category': '/jobs', 'plugin': 'jobs_status', 'action': 'status', 'desc': 'get status of job'},
+                  {'category': '/jobs', 'plugin': 'jobs_kill', 'action': 'kill', 'desc': 'kill a job'},
                   ]
 
 
@@ -220,9 +226,16 @@ def parse_action(user, category, action, options):
                         tmp_files_dbaction = render_secrets(user, dbaction)
                         tmp_files_options = render_secrets(user, options)
                         response = plugins[dbaction["plugin"]](user, dbaction, options)
+                        response = json.loads(response)
                         clean_secrets(tmp_files_dbaction)
                         clean_secrets(tmp_files_options)
-                        return response
+
+                        # Async, return queue_id
+                        if "response" not in response:
+                            if "queue_id" not in response:
+                                return json.dumps({"response": "  error: expected async queue id but found none"})
+
+                        return json.dumps(response)
                     else:
                         return plugins[dbaction["plugin"]](user, dbaction, options)
     return None

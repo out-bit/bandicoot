@@ -6,6 +6,30 @@ import datetime
 import re
 import shutil
 import time
+import multiprocessing
+import sys
+import Queue
+
+
+running_queue = {}
+running_queue_count = 0
+EOF = -1
+
+
+def queue_support():
+    def wrap(f):
+        def wrapped_f(*args):
+            global running_queue
+            global running_queue_count
+            queue_id = running_queue_count
+            q = multiprocessing.Queue()
+            p = multiprocessing.Process(target=f, args=args+(q,))
+            running_queue[queue_id] = {"queue": q, "process": p, "running": True, "response": ""}
+            running_queue_count += 1
+            p.start()
+            return json.dumps({"queue_id": queue_id})
+        return wrapped_f
+    return wrap
 
 
 def options_validator(option_list, regexp):
@@ -296,8 +320,8 @@ def plugin_logs(user, action, options):
     return json.dumps({"response": result})
 
 
-def plugin_ansible(user, action, options):
-    result = ""
+@queue_support()
+def plugin_ansible(user, action, options, q):
     ansible_options = ""
     temp_location = "/tmp/outbit/%s" % str(time.time())
 
@@ -313,18 +337,65 @@ def plugin_ansible(user, action, options):
     # Git
     cmd = str("git clone %s %s" % (action["source_url"], temp_location)).split()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    for line in p.stdout:
-        result += "  %s\n" % line
+    for line in p.stderr:
+        q.put("  %s\n" % line)
     p.wait()
 
     # Ansible
     cmd = str("ansible-playbook %s %s" % (ansible_options, action["playbook"])).split()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=temp_location)
     for line in p.stdout:
-        result += "  %s\n" % line
+        q.put("  %s\n" % line)
     p.wait()
 
     # Delete temporary git directory
     shutil.rmtree(temp_location)
 
-    return json.dumps({ "response": result})
+    q.put(EOF)
+    sys.exit(0)
+
+
+def plugin_jobs_status(user, action, options):
+    if options is None or "id" not in options:
+        # In this case, outbit_error is required! 
+        # This string is used by the client to determine if an error ocurred
+        return json.dumps({"response": "  outbit_error: id option is required"})
+    elif int(options["id"]) not in running_queue:
+        return json.dumps({"response": "  outbit_error: id does not match a job"})
+    else:
+        int_id = int(options["id"])
+        try:
+            qitem = running_queue[int_id]["queue"].get_nowait()
+            if qitem != EOF: 
+                # New Data from job!
+                running_queue[int_id]["response"] += qitem
+            else:
+                # EOF, job is finished
+                running_queue[int_id]["running"] = False
+                return json.dumps({"response": EOF})
+        except Queue.Empty:
+            pass
+
+        return json.dumps({"response": running_queue[int_id]["response"]})
+
+
+def plugin_jobs_list(user, action, options):
+    result = "  Job ID\tIs Running?\n"
+    for job_id in running_queue:
+        result += "  %s\t\t%s\n" % (str(job_id), str(running_queue[job_id]["running"]))
+
+    return json.dumps({"response": result})
+
+
+def plugin_jobs_kill(user, action, options):
+    if options is None or "id" not in options:
+        return json.dumps({"response": "  outbit_error: id option is required"})
+    elif int(options["id"]) not in running_queue:
+        return json.dumps({"response": "  outbit_error: id does not match a job"})
+    else:
+        int_id = int(options["id"])
+        if running_queue[int_id]["running"] == False:
+            return json.dumps({"response": "  The job %s, was already terminated" % str(int_id)})
+        running_queue[int_id]["process"].terminate()
+        running_queue[int_id]["running"] = False
+        return json.dumps({"response": "  The job %s, was terminated" % str(int_id)})
