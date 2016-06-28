@@ -7,6 +7,7 @@ import json
 import yaml
 import getpass
 import curses
+import time
 from outbit.parser import yacc
 
 session = requests.Session()
@@ -317,6 +318,26 @@ class Cli(object):
 
         curses.endwin()
 
+    def blocking_get_response_queued_job(self, queue_id):
+        data = {"response": "  "}
+        last_response = ""
+        self.screen.addstr("\nJob is running. Press ctrl-z to background job.\n")
+        self.screen.refresh()
+        while True:
+            data = self.run_action(self.get_action_from_command("jobs status id=%s" % str(queue_id)))
+            if data is None or "response" not in data or data["response"] == -1:
+                break
+            if "response" in data and "outbit_error:" in data["response"]:
+                return data["response"]
+            updatestr = data["response"].replace(last_response, "")
+            self.screen.addstr(updatestr)
+            self.screen.refresh()
+            #sys.stderr.write("debug: %s\n" % data)
+            #sys.stderr.write("debug: %s\n" % updatestr)
+            last_response = data["response"]
+            time.sleep(5)
+        return ""
+
     def shell_parse_line(self, line):
         line = line.strip()
 
@@ -341,10 +362,14 @@ class Cli(object):
             else:
                 data = {"response": yacc.parser_error}
             if data is not None:
-                return data["response"]
+                if "response" in data:
+                    return data["response"]
+                elif "queue_id" in data:
+                    return self.blocking_get_response_queued_job(data["queue_id"])
+                else:
+                    return("outbit - Invalid Response From server\n")
             else:
-                response = "outbit - Failed To Get Response From Server\n"
-                return(response)
+                return("outbit - Failed To Get Response From Server\n")
 
     def run(self):
         """ EntryPoint Of Application """

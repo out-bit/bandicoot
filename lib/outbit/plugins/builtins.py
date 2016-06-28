@@ -6,8 +6,9 @@ import datetime
 import re
 import shutil
 import time
-from multiprocessing import Process, Queue
+import multiprocessing
 import sys
+import Queue
 
 
 running_queue = {}
@@ -21,9 +22,9 @@ def queue_support():
             global running_queue
             global running_queue_count
             queue_id = running_queue_count
-            q = Queue()
-            p = Process(target=f, args=args+(q,))
-            running_queue[queue_id] = {"queue": q, "process": p}
+            q = multiprocessing.Queue()
+            p = multiprocessing.Process(target=f, args=args+(q,))
+            running_queue[queue_id] = {"queue": q, "process": p, "running": True, "response": ""}
             running_queue_count += 1
             p.start()
             return json.dumps({"queue_id": queue_id})
@@ -336,7 +337,7 @@ def plugin_ansible(user, action, options, q):
     # Git
     cmd = str("git clone %s %s" % (action["source_url"], temp_location)).split()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    for line in p.stdout:
+    for line in p.stderr:
         q.put("  %s\n" % line)
     p.wait()
 
@@ -352,3 +353,25 @@ def plugin_ansible(user, action, options, q):
 
     q.put(EOF)
     sys.exit(0)
+
+
+def plugin_jobs_status(user, action, options):
+    if options is None or "id" not in options:
+        return json.dumps({"response": "  outbit_error: id option is required"})
+    elif int(options["id"]) not in running_queue:
+        return json.dumps({"response": "  outbit_error: id does not match a job"})
+    else:
+        int_id = int(options["id"])
+        try:
+            qitem = running_queue[int_id]["queue"].get_nowait()
+            if qitem != EOF: 
+                # New Data from job!
+                running_queue[int_id]["response"] += qitem
+            else:
+                # EOF, job is finished
+                running_queue[int_id]["running"] = False
+                return json.dumps({"response": EOF})
+        except Queue.Empty:
+            pass
+
+        return json.dumps({"response": running_queue[int_id]["response"]})
