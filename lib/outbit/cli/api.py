@@ -2,267 +2,266 @@
 import optparse
 import sys
 import os
+import yaml
+import re
 import json
 import hashlib
-import subprocess
-from functools import wraps
-from flask import Flask, Response, request
 from pymongo import MongoClient
+from outbit.restapi import routes
+from outbit.plugins import builtins
+from Crypto.Cipher import AES
+import binascii
+from jinja2 import Template
+import ssl
+import logging
+from logging.handlers import RotatingFileHandler
+import time
+from glob import glob
+import shutil
 
-
-app = Flask(__name__)
-app.secret_key = os.urandom(24)
 
 dbclient = MongoClient('localhost', 27017)
 db = dbclient.outbit
+encryption_password = None
 
 
-def check_auth(username, password):
-    """This function is called to check if a username /
-    password combination is valid.
-    """
-    valid_auth = False
-    m = hashlib.md5()
-    m.update(password)
-    password_md5 = m.hexdigest()
-
-    post = db.users.find_one({"username": username})
-
-    if post["password_md5"] == password_md5:
-        valid_auth = True
-
-    return valid_auth
+def counters_db_init(name):
+    result = db.counters.find_one( {"_id": name} )
+    if result is None:
+        db.counters.insert_one( {"_id": name, "seq": 0 } )
 
 
-def authenticate():
-    """Sends a 401 response that enables basic auth"""
-    return Response(
-    'Could not verify your access level for that URL.\n'
-    'You have to login with proper credentials', 401,
-    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+def counters_db_getNextSequence(name):
+   ret = db.counters.update_one({ "_id": name },
+                                { "$inc": { "seq": 1 } },
+                                )
+   result = db.counters.find_one( {"_id": name} )
+   return result["seq"]
 
 
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return authenticate()
-        return f(*args, **kwargs)
-    return decorated
-
-
-def plugin_help(action, options):
-    cursor = db.actions.find()
-    response = ""
-    for dbaction in builtin_actions + list(cursor):
-        category_str = dbaction["category"].strip("/").replace("/", " ")
-        if category_str is None or len(category_str) <= 0:
-            response += "  %s \t\t\t%-60s\n" % (dbaction["action"], dbaction["desc"])
-        else:
-            response += "  %s %s \t\t%-60s\n" % (dbaction["category"].strip("/").replace("/", " "), dbaction["action"], dbaction["desc"])
-    return json.dumps({"response": response})
-
-
-def plugin_ping(action, options):
-    return json.dumps({"response": "  pong"})
-
-
-def plugin_users_add(action, options):
-    if "username" not in options or "password" not in options:
-        return json.dumps({"response": "  username and password are required options"})
-    else:
-        result = db.users.find_one({"username": options["username"]})
-        if result is None:
-            m = hashlib.md5()
-            m.update(options["password"])
-            password_md5 = str(m.hexdigest())
-            post = {"username": options["username"], "password_md5": password_md5}
-            db.users.insert_one(post)
-            return json.dumps({"response": "  created user %s" % options["username"]})
-        else:
-            return json.dumps({"response": "  user %s already exists" % options["username"]})
-
-
-def plugin_users_del(action, options):
-    if "username" not in options:
-        return json.dumps({"response": "  name option is required"})
-    post = {"username": options["username"]}
-    result = db.users.delete_many(post)
-    if result.deleted_count > 0:
-        return json.dumps({"response": "  deleted user %s" % options["username"]})
-    else:
-        return json.dumps({"response": "  user %s does not exist" % options["username"]})
-
-
-def plugin_users_list(action, options):
-    result = ""
-    cursor = db.users.find()
-    for doc in list(cursor):
-        result += "  %s\n" % doc["username"]
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
-
-
-def plugin_actions_add(action, options):
-    dat = None
-
-    for requiredopt in ["name", "category", "action", "plugin"]:
-        if requiredopt not in options:
-            dat = json.dumps({"response": "  %s option is required" % requiredopt})
-            return dat
-
-    find_result = db.actions.find_one({"name": options["name"]})
-    if find_result is None:
-        result = db.actions.insert_one(options)
-        dat = json.dumps({"response": "  created action %s" % options["name"]})
-    else:
-        dat = json.dumps({"response": "  action %s already exists" % options["name"]})
-    return dat
-
-
-def plugin_command(action, options):
-    result = ""
-    if "command_run" not in action:
-        return json.dumps({"response": "  command_run required in action"})
-    cmd = action["command_run"].split()
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    for line in p.stdout:
-        result += "  %s\n" % line
-    p.wait()
-    result += "  return code: %d\n"  % p.returncode
-    return json.dumps({ "response": result})
-
-
-def plugin_actions_del(action, options):
-    dat = None
-
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
-
-    post = {"name": options["name"]}
-    result = db.actions.delete_many(post)
-    if result.deleted_count > 0:
-        dat = json.dumps({"response": "  deleted action %s" % options["name"]})
-    else:
-        dat = json.dumps({"response": "  action %s does not exist" % options["name"]})
-    return dat
-
-
-def plugin_actions_list(action, options):
-    result = ""
-    cursor = db.actions.find()
-    for doc in list(cursor):
-        #result += "  %s\n" % doc["name"]
-        result += "  %s\n" % doc
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
-
-
-def plugin_roles_add(action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
-    else:
-        result = db.roles.find_one({"name": options["name"]})
-        if result is None:
-            post = {"name": options["name"]}
-            db.roles.insert_one(post)
-            return json.dumps({"response": "  created role %s" % options["name"]})
-        else:
-            return json.dumps({"response": "  role %s already exists" % options["name"]})
-
-
-def plugin_roles_del(action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
-    else:
-        post = {"name": options["name"]}
-        result = db.roles.delete_many(post)
-        if result.deleted_count > 0:
-            return json.dumps({"response": "  deleted role %s" % options["name"]})
-        else:
-            return json.dumps({"response": "  role %s does not exist" % options["name"]})
-
-
-def plugin_roles_list(action, options):
-    result = ""
-    cursor = db.roles.find()
-    for doc in list(cursor):
-        result += "  %s\n" % doc["name"]
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
-
-
-def plugin_plugins_list(action, options):
-    return json.dumps({"response": "\n  ".join(plugins.keys())})
-
-
-def plugin_logs(action, options):
-    result = "  category\t\taction\t\toptions\n"
-    cursor = db.logs.find()
-    for doc in list(cursor):
-        result += "  %s\t\t%s\t\t%s\n" % (doc["category"], doc["action"], doc["options"])
-    return json.dumps({"response": result})
-
-
-plugins = {"command": plugin_command,
-            "actions_list": plugin_actions_list,
-            "actions_del": plugin_actions_del,
-            "actions_add": plugin_actions_add,
-            "users_list": plugin_users_list,
-            "users_del": plugin_users_del,
-            "users_add": plugin_users_add,
-            "roles_list": plugin_roles_list,
-            "roles_del": plugin_roles_del,
-            "roles_add": plugin_roles_add,
-            "plugins_list": plugin_plugins_list,
-            "ping": plugin_ping,
-            "logs": plugin_logs,
-            "help": plugin_help}
+plugins = {"command": builtins.plugin_command,
+            "actions_list": builtins.plugin_actions_list,
+            "actions_del": builtins.plugin_actions_del,
+            "actions_edit": builtins.plugin_actions_edit,
+            "actions_add": builtins.plugin_actions_add,
+            "users_list": builtins.plugin_users_list,
+            "users_del": builtins.plugin_users_del,
+            "users_edit": builtins.plugin_users_edit,
+            "users_add": builtins.plugin_users_add,
+            "roles_list": builtins.plugin_roles_list,
+            "roles_del": builtins.plugin_roles_del,
+            "roles_edit": builtins.plugin_roles_edit,
+            "roles_add": builtins.plugin_roles_add,
+            "secrets_list": builtins.plugin_secrets_list,
+            "secrets_del": builtins.plugin_secrets_del,
+            "secrets_edit": builtins.plugin_secrets_edit,
+            "secrets_add": builtins.plugin_secrets_add,
+            "plugins_list": builtins.plugin_plugins_list,
+            "ping": builtins.plugin_ping,
+            "logs": builtins.plugin_logs,
+            "help": builtins.plugin_help,
+            "ansible": builtins.plugin_ansible,
+            "jobs_list": builtins.plugin_jobs_list,
+            "jobs_status": builtins.plugin_jobs_status,
+            "jobs_kill": builtins.plugin_jobs_kill}
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
                   {'category': '/actions', 'plugin': 'actions_del', 'action': 'del', 'desc': 'del actions'},
+                  {'category': '/actions', 'plugin': 'actions_edit', 'action': 'edit', 'desc': 'edit actions'},
                   {'category': '/actions', 'plugin': 'actions_add', 'action': 'add', 'desc': 'add actions'},
                   {'category': '/users', 'plugin': 'users_list', 'action': 'list', 'desc': 'list users'},
                   {'category': '/users', 'plugin': 'users_del', 'action': 'del', 'desc': 'del users'},
+                  {'category': '/users', 'plugin': 'users_edit', 'action': 'edit', 'desc': 'edit users'},
                   {'category': '/users', 'plugin': 'users_add', 'action': 'add', 'desc': 'add users'},
                   {'category': '/roles', 'plugin': 'roles_list', 'action': 'list', 'desc': 'list roles'},
                   {'category': '/roles', 'plugin': 'roles_del', 'action': 'del', 'desc': 'del roles'},
+                  {'category': '/roles', 'plugin': 'roles_edit', 'action': 'edit', 'desc': 'edit roles'},
                   {'category': '/roles', 'plugin': 'roles_add', 'action': 'add', 'desc': 'add roles'},
+                  {'category': '/secrets', 'plugin': 'secrets_list', 'action': 'list', 'desc': 'list secrets'},
+                  {'category': '/secrets', 'plugin': 'secrets_del', 'action': 'del', 'desc': 'del secrets'},
+                  {'category': '/secrets', 'plugin': 'secrets_edit', 'action': 'edit', 'desc': 'edit secrets'},
+                  {'category': '/secrets', 'plugin': 'secrets_add', 'action': 'add', 'desc': 'add secrets'},
                   {'category': '/plugins', 'plugin': 'plugins_list', 'action': 'list', 'desc': 'list plugins'},
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
+                  {'category': '/jobs', 'plugin': 'jobs_list', 'action': 'list', 'desc': 'list jobs'},
+                  {'category': '/jobs', 'plugin': 'jobs_status', 'action': 'status', 'desc': 'get status of job'},
+                  {'category': '/jobs', 'plugin': 'jobs_kill', 'action': 'kill', 'desc': 'kill a job'},
                   ]
 
 
-def parse_action(category, action, options):
+def encrypt_dict(dictobj):
+    # encrypt sensitive option vals
+    for key in ["secret"]:
+        if dictobj is not None and key in dictobj:
+            dictobj[key] = encrypt_str(dictobj[key])
+
+
+def decrypt_dict(dictobj):
+    for key in ["secret"]:
+        if dictobj is not None and key in dictobj:
+            dictobj[key] = decrypt_str(dictobj[key])
+
+
+def encrypt_str(text):
+    global encryption_password
+    if encryption_password is not None:
+        encryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
+        return str(binascii.b2a_base64(encryption_suite.encrypt(text)))
+    return str(text)
+
+
+def decrypt_str(text):
+    global encryption_password
+    if encryption_password is not None:
+        decryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
+        return str(decryption_suite.decrypt(binascii.a2b_base64(text)))
+    return str(text)
+
+
+def secret_has_permission(user, secret):
+    cursor = db.roles.find()
+    for doc in list(cursor):
+        if user in list(doc["users"].split(",")):
+            if "secrets" not in doc:
+                # No secrets option, give them access to all secrets
+                return True
+            if secret in list(doc["secrets"].split(",")):
+                return True
+    return False
+
+
+def roles_has_permission(user, action, options):
+    # Ping is always allowed
+    if action["category"] == "/" and action["action"] == "ping":
+        return True
+    # Help is always allowed
+    if action["category"] == "/" and action["action"] == "help":
+        return True
+    # jobs status is always allowed
+    if action["category"] == "/jobs" and action["action"] == "status":
+        return True
+    # jobs list is always allowed
+    if action["category"] == "/jobs" and action["action"] == "list":
+        return True
+    # jobs kill is always allowed
+    if action["category"] == "/jobs" and action["action"] == "kill":
+        return True
+
+    if action["category"][-1:] == "/":
+        action_str = "%s%s" % (action["category"], action["action"])
+    else:
+        action_str = "%s/%s" % (action["category"], action["action"])
+    cursor = db.roles.find()
+    for doc in list(cursor):
+        if user in list(doc["users"].split(",")):
+            for action in list(doc["actions"].split(",")):
+                if re.match(r"^%s" % action, action_str):
+                    return True
+    return False
+
+
+def clean_all_secrets():
+    if not os.path.isdir("/tmp/outbit/"):
+        os.mkdir("/tmp/outbit")
+
+    # Make sure directory permissions are secure
+    os.chmod("/tmp/outbit/", 0700)
+
+    for filename in glob("/tmp/outbit/*"):
+        if os.path.isdir(filename):
+            shutil.rmtree(filename)
+        else:
+            os.remove(filename)
+
+
+def clean_secrets(secrets):
+
+    if secrets is None:
+        return None
+
+    for filename in secrets:
+        # Temp File must exist
+        if os.path.isfile(filename):
+            # Delete secret files
+            os.remove(filename)
+
+
+def render_secret_file(name, secret):
+    filepath = "/tmp/outbit/"
+    filename = "%s.%s" % (name, time.time())
+    fullpath = "%s%s" % (filepath, filename)
+
+    if not os.path.isdir(filepath):
+        os.mkdir(filepath)
+
+    with open(fullpath, "w") as textfile:
+        textfile.write(secret)
+
+    os.chmod(fullpath, 0700)
+
+    return fullpath
+
+
+def render_secrets(user, dictobj):
+    secrets = {}
+    tmp_secret_files = []
+
+    if dictobj is None or user is None:
+        return None
+
+    cursor = db.secrets.find()
+    for doc in list(cursor):
+        decrypt_dict(doc)
+        if secret_has_permission(user, doc["name"]):
+            if "type" in doc and doc["type"] == "file":
+                secrets[doc["name"]] = render_secret_file(doc["name"], doc["secret"])
+                tmp_secret_files.append(secrets[doc["name"]])
+            else:
+                secrets[doc["name"]] = doc["secret"]
+
+    render_vars("secret", secrets, dictobj)
+    return tmp_secret_files
+
+
+def render_vars(varname, vardict, dictobj):
+    if dictobj is None or vardict is None:
+        return None
+
+    for key in dictobj:
+        if isinstance(dictobj[key], basestring):
+            t = Template(dictobj[key])
+            dictobj[key] = t.render({varname: vardict})
+
+
+def parse_action(user, category, action, options):
     cursor = db.actions.find()
     for dbaction in builtin_actions + list(cursor):
         if dbaction["category"] == category and dbaction["action"] == action:
             if "plugin" in dbaction:
-                return plugins[dbaction["plugin"]](dbaction, options)
+                if not roles_has_permission(user, dbaction, options):
+                    return json.dumps({"response": "  you do not have permission to run this action"})
+                else:
+                    # Admin functions do not allow secrets
+                    if dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]:
+                        render_vars("option", options, dbaction)
+                        tmp_files_dbaction = render_secrets(user, dbaction)
+                        tmp_files_options = render_secrets(user, options)
+                        response = plugins[dbaction["plugin"]](user, dbaction, options)
+                        response = json.loads(response)
+                        clean_secrets(tmp_files_dbaction)
+                        clean_secrets(tmp_files_options)
+
+                        # Async, return queue_id
+                        if "response" not in response:
+                            if "queue_id" not in response:
+                                return json.dumps({"response": "  error: expected async queue id but found none"})
+
+                        return json.dumps(response)
+                    else:
+                        return plugins[dbaction["plugin"]](user, dbaction, options)
     return None
-
-
-@app.route("/", methods=["POST"])
-@requires_auth
-def outbit_base():
-    indata = request.get_json()
-    dat = None
-    status = 200
-
-    # Audit Logging / History
-    post = {"category": indata["category"], "action": indata["action"], "options": indata["options"]}
-    db.logs.insert_one(post)
-
-    dat = parse_action(indata["category"], indata["action"], indata["options"])
-    if dat is None:
-        # TESTING
-        print("Testing: %s" % indata)
-        dat = json.dumps({"response": "  action not found"})
-        # END TESTING
-        #status=403 TODO PUT THIS BACK AND REMOVE TESTING
-
-    resp = Response(response=dat, status=status, mimetype="application/json")
-    return(resp)
 
 
 class Cli(object):
@@ -275,11 +274,11 @@ class Cli(object):
         parser.add_option("-s", "--server", dest="server",
                           help="IP address or hostname of outbit-api server",
                           metavar="SERVER",
-                          default="127.0.0.1")
+                          default=None)
         parser.add_option("-p", "--port", dest="port",
                           help="tcp port of outbit-api server",
                           metavar="PORT",
-                          default="8088")
+                          default=None)
         parser.add_option("-t", "--secure", dest="is_secure",
                           help="Use SSL",
                           metavar="SECURE",
@@ -288,30 +287,105 @@ class Cli(object):
                           help="Debug Mode",
                           metavar="DEBUG",
                           action="store_true")
+        parser.add_option("-k", "--ssl_key", dest="ssl_key",
+                          help="SSL key",
+                          metavar="SSLKEY",
+                          default=None)
+        parser.add_option("-c", "--ssl_crt", dest="ssl_crt",
+                          help="SSL certificate",
+                          metavar="SSLCRT",
+                          default=None)
         (options, args) = parser.parse_args()
         self.server = options.server
-        self.port = int(options.port)
+        self.port = options.port
         self.is_secure = options.is_secure
         self.is_debug = options.is_debug
+        self.ssl_key = options.ssl_key
+        self.ssl_crt = options.ssl_crt
+        global encryption_password
+
+        # Assign values from conf
+        outbit_config_locations = [os.path.expanduser("~")+"/.outbit-api.conf", "/etc/outbit-api.conf"]
+        outbit_conf_obj = {}
+        for outbit_conf in outbit_config_locations:
+            if os.path.isfile(outbit_conf):
+                with open(outbit_conf, 'r') as stream:
+                    try:
+                        outbit_conf_obj = yaml.load(stream)
+                    except yaml.YAMLError as excep:
+                        print("%s\n" % excep)
+        if self.server is None and "server" in outbit_conf_obj:
+            self.server = str(outbit_conf_obj["server"])
+        if self.port is None and "port" in outbit_conf_obj:
+            self.port = int(outbit_conf_obj["port"])
+        if self.is_secure == False and "secure" in outbit_conf_obj:
+            self.is_secure = bool(outbit_conf_obj["secure"])
+        if self.is_debug == False and "debug" in outbit_conf_obj:
+            self.is_debug = bool(outbit_conf_obj["debug"])
+        if encryption_password is None and "encryption_password" in outbit_conf_obj:
+            encryption_password = str(outbit_conf_obj["encryption_password"])
+        if self.ssl_key == None and "ssl_key" in outbit_conf_obj:
+            self.ssl_key = bool(outbit_conf_obj["ssl_key"])
+        if self.ssl_crt == None and "ssl_crt" in outbit_conf_obj:
+            self.ssl_crt = bool(outbit_conf_obj["ssl_crt"])
+
+        # Assign Default values if they were not specified at the cli or in the conf
+        if self.server is None:
+            self.server = "127.0.0.1"
+        if self.port is None:
+            self.port = 8088
+        if self.ssl_key is None:
+            self.ssl_key = "/usr/local/etc/openssl/certs/outbit.key"
+        if self.ssl_crt is None:
+            self.ssl_crt = "/usr/local/etc/openssl/certs/outbit.crt"
+
+        # Clean any left over secret files
+        clean_all_secrets()
 
     def run(self):
         """ EntryPoint Of Application """
 
+        # Setup logging to logfile (only if the file was touched)
+        if os.path.isfile("/var/log/outbit.log"):
+            handler = RotatingFileHandler('/var/log/outbit.log', maxBytes=10000, backupCount=1)
+            handler.setLevel(logging.INFO)
+            routes.app.logger.addHandler(handler)
+            # Disable stdout logging since its logging to a log file
+            log = logging.getLogger('werkzeug')
+            log.disabled = True
+
         # First Time Defaults, Setup superadmin if it doesnt exist
         default_user = "superadmin"
         default_password = "superadmin"
+        default_role = "super"
+
+        # Init db counters for jobs
+        counters_db_init("jobid")
+
+        # Create default user
         post = db.users.find_one({"username": default_user})
         if post is None:
-            plugin_users_add("/users/add",{"username": default_user, "password": default_password})
+            m = hashlib.md5()
+            m.update(default_password)
+            password_md5 = str(m.hexdigest())
+            post = {"username": default_user, "password_md5": password_md5}
+            db.users.insert_one(post)
+        # Create default role
+        post = db.roles.find_one({"name": default_role})
+        if post is None:
+            post = {"name": default_role, "users": default_user, "actions": "/"}
+            db.roles.insert_one(post)
 
         # Start API Server
-        print("Starting outbit api server on %s://%s:%d" % ("https" if
+        routes.app.logger.info("Starting outbit api server on %s://%s:%d" % ("https" if
             self.is_secure else "http", self.server, self.port))
         if self.is_secure:
-            print("Does not support SSL yet")
-            sys.exit(1)
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            context.check_hostname = False
+            context.load_cert_chain(certfile=self.ssl_crt, keyfile=self.ssl_key)
+            routes.app.run(host=self.server, ssl_context=context, port=self.port, debug=self.is_debug)
         else:
-            app.run(host=self.server, port=self.port, debug=self.is_debug)
+            routes.app.run(host=self.server, port=self.port, debug=self.is_debug)
 
 
 

@@ -1,78 +1,96 @@
 import nose
-from outbit.cli import cli
 import unittest
 import sys
-import os
+import json
+import curses
+from StringIO import StringIO
+import requests_mock
+from mock import patch
+from outbit.cli import cli
+
+
+class CursesMock(object):
+    def __init__(self, inputstr):
+        self.screen = ""
+        self.inputstr = str(inputstr)
+        self.cursor_pos_x = 0
+        self.cursor_pos_y = 0
+        self.cscreen = curses.initscr()
+
+    def addstr(self, s):
+        self.screen += str(s)
+
+    def insstr(self, s):
+        pass
+
+    def keypad(self, i):
+        pass
+
+    def scrollok(self, i):
+        pass
+
+    def getch(self):
+        c = "\n"
+        if self.cursor_pos_x < len(self.inputstr):
+            c = self.inputstr[self.cursor_pos_x]
+            self.cursor_pos_x += 1
+        return ord(c)
+
+    def delch(self,y, x):
+        pass
+
+    def move(self, y, x):
+        pass
+
+    def getyx(self):
+        return (self.cursor_pos_y, self.cursor_pos_x)
+
+    def clrtoeol(self):
+        pass
+
+    def echo(self):
+        pass
+
+
+def curses_wrapper_mock(func):
+    func("arg")
+
+
+def create_curses_wrapper_mock():
+    return curses_wrapper_mock
+    
 
 class TestCli(unittest.TestCase):
-    def test_p_action_run_help(self):
-        t = []
-        t.append(None)
-        t.append(["help",])
-        cli.p_action_run(t)
-        assert(cli.parser_category == "/" and cli.parser_action == "help")
 
-    def test_p_action_run_users_list(self):
-        t = []
-        t.append(None)
-        t.append(["users","list"])
-        cli.p_action_run(t)
-        assert(cli.parser_category == "/users" and cli.parser_action == "list")
+    @requests_mock.mock()
+    @patch('getpass.getpass', return_value='password') # Mock password typed in stdin
+    def test_run_noninteractive_ping(self, m, mock_getpass):
+        saved_stdout = sys.stdout
+        output = None
+        try:
+            out = StringIO()
+            sys.stdout = out
 
-    def test_p_action_run_users_del(self):
-        t = []
-        t.append(None)
-        t.append(["users","del"])
-        t.append(" ")
-        t.append({"username": "jdoe"})
-        cli.p_action_run(t)
-        assert(cli.parser_category == "/users" and cli.parser_action == "del" and "username" in cli.parser_options)
+            m.post("http://127.0.0.1:8088/", text=json.dumps({"response": "  pong"}))
+            cliobj = cli.Cli()
+            cliobj.interactive_mode = False
+            cliobj.noninteractive_commands = ["ping"]
+            cliobj.run()
 
-    def test_p_actions_str(self):
-        t = []
-        t.append(None)
-        t.append("help")
-        cli.p_actions(t)
-        assert(t[0] == ["help"])
+            output = out.getvalue().strip() # because i dont care about spaces
+            assert( output == "pong" )
+        finally:
+            sys.stdout = saved_stdout
 
-    def test_p_actions_list(self):
-        t = []
-        t.append(None)
-        t.append(["users"])
-        t.append(" ")
-        t.append("list")
-        cli.p_actions(t)
-        print(t)
-        assert(t[0] == ["users", "list"])
-
-    def test_p_options_1(self):
-        t = []
-        t.append(None)
-        t.append({"username": "jdoe"})
-        cli.p_options(t)
-        assert(t[0] == {"username": "jdoe"})
-
-    def test_p_options_2(self):
-        t = []
-        t.append(None)
-        t.append({"username": "jdoe"})
-        t.append(" ")
-        t.append({"password": "jdoe"})
-        cli.p_options(t)
-        assert(t[0] == {"username": "jdoe", "password": "jdoe"})
-
-    def test_p_option(self):
-        t = []
-        t.append(None)
-        t.append("username")
-        t.append("=")
-        t.append("jdoe")
-        cli.p_option(t)
-        assert(t[0] == {"username": "jdoe"})
-
-    def test_project(self):
-        # Test No Path Given (Hello Test)
-        sys.argv[1] = ""
-        sys.argv[2] = ""
+    @requests_mock.mock()
+    @patch('sys.exit', return_value=0)
+    @patch('curses.initscr', return_value=CursesMock("ping\nexit\n"))
+    @patch('getpass.getpass', return_value='password') # Mock password typed in stdin
+    def test_run_interactive_ping(self, m, mock_getpass, mock_initscr, mock_exit):
+        m.post("http://127.0.0.1:8088/", text=json.dumps({"response": "  pong"}))
         cliobj = cli.Cli()
-        assert(cliobj is not None)
+        cliobj.interactive_mode = True
+        cliobj.run()
+        curses.endwin()
+        print(mock_initscr.return_value.screen)
+        assert( "Goodbye!" in mock_initscr.return_value.screen )

@@ -2,17 +2,67 @@
 - hosts: localhost
   connection: local
   tasks:
-    - name: OSX Check homebrew is installed
-      shell: "brew list"
-      changed_when: False
-      when: ansible_distribution == 'MacOSX'
 
-    - name: OSX Install mongodb
-      shell: "brew install mongodb"
-      changed_when: False
+    - name: OSX Install mongodb and openssl
+      homebrew: name={{item}} state=installed
       when: ansible_distribution == 'MacOSX'
+      with_items:
+        - mongodb
+        - openssl
 
     - name: OSX Start mongodb
       shell: "brew services start mongodb"
       changed_when: False
       when: ansible_distribution == 'MacOSX'
+
+    - name: OSX Check if SSL cert exists
+      always_run: yes
+      changed_when: False
+      stat: path=/usr/local/etc/openssl/certs/outbit.crt
+      register: st
+      when: ansible_distribution == 'MacOSX'
+
+    - name: OSX Create self-signed SSL cert
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /usr/local/etc/openssl/certs/outbit.key -out /usr/local/etc/openssl/certs/outbit.crt -extensions v3_ca'
+      when: ansible_distribution == 'MacOSX' and st.stat.exists == False
+
+    - name: RedHat/CentOS (7) Linux make sure EPEL is installed
+      yum: name="http://download.fedoraproject.org/pub/epel/{{ansible_distribution_major_version}}/x86_64/e/epel-release-7-6.noarch.rpm" state=installed
+      when: ansible_distribution_major_version == '7' and ( ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' )
+      register: rh_epel
+
+    - name: RedHat/CentOS Linux import EPEL keys
+      command: "rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-{{ansible_distribution_major_version}}"
+      when:  rh_epel.changed
+
+    - name: Linux Install mongodb and openssl
+      package: name={{item}} state=installed
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+      with_items:
+        - mongodb
+        - openssl
+
+    - name: Linux Install mongodb extras required for Centos/REDHAT
+      package: name={{item}} state=installed
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+      with_items:
+        - mongodb-server
+
+    - name: Linux Debian/Ubuntu Start mongodb
+      service: name=mongodb state=started enabled=yes
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    - name: Linux CentOS/Redhat Start mongodb
+      service: name=mongod state=started enabled=yes
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+    - name: Linux Check if SSL cert exists
+      stat: path=/etc/ssl/certs/outbit.crt
+      always_run: yes
+      changed_when: False
+      register: st
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+    - name: Linux Create self-signed SSL cert
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /etc/ssl/certs/outbit.key -out /etc/ssl/certs/outbit.crt -extensions v3_ca'
+      when: st.stat.exists == False and ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' )

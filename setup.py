@@ -22,7 +22,7 @@ setup(name='outbit',
       url='https://github.com/starboarder2001/outbit',
       license='MIT',
       install_requires=["requests", "Flask", "PyYAML", 'setuptools', 'ansible',
-          'pymongo', 'ply'],
+          'pymongo', 'ply', 'pycrypto'],
       package_dir={ '': 'lib' },
       packages=find_packages('lib'),
       classifiers=[

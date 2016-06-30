@@ -1,0 +1,100 @@
+Getting Started with outbit
+==================
+
+Installing outbit Client
+
+.. sourcecode:: bash
+
+    $ pip install outbit
+
+Installing outbit API Server
+
+.. sourcecode:: bash
+
+  $ pip install outbit
+  $ sudo outbit-api-install
+
+Starting The API server on your localhost or on a dedicated ip.
+
+.. sourcecode:: bash
+
+    $ outbit-api -s 127.0.0.1
+
+Logging into the outbit shell. On the first login you will be prompted to change the default password.
+
+.. sourcecode:: bash
+
+    $ outbit -u superadmin -s 127.0.0.1
+      Password: superadmin
+      Changing Password From Default
+      Enter New Password: **********
+      Enter New Password Again: **********
+
+outit CLI Basics
+
+The help command will display all the commands available to run.
+
+.. sourcecode:: bash
+
+    outbit> help
+      actions list          list actions
+      actions del           del actions
+      actions edit          edit actions
+      actions add           add actions
+      users list            list users
+      users del             del users
+      users edit            edit users
+      users add             add users
+      roles list            list roles
+      roles del             del roles
+      roles edit            edit roles
+      roles add             add roles
+      secrets list          list secrets
+      secrets del           del secrets
+      secrets edit          edit secrets
+      secrets add           add secrets
+      plugins list          list plugins
+      ping                  verify connectivity
+      logs                  show the history log
+      help                  print usage
+      exit
+
+The exit command will exit the application.
+
+.. sourcecode:: bash
+
+    outbit> exit
+
+The logs command will display the history of actions performed.
+
+.. sourcecode:: bash
+
+    outbit> logs
+
+outbit CLI Non-Interactive Usage
+
+You can run commands with outbit from the bash shell without entering the interactive outbit shell.
+
+.. sourcecode:: bash
+
+    $ outbit 'logs'
+      Password: ******
+      superadmin    /       ping    None    06/18/2016 09:19
+      superadmin    /       ping    None    06/18/2016 09:19
+      superadmin    /       help    None    06/18/2016 09:19
+
+    $ outbit 'logs' 'users list'
+      Password: ******
+      superadmin    /       ping    None    06/18/2016 09:19
+      superadmin    /       ping    None    06/18/2016 09:19
+      superadmin
+
+If you do not wish to type the password for each login attempt, you can set your password in the outbit configuration file.
+
+.. sourcecode:: bash
+    $ echo "---" > ~/.outbit.conf
+    $ echo "password: *****" >> ~/.outbit.conf
+    $ outbit 'logs'
+      superadmin    /       ping    None    06/18/2016 09:19
+      superadmin    /       ping    None    06/18/2016 09:19
+      superadmin    /       help    None    06/18/2016 09:19

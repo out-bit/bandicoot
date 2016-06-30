@@ -4,104 +4,34 @@ import sys
 import os
 import requests
 import json
+import yaml
 import getpass
 import curses
-import ply.yacc as yacc
-import ply.lex as lex
+import time
+import signal
+from outbit.parser import yacc
+
+session = requests.Session()
+sig_bg_pressed = 0
+sig_kill_pressed = 0
 
 
-# LEX tokens
-tokens = ("ACTION", "OPTIONVAL", "OPTIONVALS", "OPTIONVALD", "SPACE", "EQUAL")
+# catch ctrl-z
+def sig_background(signum, frame):
+    global sig_bg_pressed
+    sig_bg_pressed = 1
 
-t_ACTION        =r'[a-zA-Z0-9_\-]+'
-t_OPTIONVAL     =r'/[a-zA-Z0-9_/\-]+'
-t_OPTIONVALS    =r"'[\"a-zA-Z0-9_/\s\-]+'"
-t_OPTIONVALD    =r'"[\'a-zA-Z0-9_/\s\-]+"'
-t_SPACE         =r'\s+'
-t_EQUAL         =r'='
 
-# Ignored characters
-t_ignore = "\n"
+# catch ctrl-c
+def sig_kill(signum, frame):
+    global sig_kill_pressed
+    sig_kill_pressed = 1
 
-def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
-    t.lexer.skip(1)
 
-# Build the lexer
-lexer = lex.lex()
-
-parser_category = "/"
-parser_action = ""
-parser_options = {}
-
-# YACC parser
-precedence = (
-    ('left', 'SPACE'),
-    )
-
-def p_action_run(t):
-    '''action_run : actions SPACE options
-              | actions'''
-    global parser_category
-    global parser_action
-    global parser_options
-    if len(t) == 4:
-        parser_category = "/%s" % "/".join(t[1][:-1])
-        parser_action = t[1][-1]
-        parser_options = t[3]
-    elif len(t) == 2:
-        parser_category = "/%s" % "/".join(t[1][:-1])
-        parser_action = t[1][-1]
-    else:
-        print("error in action_run %d\n" % len(t))
-
-def p_actions(t):
-    '''actions : actions SPACE ACTION
-              | ACTION'''
-    if t[0] is None:
-        t[0] = []
-    if len(t) == 4:
-        if isinstance(t[1], list):
-            t[0] += t[1]
-        else:
-            t[0].append(t[1])
-        t[0].append(t[3])
-    elif len(t) == 2:
-        t[0].append(t[1])
-    else:
-        print("error in action %d\n" % len(t))
-
-def p_options(t):
-    '''options : options SPACE option
-               | option'''
-    if t[0] is None:
-        t[0] = {}
-    if len(t) == 4:
-        t[0].update(t[1])
-        t[0].update(t[3])
-    elif len(t) == 2:
-        t[0].update(t[1])
-    else:
-        print("error in options %d\n" % len(t))
-
-def p_option(t):
-    '''option : ACTION EQUAL ACTION
-              | ACTION EQUAL OPTIONVAL
-              | ACTION EQUAL OPTIONVALS
-              | ACTION EQUAL OPTIONVALD'''
-    if t[0] is None:
-        t[0] = {}
-    if t[3][0] is "'":
-        t[0][t[1]] = t[3].strip("'")
-    elif t[3][0] is '"':
-        t[0][t[1]] = t[3].strip('"')
-    else:
-        t[0][t[1]] = t[3]
-
-def p_error(t):
-    print("Syntax error at '%s'" % t.value)
-
-parser = yacc.yacc()
+# signal for ctrl-z
+signal.signal(signal.SIGTSTP, sig_background)
+# signal for ctrl-c
+signal.signal(signal.SIGINT, sig_kill)
 
 
 class Cli(object):
@@ -114,26 +44,73 @@ class Cli(object):
         parser.add_option("-u", "--user", dest="user",
                           help="outbit username",
                           metavar="USER",
-                          default="superadmin")
+                          default=None)
         parser.add_option("-s", "--server", dest="server",
                           help="IP address or hostname of outbit-api server",
                           metavar="SERVER",
-                          default="127.0.0.1")
+                          default=None)
         parser.add_option("-p", "--port", dest="port",
                           help="tcp port of outbit-api server",
                           metavar="PORT",
-                          default="8088")
+                          default=None)
         parser.add_option("-t", "--secure", dest="is_secure",
                           help="Use SSL",
                           metavar="SECURE",
                           action="store_true")
+        parser.add_option("-v", "--ssl_verify", dest="is_ssl_verify",
+                          help="Verify Certificate",
+                          metavar="VERIFY",
+                          action="store_true")
+        # Assign values from cli
         (options, args) = parser.parse_args()
         self.user = options.user
         self.server = options.server
-        self.port = int(options.port)
+        self.port = options.port
         self.is_secure = options.is_secure
-        self.url = "%s://%s:%d" % ("https" if self.is_secure else "http", self.server, self.port)
+        self.is_ssl_verify = options.is_ssl_verify
+        self.interactive_mode = True
+        self.noninteractive_commands = []
         self.password = None
+        self.app_running = True
+
+        # Non-Interactive Command Parsing
+        if len(args) > 0:
+            self.interactive_mode = False
+            for command in args:
+                self.noninteractive_commands.append(command)
+
+        # Assign values from conf
+        outbit_config_locations = [os.path.expanduser("~")+"/.outbit.conf", "/etc/outbit.conf"]
+        outbit_conf_obj = {}
+        for outbit_conf in outbit_config_locations:
+            if os.path.isfile(outbit_conf):
+                with open(outbit_conf, 'r') as stream:
+                    try:
+                        outbit_conf_obj = yaml.load(stream)
+                    except yaml.YAMLError as excep:
+                        print("%s\n" % excep)
+        if self.user is None and "user" in outbit_conf_obj:
+            self.user = str(outbit_conf_obj["user"])
+        if self.password is None and "password" in outbit_conf_obj:
+            self.password = str(outbit_conf_obj["password"])
+        if self.server is None and "server" in outbit_conf_obj:
+            self.server = str(outbit_conf_obj["server"])
+        if self.port is None and "port" in outbit_conf_obj:
+            self.port = int(outbit_conf_obj["port"])
+        if self.is_secure == False and "secure" in outbit_conf_obj:
+            self.is_secure = bool(outbit_conf_obj["secure"])
+        if self.is_ssl_verify == False and "ssl_verify" in outbit_conf_obj:
+            self.is_ssl_verify = bool(outbit_conf_obj["ssl_verify"])
+
+        # Assign Default values if they were not specified at the cli or in the conf
+        if self.user is None:
+            self.user = "superadmin"
+        if self.server is None:
+            self.server = "127.0.0.1"
+        if self.port is None:
+            self.port = 8088
+
+        self.url = "%s://%s:%d" % ("https" if self.is_secure else "http", str(self.server), int(self.port))
         self.screen = None
         self.history = []
 
@@ -141,23 +118,55 @@ class Cli(object):
         """ Welcome Message """
         self.screen.addstr("======================\n")
         self.screen.addstr("Welcome To outbit\n")
-        self.screen.addstr("Connecting to Server %s\n" % self.url)
         if "pong" in self.action_ping():
             self.screen.addstr("Connected to Server %s\n" % self.url)
         else:
-            self.screen.addstr("Failed connecting to server %s\n" % self.url)
-            self.screen.addstr("======================\n")
-            sys.exit(1)
+            print("Failed connecting to server %s\n" % self.url)
+            self.exit(1)
         self.screen.addstr("======================\n")
 
     def login_prompt(self):
+        auth_success = False
+        default_username = "superadmin"
+        default_pw = "superadmin"
+
         if self.user is None:
             self.user = raw_input("Username: ")
-        if self.password is None:
-            self.password = getpass.getpass()
 
-    def exit(self):
-        sys.exit(0)
+        for trycount in [1, 2, 3]:
+            if self.password is None:
+                self.password = getpass.getpass()
+            if "pong" in self.action_ping():
+                auth_success = True
+                if self.user == default_username and self.password == default_pw:
+                    for change_trycount in [1, 2, 3]:
+                        print("Changing Password From Default")
+                        new_password = getpass.getpass("Enter New Password: ")
+                        new_password_repeat = getpass.getpass("Enter New Password Again: ")
+                        if new_password == new_password_repeat:
+                            if self.action_changepw(self.user, new_password) is not "":
+                                self.password = new_password
+                                break
+                break
+            else:
+                self.password = None
+
+        if auth_success == False:
+            print("Login Failed\n")
+            self.exit(1)
+
+
+    def exit(self, val):
+        sys.exit(val)
+        self.app_running = False # For unit testing
+
+    def action_changepw(self, username, password):
+        data = self.run_action(self.get_action_from_command("users edit username='%s' password='%s'"
+            % (username, password)))
+        if data is not None:
+            return data["response"]
+        else:
+            return ""
 
     def action_ping(self):
         data = self.run_action(self.get_action_from_command("ping"))
@@ -171,10 +180,10 @@ class Cli(object):
 
     def action_quit(self):
         self.screen.addstr("  Goodbye!\n")
-        self.exit()
+        self.exit(0)
 
     def run_action(self, actionjson):
-        r = requests.post(self.url, headers={'Content-Type': 'application/json'},
+        r = session.post(self.url, verify=False, headers={'Content-Type': 'application/json'},
             auth=(self.user, self.password), data=json.dumps(actionjson))
 
         if r.status_code == requests.codes.ok:
@@ -183,8 +192,18 @@ class Cli(object):
             return None
 
     def get_action_from_command(self, line):
-        parser.parse(line)
-        return {'category': parser_category, "action": parser_action, "options": parser_options}
+        if line is not None and len(line) > 0:
+            # Reset Parser Variables
+            yacc.parser_category = None
+            yacc.parser_action = None
+            yacc.parser_options = None
+            yacc.parser_error = None
+            # Parse line input
+            yacc.parser.parse(line)
+            # Return Action Object
+            return {'category': yacc.parser_category, "action": yacc.parser_action, "options": yacc.parser_options}
+        else:
+            return {'category': None, "action": None, "options": None}
 
     def startshell(self, arg):
         self.screen = curses.initscr()
@@ -192,6 +211,9 @@ class Cli(object):
         self.screen.addstr("outbit> ")
         self.screen.keypad(1)
         self.screen.scrollok(1)
+
+        # left and right key
+        cursor_offset = 0
 
         # ctrl-u
         history_index = 0
@@ -201,12 +223,27 @@ class Cli(object):
         last_match = None
 
         line = ""
-        while True:
+        while self.app_running:
             s = self.screen.getch()
 
             # Ascii
             if s >= 32 and s <= 126:
-                line += chr(s)
+                if cursor_offset >= 0:
+                    # cursor at end of line
+                    line += chr(s)
+                    self.screen.addstr(chr(s))
+                elif cursor_offset <= len(line)*-1:
+                    # cursor at beginning of line
+                    line = chr(s) + line
+                    self.screen.insstr(chr(s))
+                    (y, x) = self.screen.getyx()
+                    self.screen.move(y, x+1)
+                else:
+                    # cursor in the middle of the line
+                    line = line[:len(line)+cursor_offset] + chr(s) + line[len(line)+cursor_offset:]
+                    self.screen.insstr(chr(s))
+                    (y, x) = self.screen.getyx()
+                    self.screen.move(y, x+1)
                 if search_mode:
                     match = None
                     for item in reversed(self.history):
@@ -223,30 +260,30 @@ class Cli(object):
                         self.screen.addstr(y, len("(reverse-i-search)`':"), match)
                         self.screen.clrtoeol()
                         last_match = match
-                else:
-                    self.screen.addstr(chr(s))
                 history_index = 0
             # Finished With Line Input
             elif s == ord("\n"):
+                (y, x) = self.screen.getyx()
+                self.screen.move(y, len("outbit> ")+len(line))
                 self.screen.addstr("\n")
                 if search_mode:
                     if match is not None:
-                        self.shell_parse_line(match)
-                        self.history.append(match)
+                        result = self.shell_parse_line(match)
+                        self.screen.addstr(result)
                 else:
-                    self.shell_parse_line(line)
-                    self.history.append(line)
+                    result = self.shell_parse_line(line)
+                    self.screen.addstr(result)
                 self.screen.addstr("\noutbit> ")
                 line = ""
                 history_index = 0
+                cursor_offset = 0
                 search_mode = False
             # Backspace
             elif s == curses.KEY_BACKSPACE or s == 127 or s == curses.erasechar():
-                line = line[:-1]
                 (y, x) = self.screen.getyx()
-                self.screen.addstr(y, 0, "outbit> ")
-                self.screen.addstr(y, len("outbit> "), line)
-                self.screen.clrtoeol()
+                if len(line) > 0 and x > len("outbit> "):
+                    line = line[:len(line)+cursor_offset-1] + line[len(line)+cursor_offset:]
+                    self.screen.delch(y, x-1)
                 history_index = 0
             # Ctrl-u, clear line
             elif s == 21:
@@ -268,6 +305,7 @@ class Cli(object):
                     # prevent divide by zero when history is 0
                     continue
                 history_index += 1
+                cursor_offset = 0
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
@@ -278,19 +316,69 @@ class Cli(object):
                     # prevent divide by zero when history is 0
                     continue
                 history_index -= 1
+                cursor_offset = 0
                 (y, x) = self.screen.getyx()
                 self.screen.addstr(y, 0, "outbit> ")
                 self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
                 self.screen.clrtoeol()
                 line = self.history[-(history_index%len(self.history))]
+            elif s == curses.KEY_LEFT:
+                if cursor_offset > len(line)*-1:
+                    cursor_offset -= 1
+                    (y, x) = self.screen.getyx()
+                    self.screen.move(y, x-1)
+            elif s == curses.KEY_RIGHT:
+                if cursor_offset < 0:
+                    cursor_offset += 1
+                    (y, x) = self.screen.getyx()
+                    self.screen.move(y, x+1)
             else:
-                self.screen.addstr("Out of range: %d" % s)
+                #self.screen.ddstr("Out of range: %d" % s)
                 history_index = 0
+                cursor_offset = 0
 
         curses.endwin()
 
+    def blocking_get_response_queued_job(self, queue_id):
+        global sig_bg_pressed
+        global sig_kill_pressed
+        sig_bg_pressed = 0 # Reset ctrl-z state
+        sig_kill_pressed = 0 # reset ctrl-c state
+
+        data = {"response": "  "}
+        last_response = ""
+        self.screen.addstr("\nJob is running with id=%s. Press ctrl-z to background job.\n" % str(queue_id))
+        self.screen.refresh()
+
+        while sig_bg_pressed == 0:
+            if sig_kill_pressed == 1:
+                # Kill job
+                data = self.run_action(self.get_action_from_command("jobs kill id=%s" % str(queue_id)))
+                self.screen.addstr(data["response"])
+                self.screen.refresh()
+                break
+            else:
+                data = self.run_action(self.get_action_from_command("jobs status id=%s" % str(queue_id)))
+                if data is None or "response" not in data or data["response"] == -1:
+                    break
+                if "response" in data and "outbit_error:" in data["response"]:
+                    return data["response"]
+                updatestr = data["response"].replace(last_response, "")
+                self.screen.addstr(updatestr)
+                self.screen.refresh()
+                #sys.stderr.write("debug: %s\n" % data)
+                #sys.stderr.write("debug: %s\n" % updatestr)
+                last_response = data["response"]
+                time.sleep(5)
+        return ""
+
     def shell_parse_line(self, line):
         line = line.strip()
+
+        # Return nothing for an empty line
+        if len(line) <= 0:
+            return("")
+
         action = line.split()
         if self.is_action_quit(action):
             # outbit> quit
@@ -299,17 +387,34 @@ class Cli(object):
         else:
             # Server Side Handles Command Response
             # outbit> [category ..] action [option1=something ..]
+            if line is not None and len(line) > 0:
+                self.history.append(line)
+
             actionjson = self.get_action_from_command(line)
-            data = self.run_action(actionjson)
-            if data is not None:
-                self.screen.addstr(data["response"])
-                return data["response"]
+            if yacc.parser_error is None:
+                data = self.run_action(actionjson)
             else:
-                response = "outbit - Failed To Get Response From Server\n"
-                self.screen.addstr(response)
-                return(response)
+                data = {"response": yacc.parser_error}
+            if data is not None:
+                if "response" in data:
+                    if data["response"] == -1: # EOF for async calls
+                        # async call, EOF reached, return nothing
+                        return ""
+                    else:
+                        # text returned
+                        return data["response"]
+                elif "queue_id" in data:
+                    return self.blocking_get_response_queued_job(data["queue_id"])
+                else:
+                    return("outbit - Invalid Response From server\n")
+            else:
+                return("outbit - Failed To Get Response From Server\n")
 
     def run(self):
         """ EntryPoint Of Application """
         self.login_prompt()
-        curses.wrapper(self.startshell)
+        if self.interactive_mode:
+            curses.wrapper(self.startshell)
+        else:
+            for command in self.noninteractive_commands:
+                print(self.shell_parse_line(command))
