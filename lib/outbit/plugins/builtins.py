@@ -21,10 +21,13 @@ def queue_support():
         def wrapped_f(*args):
             global running_queue
             global running_queue_count
+            user = args[0]
+            action = args[1]
+            options = args[2]
             queue_id = running_queue_count
             q = multiprocessing.Queue()
             p = multiprocessing.Process(target=f, args=args+(q,))
-            running_queue[queue_id] = {"queue": q, "process": p, "running": True, "response": ""}
+            running_queue[queue_id] = {"start_time": time.time(), "user": user, "action": action, "options": options, "queue": q, "process": p, "running": True, "response": ""}
             running_queue_count += 1
             p.start()
             return json.dumps({"queue_id": queue_id})
@@ -364,6 +367,8 @@ def plugin_jobs_status(user, action, options):
         return json.dumps({"response": "  outbit_error: id does not match a job"})
     else:
         int_id = int(options["id"])
+        if running_queue[int_id]["user"] != user:
+            return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id)})
         try:
             qitem = running_queue[int_id]["queue"].get_nowait()
             if qitem != EOF: 
@@ -372,6 +377,7 @@ def plugin_jobs_status(user, action, options):
             else:
                 # EOF, job is finished
                 running_queue[int_id]["running"] = False
+                running_queue[int_id]["end_time"] = time.time()
                 return json.dumps({"response": EOF})
         except Queue.Empty:
             pass
@@ -380,9 +386,12 @@ def plugin_jobs_status(user, action, options):
 
 
 def plugin_jobs_list(user, action, options):
-    result = "  Job ID\tIs Running?\n"
+    result = "  Job ID\tIs Running?\tUser\tCommand\n"
     for job_id in running_queue:
-        result += "  %s\t\t%s\n" % (str(job_id), str(running_queue[job_id]["running"]))
+        result += "  %s\t\t%s\t\t%s\t\t%s/%s\n" % (str(job_id), str(running_queue[job_id]["running"]),
+                                              str(running_queue[job_id]["user"]),
+                                              str(running_queue[job_id]["action"]["category"]).rstrip("/"),
+                                              str(running_queue[job_id]["action"]["action"]))
 
     return json.dumps({"response": result})
 
@@ -396,6 +405,8 @@ def plugin_jobs_kill(user, action, options):
         int_id = int(options["id"])
         if running_queue[int_id]["running"] == False:
             return json.dumps({"response": "  The job %s, was already terminated" % str(int_id)})
+        elif running_queue[int_id]["user"] != user:
+            return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id)})
         running_queue[int_id]["process"].terminate()
         running_queue[int_id]["running"] = False
         return json.dumps({"response": "  The job %s, was terminated" % str(int_id)})

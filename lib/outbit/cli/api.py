@@ -125,6 +125,15 @@ def roles_has_permission(user, action, options):
     # Help is always allowed
     if action["category"] == "/" and action["action"] == "help":
         return True
+    # jobs is always allowed
+    if action["category"] == "/jobs" and action["action"] == "status":
+        return True
+    # jobs is always allowed
+    if action["category"] == "/jobs" and action["action"] == "list":
+        return True
+    # jobs is always allowed
+    if action["category"] == "/jobs" and action["action"] == "kill":
+        return True
 
     if action["category"][-1:] == "/":
         action_str = "%s%s" % (action["category"], action["action"])

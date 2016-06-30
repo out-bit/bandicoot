@@ -13,6 +13,7 @@ from outbit.parser import yacc
 
 session = requests.Session()
 sig_bg_pressed = 0
+sig_kill_pressed = 0
 
 
 # catch ctrl-z
@@ -21,8 +22,16 @@ def sig_background(signum, frame):
     sig_bg_pressed = 1
 
 
+# catch ctrl-c
+def sig_kill(signum, frame):
+    global sig_kill_pressed
+    sig_kill_pressed = 1
+
+
 # signal for ctrl-z
 signal.signal(signal.SIGTSTP, sig_background)
+# signal for ctrl-c
+signal.signal(signal.SIGINT, sig_kill)
 
 
 class Cli(object):
@@ -332,7 +341,9 @@ class Cli(object):
 
     def blocking_get_response_queued_job(self, queue_id):
         global sig_bg_pressed
-        sig_bg_pressed = 0 # Reset ctrl-z state0
+        global sig_kill_pressed
+        sig_bg_pressed = 0 # Reset ctrl-z state
+        sig_kill_pressed = 0 # reset ctrl-c state
 
         data = {"response": "  "}
         last_response = ""
@@ -340,18 +351,25 @@ class Cli(object):
         self.screen.refresh()
 
         while sig_bg_pressed == 0:
-            data = self.run_action(self.get_action_from_command("jobs status id=%s" % str(queue_id)))
-            if data is None or "response" not in data or data["response"] == -1:
+            if sig_kill_pressed == 1:
+                # Kill job
+                data = self.run_action(self.get_action_from_command("jobs kill id=%s" % str(queue_id)))
+                self.screen.addstr(data["response"])
+                self.screen.refresh()
                 break
-            if "response" in data and "outbit_error:" in data["response"]:
-                return data["response"]
-            updatestr = data["response"].replace(last_response, "")
-            self.screen.addstr(updatestr)
-            self.screen.refresh()
-            #sys.stderr.write("debug: %s\n" % data)
-            #sys.stderr.write("debug: %s\n" % updatestr)
-            last_response = data["response"]
-            time.sleep(5)
+            else:
+                data = self.run_action(self.get_action_from_command("jobs status id=%s" % str(queue_id)))
+                if data is None or "response" not in data or data["response"] == -1:
+                    break
+                if "response" in data and "outbit_error:" in data["response"]:
+                    return data["response"]
+                updatestr = data["response"].replace(last_response, "")
+                self.screen.addstr(updatestr)
+                self.screen.refresh()
+                #sys.stderr.write("debug: %s\n" % data)
+                #sys.stderr.write("debug: %s\n" % updatestr)
+                last_response = data["response"]
+                time.sleep(5)
         return ""
 
     def shell_parse_line(self, line):
