@@ -25,6 +25,20 @@ db = dbclient.outbit
 encryption_password = None
 
 
+def counters_db_init(name):
+    result = db.counters.find_one( {"_id": name} )
+    if result is None:
+        db.counters.insert_one( {"_id": name, "seq": 0 } )
+
+
+def counters_db_getNextSequence(name):
+   ret = db.counters.update_one({ "_id": name },
+                                { "$inc": { "seq": 1 } },
+                                )
+   result = db.counters.find_one( {"_id": name} )
+   return result["seq"]
+
+
 plugins = {"command": builtins.plugin_command,
             "actions_list": builtins.plugin_actions_list,
             "actions_del": builtins.plugin_actions_del,
@@ -125,13 +139,13 @@ def roles_has_permission(user, action, options):
     # Help is always allowed
     if action["category"] == "/" and action["action"] == "help":
         return True
-    # jobs is always allowed
+    # jobs status is always allowed
     if action["category"] == "/jobs" and action["action"] == "status":
         return True
-    # jobs is always allowed
+    # jobs list is always allowed
     if action["category"] == "/jobs" and action["action"] == "list":
         return True
-    # jobs is always allowed
+    # jobs kill is always allowed
     if action["category"] == "/jobs" and action["action"] == "kill":
         return True
 
@@ -344,6 +358,10 @@ class Cli(object):
         default_user = "superadmin"
         default_password = "superadmin"
         default_role = "super"
+
+        # Init db counters for jobs
+        counters_db_init("jobid")
+
         # Create default user
         post = db.users.find_one({"username": default_user})
         if post is None:

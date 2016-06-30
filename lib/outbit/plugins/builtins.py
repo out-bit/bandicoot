@@ -11,26 +11,24 @@ import sys
 import Queue
 
 
-running_queue = {}
-running_queue_count = 0
+job_queue = {}
 EOF = -1
 
 
 def queue_support():
     def wrap(f):
         def wrapped_f(*args):
-            global running_queue
-            global running_queue_count
+            global job_queue
             user = args[0]
             action = args[1]
             options = args[2]
-            queue_id = running_queue_count
             q = multiprocessing.Queue()
             p = multiprocessing.Process(target=f, args=args+(q,))
-            running_queue[queue_id] = {"start_time": time.time(), "user": user, "action": action, "options": options, "queue": q, "process": p, "running": True, "response": ""}
-            running_queue_count += 1
+            job_id = outbit.cli.api.counters_db_getNextSequence("jobid")
+            outbit.cli.api.db.jobs.insert_one({"_id": job_id, "start_time": time.time(), "user": user, "action": action, "options": options, "running": True, "response": ""})
+            job_queue[job_id] = { "queue": q, "process": p }
             p.start()
-            return json.dumps({"queue_id": queue_id})
+            return json.dumps({"queue_id": job_id})
         return wrapped_f
     return wrap
 
@@ -359,54 +357,69 @@ def plugin_ansible(user, action, options, q):
 
 
 def plugin_jobs_status(user, action, options):
-    if options is None or "id" not in options:
+    global job_queue
+    result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
+    if result is None:
+        return json.dumps({"response": "  outbit_error: id does not match a job"})
+    elif options is None or "id" not in options:
         # In this case, outbit_error is required! 
         # This string is used by the client to determine if an error ocurred
         return json.dumps({"response": "  outbit_error: id option is required"})
-    elif int(options["id"]) not in running_queue:
-        return json.dumps({"response": "  outbit_error: id does not match a job"})
     else:
         int_id = int(options["id"])
-        if running_queue[int_id]["user"] != user:
+        if result["user"] != user:
             return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id)})
         try:
-            qitem = running_queue[int_id]["queue"].get_nowait()
+            if result["_id"] not in job_queue:
+                result["running"] = False
+                outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
+                # Job already ran, just return the result
+                return json.dumps({"response": result["response"]}) 
+            qitem = job_queue[result["_id"]]["queue"].get_nowait()
             if qitem != EOF: 
                 # New Data from job!
-                running_queue[int_id]["response"] += qitem
+                result["response"] += qitem
+                outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"response": result["response"]},})
             else:
                 # EOF, job is finished
-                running_queue[int_id]["running"] = False
-                running_queue[int_id]["end_time"] = time.time()
+                result["running"] = False
+                outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
+                result["end_time"] = time.time()
+                outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"end_time": result["end_time"]},})
                 return json.dumps({"response": EOF})
         except Queue.Empty:
             pass
 
-        return json.dumps({"response": running_queue[int_id]["response"]})
+        return json.dumps({"response": result["response"]})
 
 
 def plugin_jobs_list(user, action, options):
     result = "  Job ID\tIs Running?\tUser\tCommand\n"
-    for job_id in running_queue:
-        result += "  %s\t\t%s\t\t%s\t\t%s/%s\n" % (str(job_id), str(running_queue[job_id]["running"]),
-                                              str(running_queue[job_id]["user"]),
-                                              str(running_queue[job_id]["action"]["category"]).rstrip("/"),
-                                              str(running_queue[job_id]["action"]["action"]))
+    cursor = outbit.cli.api.db.jobs.find()
+    for doc in list(cursor):
+        is_running = doc["_id"] in job_queue and doc["running"]
+        result += "  %s\t\t%s\t\t%s\t\t%s/%s\n" % (str(doc["_id"]), str(is_running),
+                                              str(doc["user"]),
+                                              str(doc["action"]["category"]).rstrip("/"),
+                                              str(doc["action"]["action"]))
 
     return json.dumps({"response": result})
 
 
 def plugin_jobs_kill(user, action, options):
-    if options is None or "id" not in options:
-        return json.dumps({"response": "  outbit_error: id option is required"})
-    elif int(options["id"]) not in running_queue:
+    global job_queue
+    result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
+    if result is None:
         return json.dumps({"response": "  outbit_error: id does not match a job"})
+    elif options is None or "id" not in options:
+        return json.dumps({"response": "  outbit_error: id option is required"})
     else:
         int_id = int(options["id"])
-        if running_queue[int_id]["running"] == False:
+        if result["running"] == False:
             return json.dumps({"response": "  The job %s, was already terminated" % str(int_id)})
-        elif running_queue[int_id]["user"] != user:
+        elif result["user"] != user:
             return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id)})
-        running_queue[int_id]["process"].terminate()
-        running_queue[int_id]["running"] = False
+        job_queue[int_id]["process"].terminate()
+        result["running"] = False
+        outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
         return json.dumps({"response": "  The job %s, was terminated" % str(int_id)})
