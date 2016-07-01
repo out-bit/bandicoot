@@ -1,7 +1,6 @@
 FROM ubuntu:14.04
 MAINTAINER David Whiteside <david@davidwhiteside.com>
-RUN apt-get update
-RUN apt-get install -y python \
+RUN apt-get update && apt-get install -y python \
   python-setuptools \
   python-dev \
   build-essential \
