@@ -42,6 +42,13 @@ Install outbit client and api server.
   $ pip install outbit
   $ sudo outbit-api-install
 
+Install outbit api server using Docker.
+
+.. sourcecode:: bash
+
+  $ docker pull starboarder2001/outbit
+  $ docker run -d -p 8088:8088 starboarder2001/outbit
+
 Usage
 ============
 
