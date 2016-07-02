@@ -359,18 +359,21 @@ class Cli(object):
                 break
             else:
                 data = self.run_action(self.get_action_from_command("jobs status id=%s" % str(queue_id)))
-                if data is None or "response" not in data or data["response"] == -1:
-                    break
+                if data is None or "finished" not in data or data["finished"] == True:
+                    # Its finished, print the last update
+                    updatestr = data["response"].replace(last_response, "")
+                    self.screen.addstr(updatestr)
+                    self.screen.refresh()
+                    return "" # no update
                 if "response" in data and "outbit_error:" in data["response"]:
-                    return data["response"]
+                    # Error happend
+                    return data["response"] # prints error string
                 updatestr = data["response"].replace(last_response, "")
                 self.screen.addstr(updatestr)
                 self.screen.refresh()
-                #sys.stderr.write("debug: %s\n" % data)
-                #sys.stderr.write("debug: %s\n" % updatestr)
                 last_response = data["response"]
                 time.sleep(5)
-        return ""
+        return "" # no update
 
     def shell_parse_line(self, line):
         line = line.strip()

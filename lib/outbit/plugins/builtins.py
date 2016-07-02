@@ -358,7 +358,6 @@ def plugin_ansible(user, action, options, q):
 
 def plugin_jobs_status(user, action, options):
     global job_queue
-    is_finished = False
 
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
@@ -379,7 +378,6 @@ def plugin_jobs_status(user, action, options):
                     result["running"] = False
                     outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
                     # Job already ran, just return the result
-                    is_finished = True
                     break
 
                 qitem = job_queue[result["_id"]]["queue"].get_nowait()
@@ -397,7 +395,7 @@ def plugin_jobs_status(user, action, options):
             except Queue.Empty:
                 break
 
-        return json.dumps({"response": result["response"], "finished": is_finished})
+        return json.dumps({"response": result["response"], "finished": not result["running"]})
 
 
 def plugin_jobs_list(user, action, options):
