@@ -19,6 +19,7 @@ Contents:
    roles
    actions
    plugins
+   jobs
    logs
 
 .. include:: ../README.rst
