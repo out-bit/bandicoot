@@ -8,10 +8,20 @@ import mongomock
 import outbit.cli.api
 
 
+class MockPopen(object):
+    def __init__(self, stdout, stderr):
+        self.stdout = stdout
+        self.stderr = stderr
+
+    def wait(self):
+        pass
+
+
 class TestCli(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         self.mock_db_setup()
         self.mock_db_basic_database()
+        outbit.cli.api.counters_db_init("jobid") # setup counters in mockdb
         unittest.TestCase.__init__(self, *args, **kwargs)
 
     def mock_db_setup(self):
@@ -295,8 +305,9 @@ class TestCli(unittest.TestCase):
         assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
 
     def test_plugin_jobs_list(self):
-        result = builtins.plugin_jobs_list(None, {}, {})
-        assert(result == json.dumps({"response": "  Job ID\tIs Running?\tUser\tCommand\n"}))
+        result = json.loads(builtins.plugin_jobs_list(None, {}, {}))
+        number_of_jobs = len(result["response"].split("\n"))
+        assert(number_of_jobs == 6)
 
     def test_plugin_jobs_kill_id_required(self):
         result = builtins.plugin_jobs_kill(None, {}, {})
@@ -305,3 +316,23 @@ class TestCli(unittest.TestCase):
     def test_plugin_jobs_kill_id_not_found(self):
         result = builtins.plugin_jobs_kill(None, {}, {"id": 100})
         assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
+
+    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
+    def test_plugin_ansible_source_url_required(self, mock_popen):
+        result = builtins.plugin_ansible(None, {"action": "test", "category": "/"}, {})
+        assert("queue_id" in json.loads(result))
+
+    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
+    def test_plugin_ansible_playbook_required(self, mock_popen):
+        result = builtins.plugin_ansible(None, {"action": "test", "category": "/", "source_url": "git://test"}, {})
+        assert("queue_id" in json.loads(result))
+
+    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
+    def test_plugin_ansible_usingsudo(self, mock_popen):
+        result = builtins.plugin_ansible(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": True}, {})
+        assert("queue_id" in json.loads(result))
+
+    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
+    def test_plugin_ansible(self, mock_popen):
+        result = builtins.plugin_ansible(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": False}, {})
+        assert("queue_id" in json.loads(result))

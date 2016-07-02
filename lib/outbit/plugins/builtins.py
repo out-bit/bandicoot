@@ -9,6 +9,7 @@ import time
 import multiprocessing
 import sys
 import Queue
+import os
 
 
 job_queue = {}
@@ -350,7 +351,8 @@ def plugin_ansible(user, action, options, q):
     p.wait()
 
     # Delete temporary git directory
-    shutil.rmtree(temp_location)
+    if os.path.isdir(temp_location):
+        shutil.rmtree(temp_location)
 
     q.put(EOF)
     sys.exit(0)
@@ -363,7 +365,7 @@ def plugin_jobs_status(user, action, options):
         # In this case, outbit_error is required! 
         # This string is used by the client to determine if an error ocurred
         return json.dumps({"response": "  outbit_error: id option is required"})
-    
+
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
         return json.dumps({"response": "  outbit_error: id does not match a job"})
