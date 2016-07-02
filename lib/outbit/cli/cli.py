@@ -397,7 +397,7 @@ class Cli(object):
                 data = {"response": yacc.parser_error}
             if data is not None:
                 if "response" in data:
-                    if data["response"] == -1: # EOF for async calls
+                    if "finished" in data and data["finished"] == True: # EOF for async calls
                         # async call, EOF reached, return nothing
                         return ""
                     else:

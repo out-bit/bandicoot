@@ -358,6 +358,8 @@ def plugin_ansible(user, action, options, q):
 
 def plugin_jobs_status(user, action, options):
     global job_queue
+    is_finished = False
+
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
         return json.dumps({"response": "  outbit_error: id does not match a job"})
@@ -369,28 +371,33 @@ def plugin_jobs_status(user, action, options):
         int_id = int(options["id"])
         if result["user"] != user:
             return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id)})
-        try:
-            if result["_id"] not in job_queue:
-                result["running"] = False
-                outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
-                # Job already ran, just return the result
-                return json.dumps({"response": result["response"]}) 
-            qitem = job_queue[result["_id"]]["queue"].get_nowait()
-            if qitem != EOF: 
-                # New Data from job!
-                result["response"] += qitem
-                outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"response": result["response"]},})
-            else:
-                # EOF, job is finished
-                result["running"] = False
-                outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
-                result["end_time"] = time.time()
-                outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"end_time": result["end_time"]},})
-                return json.dumps({"response": EOF})
-        except Queue.Empty:
-            pass
 
-        return json.dumps({"response": result["response"]})
+        # Get all items from queue until its empty or EOF is reached
+        while True:
+            try:
+                if result["_id"] not in job_queue:
+                    result["running"] = False
+                    outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
+                    # Job already ran, just return the result
+                    is_finished = True
+                    break
+
+                qitem = job_queue[result["_id"]]["queue"].get_nowait()
+                if qitem != EOF:
+                    # New Data from job!
+                    result["response"] += qitem
+                    outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"response": result["response"]},})
+                else:
+                    # EOF, job is finished
+                    result["running"] = False
+                    outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
+                    result["end_time"] = time.time()
+                    outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"end_time": result["end_time"]},})
+                    break
+            except Queue.Empty:
+                break
+
+        return json.dumps({"response": result["response"], "finished": is_finished})
 
 
 def plugin_jobs_list(user, action, options):
