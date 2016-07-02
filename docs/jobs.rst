@@ -24,3 +24,6 @@ Below shows running the action which creates a job.  ctrl-z is then pressed to b
 
   outbit> jobs status id=17
     Cloning into '/tmp/outbit/1467473131.22'...
+
+  outbit> jobs kill id=17
+    The job 17, was terminated
