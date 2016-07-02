@@ -85,9 +85,11 @@ class TestCli(unittest.TestCase):
     def test_p_actions_singleaction(self):
         t = []
         t.append(None)
-        t.append("help")
+        t.append("users")
+        t.append(" ")
+        t.append("list")
         yacc.p_actions(t)
-        assert(t[0] == ["help"])
+        assert(t[0] == ["users", "list"])
 
     def test_p_options_1(self):
         t = []
