@@ -22,6 +22,14 @@ class TestCli(unittest.TestCase):
         api.db.secrets.insert_one({"name": "test_secret1", "secret": "test"})
         api.db.roles.insert_one({"name": "test_role1", "users": "jdoe1", "actions": "/", "secrets": "test_secret1"})
 
+    def test_counters_db_init(self):
+        api.counters_db_init("testseq")
+        assert(api.db.counters.find_one({"_id": "testseq"}) != None)
+
+    def test_counters_db_getNextSequence(self):
+        api.counters_db_init("testseq")
+        assert(api.counters_db_getNextSequence("testseq") == 1)
+
     def test_render_secrets_nonedict(self):
         assert(api.render_secrets("jdoe1", None) == None)
 

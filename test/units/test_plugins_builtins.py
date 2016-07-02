@@ -95,6 +95,30 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_users_list(None, None, {})
         assert (result == json.dumps({"response": "  jdoe1\n  jdoe2\n  jdoe3\n  jdoe4\n  add_test"}))
 
+    def test_plugin_actions_add_invalid_char(self):
+        result = builtins.plugin_actions_add(None, None, {"category": "/$$$"})
+        assert(result == json.dumps({"response": "  option category=/$$$ has invalid characters"}))
+
+    def test_plugin_actions_add_category_fix_trailing_slash(self):
+        result = builtins.plugin_actions_add(None, None, {"name": "test_slash_action1", "category": "/fixtest1/", "action": "test", "plugin": "command", "desc": "test"})
+        action_list = json.loads(builtins.plugin_actions_list(None, None, {}))
+        category_format_correct = False
+        for line in action_list["response"].split("\n"):
+            if 'category="/fixtest1"':
+                category_format_correct = True
+        builtins.plugin_actions_del(None, None, {"name": "test_slash_action1"})
+        assert(result == json.dumps({"response": "  created action test_slash_action1"}) and category_format_correct == True)
+
+    def test_plugin_actions_add_category_fix_no_prepended_slash(self):
+        result = builtins.plugin_actions_add(None, None, {"name": "test_slash_action2", "category": "fixtest2", "action": "test", "plugin": "command", "desc": "test"})
+        action_list = json.loads(builtins.plugin_actions_list(None, None, {}))
+        category_format_correct = False
+        for line in action_list["response"].split("\n"):
+            if 'category="/fixtest2"':
+                category_format_correct = True
+        builtins.plugin_actions_del(None, None, {"name": "test_slash_action2"})
+        assert(result == json.dumps({"response": "  created action test_slash_action2"}) and category_format_correct == True)
+
     def test_plugin_actions_add_name_missing(self):
         result = builtins.plugin_actions_add(None, None, {"category": "/"})
         assert(result == json.dumps({"response": "  name option is required"}))
@@ -248,3 +272,36 @@ class TestCli(unittest.TestCase):
     def test_plugin_logs(self):
         result = builtins.plugin_logs(None, {}, {})
         assert(result == json.dumps({"response": "  category\t\taction\t\toptions\n"}))
+
+    def test_plugin_logs_backwardcompat(self):
+        post = {}
+        post["category"] = "/testing"
+        post["action"] = {"name": "testaction"}
+        post["options"] = {"testopt": "something"}
+        # Missing Attributes in older version of outbit, test backward compat
+        # post["result"]
+        # post["date"]
+        # post["user"]
+        outbit.cli.api.db.logs.insert_one(post)
+        result = builtins.plugin_logs(None, {}, {})
+        assert(result == json.dumps({"response": "  category\t\taction\t\toptions\n  unknown\t/testing\t{'name': 'testaction'}\t{'testopt': 'something'}\t01/01/1970 00:00\n"}))
+
+    def test_plugin_jobs_status_id_required(self):
+        result = builtins.plugin_jobs_status(None, {}, {})
+        assert(result == json.dumps({"response": "  outbit_error: id option is required"}))
+
+    def test_plugin_jobs_status_id_not_found(self):
+        result = builtins.plugin_jobs_status(None, {}, {"id": 100})
+        assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
+
+    def test_plugin_jobs_list(self):
+        result = builtins.plugin_jobs_list(None, {}, {})
+        assert(result == json.dumps({"response": "  Job ID\tIs Running?\tUser\tCommand\n"}))
+
+    def test_plugin_jobs_kill_id_required(self):
+        result = builtins.plugin_jobs_kill(None, {}, {})
+        assert(result == json.dumps({"response": "  outbit_error: id option is required"}))
+
+    def test_plugin_jobs_kill_id_not_found(self):
+        result = builtins.plugin_jobs_kill(None, {}, {"id": 100})
+        assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
