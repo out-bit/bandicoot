@@ -359,13 +359,14 @@ def plugin_ansible(user, action, options, q):
 def plugin_jobs_status(user, action, options):
     global job_queue
 
-    result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
-    if result is None:
-        return json.dumps({"response": "  outbit_error: id does not match a job"})
-    elif options is None or "id" not in options:
+    if options is None or "id" not in options:
         # In this case, outbit_error is required! 
         # This string is used by the client to determine if an error ocurred
         return json.dumps({"response": "  outbit_error: id option is required"})
+    
+    result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
+    if result is None:
+        return json.dumps({"response": "  outbit_error: id does not match a job"})
     else:
         int_id = int(options["id"])
         if result["user"] != user:
@@ -413,11 +414,13 @@ def plugin_jobs_list(user, action, options):
 
 def plugin_jobs_kill(user, action, options):
     global job_queue
+    
+    if options is None or "id" not in options:
+        return json.dumps({"response": "  outbit_error: id option is required"})
+
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
         return json.dumps({"response": "  outbit_error: id does not match a job"})
-    elif options is None or "id" not in options:
-        return json.dumps({"response": "  outbit_error: id option is required"})
     else:
         int_id = int(options["id"])
         if result["running"] == False:
