@@ -7,7 +7,7 @@ This example assumes an action named ansibletest exists and uses the ansible plu
 
 .. sourcecode:: bash
 
-  outbit> actions add name=ansibletest action=ansibletest   category=/   desc="test ansible"   playbook="update_webserver.yml"   plugin="ansible"   source_url="https://gitexample/something.git"   sudo="yes"
+  outbit> actions add name=ansibletest action=ansibletest category=/ desc="test ansible" playbook="update_webserver.yml" plugin="ansible" source_url="https://gitexample/something.git" sudo="yes"
 
 Below shows running the action which creates a job.  ctrl-z is then pressed to background the job and the "jobs list" command is used to see the running job and previously run jobs.  The "job status" command is used to check the result of the job.
 
