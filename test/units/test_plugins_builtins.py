@@ -305,6 +305,14 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_jobs_status(None, {}, {"id": 100})
         assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
 
+    def test_plugin_jobs_status_wronguser(self):
+        result = builtins.plugin_jobs_status("joesmoe1", {}, {"id": 1})
+        assert(result == json.dumps({"response": "  The job 1, is owned by another user"}))
+
+    def test_plugin_jobs_status(self):
+        result = builtins.plugin_jobs_status(None, {}, {"id": 1})
+        assert(result == json.dumps({"finished": True, "response": ""}))
+
     def test_plugin_jobs_list(self):
         result = json.loads(builtins.plugin_jobs_list(None, {}, {}))
         number_of_jobs = len(result["response"].split("\n"))
@@ -317,6 +325,20 @@ class TestCli(unittest.TestCase):
     def test_plugin_jobs_kill_id_not_found(self):
         result = builtins.plugin_jobs_kill(None, {}, {"id": 100})
         assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
+
+    def test_plugin_jobs_kill_alreadyterminated(self):
+        result = builtins.plugin_jobs_kill("joesmoe", {}, {"id": 1})
+        print(result)
+        assert(result == json.dumps({"response": "  The job 1, was already terminated"}))
+
+    def test_plugin_jobs_kill(self):
+        result = builtins.plugin_jobs_kill(None, {}, {"id": 1})
+        assert(result == json.dumps({"response": "  The job 1, was terminated"}))
+
+#    def test_plugin_jobs_kill_wronguser(self):
+#        result = builtins.plugin_jobs_kill("joesmoe", {}, {"id": 1})
+#        print(result)
+#        assert(result == json.dumps({"response": "  The job 1, is owned by another user"}))
 
     @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
     def test_plugin_ansible_withdecorator(self, mock_popen):
@@ -341,12 +363,12 @@ class TestCli(unittest.TestCase):
     @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
     def test_plugin_ansible_usingsudo(self, mock_exit, mock_popen):
         q = multiprocessing.Queue()
-        result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": True}, {}, q)
+        result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": "yes"}, {}, q)
         assert(result == json.dumps({"response": "  success"}))
 
     @mock.patch('sys.exit', return_value=0) # do not really exit, as if it were really a thread
     @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
     def test_plugin_ansible_nodecorator(self, mock_exit, mock_popen):
         q = multiprocessing.Queue()
-        result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": False}, {}, q)
+        result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": "no"}, {}, q)
         assert(result == json.dumps({"response": "  success"}))
