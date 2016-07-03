@@ -6,6 +6,7 @@ import json
 import mock
 import mongomock
 import outbit.cli.api
+import multiprocessing
 
 
 class MockPopen(object):
@@ -307,7 +308,7 @@ class TestCli(unittest.TestCase):
     def test_plugin_jobs_list(self):
         result = json.loads(builtins.plugin_jobs_list(None, {}, {}))
         number_of_jobs = len(result["response"].split("\n"))
-        assert(number_of_jobs == 6)
+        assert(number_of_jobs == 3)
 
     def test_plugin_jobs_kill_id_required(self):
         result = builtins.plugin_jobs_kill(None, {}, {})
@@ -318,21 +319,34 @@ class TestCli(unittest.TestCase):
         assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
 
     @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
-    def test_plugin_ansible_source_url_required(self, mock_popen):
-        result = builtins.plugin_ansible(None, {"action": "test", "category": "/"}, {})
-        assert("queue_id" in json.loads(result))
-
-    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
-    def test_plugin_ansible_playbook_required(self, mock_popen):
-        result = builtins.plugin_ansible(None, {"action": "test", "category": "/", "source_url": "git://test"}, {})
-        assert("queue_id" in json.loads(result))
-
-    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
-    def test_plugin_ansible_usingsudo(self, mock_popen):
-        result = builtins.plugin_ansible(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": True}, {})
-        assert("queue_id" in json.loads(result))
-
-    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
-    def test_plugin_ansible(self, mock_popen):
+    def test_plugin_ansible_withdecorator(self, mock_popen):
         result = builtins.plugin_ansible(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": False}, {})
         assert("queue_id" in json.loads(result))
+
+    @mock.patch('sys.exit', return_value=0) # do not really exit, as if it were really a thread
+    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
+    def test_plugin_ansible_source_url_required(self, mock_exit, mock_popen):
+        q = multiprocessing.Queue()
+        result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/"}, {}, q)
+        assert(result == json.dumps({"response": "  source_url required in action"}))
+
+    @mock.patch('sys.exit', return_value=0) # do not really exit, as if it were really a thread
+    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
+    def test_plugin_ansible_playbook_required(self, mock_exit, mock_popen):
+        q = multiprocessing.Queue()
+        result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/", "source_url": "git://test"}, {}, q)
+        assert(result == json.dumps({"response": "  playbook required in action"}))
+
+    @mock.patch('sys.exit', return_value=0) # do not really exit, as if it were really a thread
+    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
+    def test_plugin_ansible_usingsudo(self, mock_exit, mock_popen):
+        q = multiprocessing.Queue()
+        result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": True}, {}, q)
+        assert(result == json.dumps({"response": "  success"}))
+
+    @mock.patch('sys.exit', return_value=0) # do not really exit, as if it were really a thread
+    @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
+    def test_plugin_ansible_nodecorator(self, mock_exit, mock_popen):
+        q = multiprocessing.Queue()
+        result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": False}, {}, q)
+        assert(result == json.dumps({"response": "  success"}))

@@ -30,6 +30,7 @@ def queue_support():
             job_queue[job_id] = { "queue": q, "process": p }
             p.start()
             return json.dumps({"queue_id": job_id})
+        wrapped_f._original = f
         return wrapped_f
     return wrap
 
@@ -356,6 +357,7 @@ def plugin_ansible(user, action, options, q):
 
     q.put(EOF)
     sys.exit(0)
+    return json.dumps({"response": "  success"}) # For unittesting
 
 
 def plugin_jobs_status(user, action, options):
