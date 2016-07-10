@@ -364,8 +364,8 @@ class Cli(object):
                     updatestr = data["response"].replace(last_response, "")
                     self.screen.addstr(updatestr)
                     self.screen.refresh()
-                    return "" # no update
-                if "response" in data and "outbit_error:" in data["response"]:
+                    return "" # prints no update since everything was already printed to the screen
+                if "response" in data and "exit_code" in data and data["exit_code"] != 0:
                     # Error happend
                     return data["response"] # prints error string
                 updatestr = data["response"].replace(last_response, "")

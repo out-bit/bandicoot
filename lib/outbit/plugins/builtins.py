@@ -392,14 +392,17 @@ def plugin_ansible(user, action, options, q):
 @options_validator(option_list=["id"], regexp=r'^[0-9]+$')
 def plugin_jobs_status(user, action, options):
     global job_queue
+    exit_code = 0
 
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
-        return json.dumps({"response": "  The job id %s does not match a job" % str(options["id"])})
+        exit_code = 1
+        return json.dumps({"response": "  The job id %s does not match a job" % str(options["id"]), "exit_code": exit_code})
     else:
         int_id = int(options["id"])
         if result["user"] != user:
-            return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id)})
+            exit_code = 1
+            return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id), "exit_code": exit_code})
 
         # Get all items from queue until its empty or EOF is reached
         while True:
@@ -425,7 +428,7 @@ def plugin_jobs_status(user, action, options):
             except Queue.Empty:
                 break
 
-        return json.dumps({"response": result["response"], "finished": not result["running"]})
+        return json.dumps({"response": result["response"], "finished": not result["running"], "exit_code": exit_code})
 
 
 def plugin_jobs_list(user, action, options):

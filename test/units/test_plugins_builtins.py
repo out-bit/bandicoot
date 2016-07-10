@@ -306,16 +306,17 @@ class TestCli(unittest.TestCase):
     def test_plugin_jobs_status_id_not_found(self):
         result = builtins.plugin_jobs_status(None, {}, {"id": "100"})
         print(result)
-        assert(result == json.dumps({"response": "  The job id 100 does not match a job"}))
+        assert(result == json.dumps({"response": "  The job id 100 does not match a job", "exit_code": 1}))
 
     def test_plugin_jobs_status_wronguser(self):
         result = builtins.plugin_jobs_status("joesmoe1", {}, {"id": "1"})
-        assert(result == json.dumps({"response": "  The job 1, is owned by another user"}))
+        print(result)
+        assert(result == json.dumps({"response": "  The job 1, is owned by another user", "exit_code": 1}))
 
     def test_plugin_jobs_status(self):
         result = builtins.plugin_jobs_status("joesmoe", {}, {"id": "1"})
         print(result)
-        assert(result == json.dumps({"finished": True, "response": ""}))
+        assert(result == json.dumps({"finished": True, "response": "", "exit_code": 0}))
 
     def test_plugin_jobs_list(self):
         result = json.loads(builtins.plugin_jobs_list(None, {}, {}))
