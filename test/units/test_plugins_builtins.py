@@ -302,15 +302,16 @@ class TestCli(unittest.TestCase):
         assert(result == json.dumps({"response": "  outbit_error: id option is required"}))
 
     def test_plugin_jobs_status_id_not_found(self):
-        result = builtins.plugin_jobs_status(None, {}, {"id": 100})
+        result = builtins.plugin_jobs_status(None, {}, {"id": "100"})
         assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
 
     def test_plugin_jobs_status_wronguser(self):
-        result = builtins.plugin_jobs_status("joesmoe1", {}, {"id": 1})
+        result = builtins.plugin_jobs_status("joesmoe1", {}, {"id": "1"})
         assert(result == json.dumps({"response": "  The job 1, is owned by another user"}))
 
     def test_plugin_jobs_status(self):
-        result = builtins.plugin_jobs_status(None, {}, {"id": 1})
+        result = builtins.plugin_jobs_status("joesmoe", {}, {"id": "1"})
+        print(result)
         assert(result == json.dumps({"finished": True, "response": ""}))
 
     def test_plugin_jobs_list(self):
@@ -323,17 +324,18 @@ class TestCli(unittest.TestCase):
         assert(result == json.dumps({"response": "  outbit_error: id option is required"}))
 
     def test_plugin_jobs_kill_id_not_found(self):
-        result = builtins.plugin_jobs_kill(None, {}, {"id": 100})
+        result = builtins.plugin_jobs_kill(None, {}, {"id": "100"})
         assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
 
+    def test_plugin_jobs_kill(self):
+        result = builtins.plugin_jobs_kill("joesmoe", {}, {"id": "1"})
+        print(result)
+        assert(result == json.dumps({"response": "  The job 1, was terminated"}))
+
     def test_plugin_jobs_kill_alreadyterminated(self):
-        result = builtins.plugin_jobs_kill("joesmoe", {}, {"id": 1})
+        result = builtins.plugin_jobs_kill("joesmoe", {}, {"id": "1"})
         print(result)
         assert(result == json.dumps({"response": "  The job 1, was already terminated"}))
-
-    def test_plugin_jobs_kill(self):
-        result = builtins.plugin_jobs_kill(None, {}, {"id": 1})
-        assert(result == json.dumps({"response": "  The job 1, was terminated"}))
 
 #    def test_plugin_jobs_kill_wronguser(self):
 #        result = builtins.plugin_jobs_kill("joesmoe", {}, {"id": 1})
@@ -342,7 +344,7 @@ class TestCli(unittest.TestCase):
 
     @mock.patch('subprocess.Popen', return_value=MockPopen([], []))
     def test_plugin_ansible_withdecorator(self, mock_popen):
-        result = builtins.plugin_ansible(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": False}, {})
+        result = builtins.plugin_ansible("joesmoe", {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": False}, {})
         assert("queue_id" in json.loads(result))
 
     @mock.patch('sys.exit', return_value=0) # do not really exit, as if it were really a thread

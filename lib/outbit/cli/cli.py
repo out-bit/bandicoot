@@ -400,12 +400,7 @@ class Cli(object):
                 data = {"response": yacc.parser_error}
             if data is not None:
                 if "response" in data:
-                    if "finished" in data and data["finished"] == True: # EOF for async calls
-                        # async call, EOF reached, return nothing
-                        return ""
-                    else:
-                        # text returned
-                        return data["response"]
+                    return data["response"]
                 elif "queue_id" in data:
                     return self.blocking_get_response_queued_job(data["queue_id"])
                 else:

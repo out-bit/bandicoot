@@ -25,8 +25,8 @@ def queue_support():
             options = args[2]
             q = multiprocessing.Queue()
             p = multiprocessing.Process(target=f, args=args+(q,))
-            job_id = outbit.cli.api.counters_db_getNextSequence("jobid")
-            outbit.cli.api.db.jobs.insert_one({"_id": job_id, "start_time": time.time(), "user": user, "action": action, "options": options, "running": True, "response": ""})
+            job_id = int(outbit.cli.api.counters_db_getNextSequence("jobid"))
+            outbit.cli.api.db.jobs.insert_one({"_id": int(job_id), "start_time": time.time(), "user": user, "action": action, "options": options, "running": True, "response": ""})
             job_queue[job_id] = { "queue": q, "process": p }
             p.start()
             return json.dumps({"queue_id": job_id})
@@ -41,9 +41,10 @@ def options_validator(option_list, regexp):
             user = args[0]
             action = args[1]
             options = args[2]
-            for key in options:
-                if key in option_list and not re.match(regexp, options[key]):
-                    return json.dumps({"response": "  option %s=%s has invalid characters" % (key, options[key])})
+            if options is not None:
+                for key in options:
+                    if key in option_list and not re.match(regexp, options[key]):
+                        return json.dumps({"response": "  option %s=%s has invalid characters" % (key, options[key])})
             return f(*args)
         return wrapped_f
     return wrap
@@ -79,6 +80,7 @@ def plugin_ping(user, action, options):
     return json.dumps({"response": "  pong"})
 
 
+@options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_add(user, action, options):
     if "username" not in options or "password" not in options:
         return json.dumps({"response": "  username and password are required options"})
@@ -95,6 +97,7 @@ def plugin_users_add(user, action, options):
             return json.dumps({"response": "  user %s already exists" % options["username"]})
 
 
+@options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_del(user, action, options):
     if "username" not in options:
         return json.dumps({"response": "  username option is required"})
@@ -106,6 +109,7 @@ def plugin_users_del(user, action, options):
         return json.dumps({"response": "  user %s does not exist" % options["username"]})
 
 
+@options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_edit(user, action, options):
     if "username" not in options:
         return json.dumps({"response": "  username option is required"})
@@ -180,6 +184,7 @@ def plugin_actions_edit(user, action, options):
         return json.dumps({"response": "  action %s does not exist" % options["name"]})
 
 
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_actions_del(user, action, options):
     dat = None
 
@@ -206,6 +211,7 @@ def plugin_actions_list(user, action, options):
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_add(user, action, options):
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
@@ -219,6 +225,7 @@ def plugin_roles_add(user, action, options):
             return json.dumps({"response": "  role %s already exists" % options["name"]})
 
 
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_edit(user, action, options):
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
@@ -230,6 +237,7 @@ def plugin_roles_edit(user, action, options):
         return json.dumps({"response": "  role %s does not exist" % options["name"]})
 
 
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_del(user, action, options):
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
@@ -253,6 +261,7 @@ def plugin_roles_list(user, action, options):
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_add(user, action, options):
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
@@ -266,6 +275,7 @@ def plugin_secrets_add(user, action, options):
             return json.dumps({"response": "  secret %s already exists" % options["name"]})
 
 
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_edit(user, action, options):
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
@@ -277,6 +287,7 @@ def plugin_secrets_edit(user, action, options):
         return json.dumps({"response": "  secret %s does not exist" % options["name"]})
 
 
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_del(user, action, options):
     if "name" not in options:
         return json.dumps({"response": "  name option is required"})
@@ -360,6 +371,7 @@ def plugin_ansible(user, action, options, q):
     return json.dumps({"response": "  success"}) # For unittesting
 
 
+@options_validator(option_list=["id"], regexp=r'^[0-9]+$')
 def plugin_jobs_status(user, action, options):
     global job_queue
 
@@ -416,6 +428,7 @@ def plugin_jobs_list(user, action, options):
     return json.dumps({"response": result})
 
 
+@options_validator(option_list=["id"], regexp=r'^[0-9]+$')
 def plugin_jobs_kill(user, action, options):
     global job_queue
     
