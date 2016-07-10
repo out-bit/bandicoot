@@ -18,6 +18,8 @@ from logging.handlers import RotatingFileHandler
 import time
 from glob import glob
 import shutil
+import datetime
+import multiprocessing
 
 
 dbclient = MongoClient('localhost', 27017)
@@ -37,6 +39,96 @@ def counters_db_getNextSequence(name):
                                 )
    result = db.counters.find_one( {"_id": name} )
    return result["seq"]
+
+
+def schedule_manager():
+    schedule_last_run = {} # stores last run times for 
+
+    while True:
+        # Get Current Time
+        cron_minute = datetime.datetime.now().minute
+        cron_hour = datetime.datetime.now().hour
+        cron_day_of_month = datetime.datetime.today().day
+        cron_month = datetime.datetime.today().month
+        cron_day_of_week = datetime.datetime.today().weekday()
+
+        cursor = db.schedules.find()
+        for doc in list(cursor):
+            name = doc["name"]
+            user = doc["user"]
+            category = doc["category"]
+            action = doc["action"]
+            options = None # Default (NOT WORKING)
+            minute = "*" # Default
+            hour = "*" # Default
+            day_of_month = "*" # Default
+            month = "*" # Default
+            day_of_week = "*" # Default
+
+            if "options" in doc:
+                options = doc["options"]
+            if "minute" in doc:
+                minute = doc["minute"]
+            if "hour" in doc:
+                hour = doc["hour"]
+            if "day_of_month" in doc:
+                day_of_month = doc["day_of_month"]
+            if "month" in doc:
+                month = doc["month"]
+            if "day_of_week" in doc:
+                day_of_week = doc["day_of_week"]
+
+            # * matches anything, so make it match the current time
+            if minute == "*":
+                minute = cron_minute
+            else:
+                minute = int(minute)
+
+            if hour == "*":
+                hour = cron_hour
+            else:
+                hour = int(hour)
+
+            if day_of_month == "*":
+                day_of_month = cron_day_of_month
+            else:
+                day_of_month = int(day_of_month)
+
+            if month == "*":
+                month = cron_month
+            else:
+                month = int(month)
+
+            if day_of_week == "*":
+                day_of_week = cron_day_of_week
+            else:
+                day_of_week = int(day_of_week)
+
+            # Check if cron should be run, see if each setting matches
+            # If name is not in schedule_last_run its the first time running it, so thats ok.
+            # If name is already in schedule_last_run then check to make sure it didnt already run within the same minute
+            if cron_minute == minute and \
+               cron_hour == hour and \
+               cron_day_of_month == day_of_month and \
+               cron_month == month and \
+               cron_day_of_week == day_of_week and \
+               (name not in schedule_last_run or \
+               not (schedule_last_run[name][0] == cron_minute and \
+               schedule_last_run[name][1] == cron_hour and \
+               schedule_last_run[name][2] == cron_day_of_month and \
+               schedule_last_run[name][3] == cron_month and \
+               schedule_last_run[name][4] == cron_day_of_week)):
+
+                # Run Scheduled Action
+                dat = parse_action(user, category, action, options)
+
+                # Audit Logging / History
+                log_action(user, {"result": dat, "category": category, "action": action, "options": options})
+
+                schedule_last_run[name] = (cron_minute, cron_hour, cron_day_of_month, cron_month, cron_day_of_week)
+
+        # Delay 10 seconds between each check
+        time.sleep(10)
 
 
 plugins = {"command": builtins.plugin_command,
@@ -63,7 +155,12 @@ plugins = {"command": builtins.plugin_command,
             "ansible": builtins.plugin_ansible,
             "jobs_list": builtins.plugin_jobs_list,
             "jobs_status": builtins.plugin_jobs_status,
-            "jobs_kill": builtins.plugin_jobs_kill}
+            "jobs_kill": builtins.plugin_jobs_kill,
+            "schedules_list": builtins.plugin_schedules_list,
+            "schedules_del": builtins.plugin_schedules_del,
+            "schedules_edit": builtins.plugin_schedules_edit,
+            "schedules_add": builtins.plugin_schedules_add
+           }
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
                   {'category': '/actions', 'plugin': 'actions_del', 'action': 'del', 'desc': 'del actions'},
@@ -88,7 +185,24 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/jobs', 'plugin': 'jobs_list', 'action': 'list', 'desc': 'list jobs'},
                   {'category': '/jobs', 'plugin': 'jobs_status', 'action': 'status', 'desc': 'get status of job'},
                   {'category': '/jobs', 'plugin': 'jobs_kill', 'action': 'kill', 'desc': 'kill a job'},
+                  {'category': '/schedules', 'plugin': 'schedules_add', 'action': 'add', 'desc': 'add schedule'},
+                  {'category': '/schedules', 'plugin': 'schedules_edit', 'action': 'edit', 'desc': 'edit schedule'},
+                  {'category': '/schedules', 'plugin': 'schedules_list', 'action': 'list', 'desc': 'list schedules'},
+                  {'category': '/schedules', 'plugin': 'schedules_del', 'action': 'del', 'desc': 'del schedule'},
                   ]
+
+
+def log_action(username, post):
+    if post["category"] is not None and post["action"] is not None:
+        if post["options"] is not None:
+            # Filter sensitive information from options
+            for option in ["password", "secret"]:
+                if option in post["options"]:
+                    post["options"][option] = "..."
+        # Only Log Valid Requests
+        post["date"] = datetime.datetime.utcnow()
+        post["user"] = username
+        db.logs.insert_one(post)
 
 
 def encrypt_dict(dictobj):
@@ -375,6 +489,10 @@ class Cli(object):
         if post is None:
             post = {"name": default_role, "users": default_user, "actions": "/"}
             db.roles.insert_one(post)
+
+        # Start Scheduler
+        p = multiprocessing.Process(target=schedule_manager)
+        p.start()
 
         # Start API Server
         routes.app.logger.info("Starting outbit api server on %s://%s:%d" % ("https" if

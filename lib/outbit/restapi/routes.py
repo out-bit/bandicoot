@@ -46,19 +46,6 @@ def requires_auth(f):
     return decorated
 
 
-def log_action(username, post):
-    if post["category"] is not None and post["action"] is not None:
-        if post["options"] is not None:
-            # Filter sensitive information from options
-            for option in ["password", "secret"]:
-                if option in post["options"]:
-                    post["options"][option] = "..."
-        # Only Log Valid Requests
-        post["date"] = datetime.datetime.utcnow()
-        post["user"] = username
-        outbit.cli.api.db.logs.insert_one(post)
-
-
 @app.route("/", methods=["POST"])
 @requires_auth
 def outbit_base():
@@ -76,7 +63,7 @@ def outbit_base():
         dat = json.dumps({"response": "  action not found"})
 
     # Audit Logging / History
-    log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
+    outbit.cli.api.log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
 
     # http response
     resp = Response(response=dat, status=status, mimetype="application/json")

@@ -463,3 +463,48 @@ def plugin_jobs_kill(user, action, options):
         result["running"] = False
         outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
         return json.dumps({"response": "  The job %s, was terminated" % str(int_id)})
+
+
+@options_required(option_list=["name", "category", "action"])
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
+def plugin_schedules_add(user, action, options):
+    result = outbit.cli.api.db.schedules.find_one({"name": options["name"]})
+    if result is None:
+        post = options
+        if "user" not in post:
+            post["user"] = user
+        outbit.cli.api.db.schedules.insert_one(post)
+        return json.dumps({"response": "  created schedule %s" % options["name"]})
+    else:
+        return json.dumps({"response": "  schedule %s already exists" % options["name"]})
+
+
+@options_required(option_list=["name"])
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
+def plugin_schedules_edit(user, action, options):
+    result = outbit.cli.api.db.schedules.update_one({"name": options["name"]},
+            {"$set": options})
+    if result.matched_count > 0:
+        return json.dumps({"response": "  modified schedule %s" % options["name"]})
+    else:
+        return json.dumps({"response": "  schedule %s does not exist" % options["name"]})
+
+
+@options_supported(option_list=["name"])
+@options_required(option_list=["name"])
+@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
+def plugin_schedules_del(user, action, options):
+    post = {"name": options["name"]}
+    result = outbit.cli.api.db.schedules.delete_many(post)
+    if result.deleted_count > 0:
+        return json.dumps({"response": "  deleted schedule %s" % options["name"]})
+    else:
+        return json.dumps({"response": "  schedule %s does not exist" % options["name"]})
+
+
+def plugin_schedules_list(user, action, options):
+    result = ""
+    cursor = outbit.cli.api.db.schedules.find()
+    for doc in list(cursor):
+        result += "  %s\n" % doc["name"]
+    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
