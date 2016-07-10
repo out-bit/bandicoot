@@ -83,8 +83,8 @@ class TestCli(unittest.TestCase):
     def test_plugin_users_add_name_missing(self):
         result_uonly = builtins.plugin_users_add(None, None, {"username": "jdoe"})
         result_ponly = builtins.plugin_users_add(None, None, {"password": "jdoe"})
-        assert(result_uonly == json.dumps({"response": "  username and password are required options"})
-            and result_ponly == json.dumps({"response": "  username and password are required options"}))
+        assert(result_uonly == json.dumps({"response": "  password option is required"})
+            and result_ponly == json.dumps({"response": "  username option is required"}))
 
     def test_plugin_users_edit_name_missing(self):
         result = builtins.plugin_users_edit(None, None, {"password": "a"})
@@ -107,7 +107,8 @@ class TestCli(unittest.TestCase):
         assert (result == json.dumps({"response": "  jdoe1\n  jdoe2\n  jdoe3\n  jdoe4\n  add_test"}))
 
     def test_plugin_actions_add_invalid_char(self):
-        result = builtins.plugin_actions_add(None, None, {"category": "/$$$"})
+        result = builtins.plugin_actions_add(None, None, {"name": "test", "desc": "test", "plugin": "command", "action": "test", "category": "/$$$"})
+        print(result)
         assert(result == json.dumps({"response": "  option category=/$$$ has invalid characters"}))
 
     def test_plugin_actions_add_category_fix_trailing_slash(self):
@@ -299,11 +300,13 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_jobs_status_id_required(self):
         result = builtins.plugin_jobs_status(None, {}, {})
-        assert(result == json.dumps({"response": "  outbit_error: id option is required"}))
+        print(result)
+        assert(result == json.dumps({"response": "  id option is required"}))
 
     def test_plugin_jobs_status_id_not_found(self):
         result = builtins.plugin_jobs_status(None, {}, {"id": "100"})
-        assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
+        print(result)
+        assert(result == json.dumps({"response": "  The job id 100 does not match a job"}))
 
     def test_plugin_jobs_status_wronguser(self):
         result = builtins.plugin_jobs_status("joesmoe1", {}, {"id": "1"})
@@ -321,11 +324,13 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_jobs_kill_id_required(self):
         result = builtins.plugin_jobs_kill(None, {}, {})
-        assert(result == json.dumps({"response": "  outbit_error: id option is required"}))
+        print(result)
+        assert(result == json.dumps({"response": "  id option is required"}))
 
     def test_plugin_jobs_kill_id_not_found(self):
         result = builtins.plugin_jobs_kill(None, {}, {"id": "100"})
-        assert(result == json.dumps({"response": "  outbit_error: id does not match a job"}))
+        print(result)
+        assert(result == json.dumps({"response": "  The job id 100 does not match a job"}))
 
     def test_plugin_jobs_kill(self):
         result = builtins.plugin_jobs_kill("joesmoe", {}, {"id": "1"})

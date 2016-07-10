@@ -50,6 +50,23 @@ def options_validator(option_list, regexp):
     return wrap
 
 
+def options_required(option_list):
+    def wrap(f):
+        def wrapped_f(*args):
+            user = args[0]
+            action = args[1]
+            options = args[2]
+            if options is not None:
+                # Loop through required options
+                for key in option_list:
+                    # Check if each required option was given by the users options
+                    if key not in options:
+                        return json.dumps({"response": "  %s option is required" % key})
+            return f(*args)
+        return wrapped_f
+    return wrap
+
+
 def category_fix(options):
     if "category" in options:
         if options["category"] != "/":
@@ -80,27 +97,24 @@ def plugin_ping(user, action, options):
     return json.dumps({"response": "  pong"})
 
 
+@options_required(option_list=["username", "password"])
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_add(user, action, options):
-    if "username" not in options or "password" not in options:
-        return json.dumps({"response": "  username and password are required options"})
+    result = outbit.cli.api.db.users.find_one({"username": options["username"]})
+    if result is None:
+        m = hashlib.md5()
+        m.update(str(options["password"]))
+        password_md5 = str(m.hexdigest())
+        post = {"username": options["username"], "password_md5": password_md5}
+        outbit.cli.api.db.users.insert_one(post)
+        return json.dumps({"response": "  created user %s" % options["username"]})
     else:
-        result = outbit.cli.api.db.users.find_one({"username": options["username"]})
-        if result is None:
-            m = hashlib.md5()
-            m.update(str(options["password"]))
-            password_md5 = str(m.hexdigest())
-            post = {"username": options["username"], "password_md5": password_md5}
-            outbit.cli.api.db.users.insert_one(post)
-            return json.dumps({"response": "  created user %s" % options["username"]})
-        else:
-            return json.dumps({"response": "  user %s already exists" % options["username"]})
+        return json.dumps({"response": "  user %s already exists" % options["username"]})
 
 
+@options_required(option_list=["username"])
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_del(user, action, options):
-    if "username" not in options:
-        return json.dumps({"response": "  username option is required"})
     post = {"username": options["username"]}
     result = outbit.cli.api.db.users.delete_many(post)
     if result.deleted_count > 0:
@@ -109,12 +123,9 @@ def plugin_users_del(user, action, options):
         return json.dumps({"response": "  user %s does not exist" % options["username"]})
 
 
+@options_required(option_list=["username", "password"])
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_edit(user, action, options):
-    if "username" not in options:
-        return json.dumps({"response": "  username option is required"})
-    if "password" not in options:
-        return json.dumps({"response": "  password option is required"})
     m = hashlib.md5()
     m.update(options["password"])
     password_md5 = str(m.hexdigest())
@@ -134,15 +145,11 @@ def plugin_users_list(user, action, options):
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
+@options_required(option_list=["name", "category", "action", "plugin", "desc"])
 @options_validator(option_list=["name", "plugin", "action"], regexp=r'^[a-zA-Z0-9_\-]+$')
 @options_validator(option_list=["category"], regexp=r'^[a-zA-Z0-9_\-/]+$')
 def plugin_actions_add(user, action, options):
     dat = None
-
-    for requiredopt in ["name", "category", "action", "plugin", "desc"]:
-        if requiredopt not in options:
-            dat = json.dumps({"response": "  %s option is required" % requiredopt})
-            return dat
 
     category_fix(options)
 
@@ -168,12 +175,10 @@ def plugin_command(user, action, options):
     return json.dumps({ "response": result})
 
 
+@options_required(option_list=["name"])
 @options_validator(option_list=["name", "plugin", "action"], regexp=r'^[a-zA-Z0-9_\-]+$')
 @options_validator(option_list=["category"], regexp=r'^[a-zA-Z0-9_\-/]+$')
 def plugin_actions_edit(user, action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
-
     category_fix(options)
 
     result = outbit.cli.api.db.actions.update_one({"name": options["name"]},
@@ -184,12 +189,10 @@ def plugin_actions_edit(user, action, options):
         return json.dumps({"response": "  action %s does not exist" % options["name"]})
 
 
+@options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_actions_del(user, action, options):
     dat = None
-
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
 
     post = {"name": options["name"]}
     result = outbit.cli.api.db.actions.delete_many(post)
@@ -211,24 +214,21 @@ def plugin_actions_list(user, action, options):
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
+@options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_add(user, action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
+    result = outbit.cli.api.db.roles.find_one({"name": options["name"]})
+    if result is None:
+        post = options
+        outbit.cli.api.db.roles.insert_one(post)
+        return json.dumps({"response": "  created role %s" % options["name"]})
     else:
-        result = outbit.cli.api.db.roles.find_one({"name": options["name"]})
-        if result is None:
-            post = options
-            outbit.cli.api.db.roles.insert_one(post)
-            return json.dumps({"response": "  created role %s" % options["name"]})
-        else:
-            return json.dumps({"response": "  role %s already exists" % options["name"]})
+        return json.dumps({"response": "  role %s already exists" % options["name"]})
 
 
+@options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_edit(user, action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
     result = outbit.cli.api.db.roles.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
@@ -237,17 +237,15 @@ def plugin_roles_edit(user, action, options):
         return json.dumps({"response": "  role %s does not exist" % options["name"]})
 
 
+@options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_del(user, action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
+    post = {"name": options["name"]}
+    result = outbit.cli.api.db.roles.delete_many(post)
+    if result.deleted_count > 0:
+        return json.dumps({"response": "  deleted role %s" % options["name"]})
     else:
-        post = {"name": options["name"]}
-        result = outbit.cli.api.db.roles.delete_many(post)
-        if result.deleted_count > 0:
-            return json.dumps({"response": "  deleted role %s" % options["name"]})
-        else:
-            return json.dumps({"response": "  role %s does not exist" % options["name"]})
+        return json.dumps({"response": "  role %s does not exist" % options["name"]})
 
 
 def plugin_roles_list(user, action, options):
@@ -261,24 +259,21 @@ def plugin_roles_list(user, action, options):
     return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
+@options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_add(user, action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
+    result = outbit.cli.api.db.secrets.find_one({"name": options["name"]})
+    if result is None:
+        post = options
+        outbit.cli.api.db.secrets.insert_one(post)
+        return json.dumps({"response": "  created secret %s" % options["name"]})
     else:
-        result = outbit.cli.api.db.secrets.find_one({"name": options["name"]})
-        if result is None:
-            post = options
-            outbit.cli.api.db.secrets.insert_one(post)
-            return json.dumps({"response": "  created secret %s" % options["name"]})
-        else:
-            return json.dumps({"response": "  secret %s already exists" % options["name"]})
+        return json.dumps({"response": "  secret %s already exists" % options["name"]})
 
 
+@options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_edit(user, action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
     result = outbit.cli.api.db.secrets.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
@@ -287,17 +282,15 @@ def plugin_secrets_edit(user, action, options):
         return json.dumps({"response": "  secret %s does not exist" % options["name"]})
 
 
+@options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_del(user, action, options):
-    if "name" not in options:
-        return json.dumps({"response": "  name option is required"})
+    post = {"name": options["name"]}
+    result = outbit.cli.api.db.secrets.delete_many(post)
+    if result.deleted_count > 0:
+        return json.dumps({"response": "  deleted secret %s" % options["name"]})
     else:
-        post = {"name": options["name"]}
-        result = outbit.cli.api.db.secrets.delete_many(post)
-        if result.deleted_count > 0:
-            return json.dumps({"response": "  deleted secret %s" % options["name"]})
-        else:
-            return json.dumps({"response": "  secret %s does not exist" % options["name"]})
+        return json.dumps({"response": "  secret %s does not exist" % options["name"]})
 
 
 def plugin_secrets_list(user, action, options):
@@ -371,18 +364,14 @@ def plugin_ansible(user, action, options, q):
     return json.dumps({"response": "  success"}) # For unittesting
 
 
+@options_required(option_list=["id"])
 @options_validator(option_list=["id"], regexp=r'^[0-9]+$')
 def plugin_jobs_status(user, action, options):
     global job_queue
 
-    if options is None or "id" not in options:
-        # In this case, outbit_error is required! 
-        # This string is used by the client to determine if an error ocurred
-        return json.dumps({"response": "  outbit_error: id option is required"})
-
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
-        return json.dumps({"response": "  outbit_error: id does not match a job"})
+        return json.dumps({"response": "  The job id %s does not match a job" % str(options["id"])})
     else:
         int_id = int(options["id"])
         if result["user"] != user:
@@ -428,16 +417,14 @@ def plugin_jobs_list(user, action, options):
     return json.dumps({"response": result})
 
 
+@options_required(option_list=["id"])
 @options_validator(option_list=["id"], regexp=r'^[0-9]+$')
 def plugin_jobs_kill(user, action, options):
     global job_queue
     
-    if options is None or "id" not in options:
-        return json.dumps({"response": "  outbit_error: id option is required"})
-
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
-        return json.dumps({"response": "  outbit_error: id does not match a job"})
+        return json.dumps({"response": "  The job id %s does not match a job" % str(options["id"])})
     else:
         int_id = int(options["id"])
         if result["running"] == False:
