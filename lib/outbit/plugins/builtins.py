@@ -67,6 +67,23 @@ def options_required(option_list):
     return wrap
 
 
+def options_supported(option_list):
+    def wrap(f):
+        def wrapped_f(*args):
+            user = args[0]
+            action = args[1]
+            options = args[2]
+            if options is not None:
+                # Loop through supported options
+                for key in options:
+                    # Check if unsupported option was provided
+                    if key not in option_list:
+                        return json.dumps({"response": "  %s option is not supported. Supported options are: %s." % (key, ", ".join(option_list))})
+            return f(*args)
+        return wrapped_f
+    return wrap
+
+
 def category_fix(options):
     if "category" in options:
         if options["category"] != "/":
@@ -97,6 +114,7 @@ def plugin_ping(user, action, options):
     return json.dumps({"response": "  pong"})
 
 
+@options_supported(option_list=["username", "password"])
 @options_required(option_list=["username", "password"])
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_add(user, action, options):
@@ -112,6 +130,7 @@ def plugin_users_add(user, action, options):
         return json.dumps({"response": "  user %s already exists" % options["username"]})
 
 
+@options_supported(option_list=["username"])
 @options_required(option_list=["username"])
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_del(user, action, options):
@@ -123,6 +142,7 @@ def plugin_users_del(user, action, options):
         return json.dumps({"response": "  user %s does not exist" % options["username"]})
 
 
+@options_supported(option_list=["username", "password"])
 @options_required(option_list=["username", "password"])
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_edit(user, action, options):
@@ -189,6 +209,7 @@ def plugin_actions_edit(user, action, options):
         return json.dumps({"response": "  action %s does not exist" % options["name"]})
 
 
+@options_supported(option_list=["name"])
 @options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_actions_del(user, action, options):
@@ -237,6 +258,7 @@ def plugin_roles_edit(user, action, options):
         return json.dumps({"response": "  role %s does not exist" % options["name"]})
 
 
+@options_supported(option_list=["name"])
 @options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_del(user, action, options):
@@ -282,6 +304,7 @@ def plugin_secrets_edit(user, action, options):
         return json.dumps({"response": "  secret %s does not exist" % options["name"]})
 
 
+@options_supported(option_list=["name"])
 @options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_del(user, action, options):
@@ -364,6 +387,7 @@ def plugin_ansible(user, action, options, q):
     return json.dumps({"response": "  success"}) # For unittesting
 
 
+@options_supported(option_list=["id"])
 @options_required(option_list=["id"])
 @options_validator(option_list=["id"], regexp=r'^[0-9]+$')
 def plugin_jobs_status(user, action, options):
@@ -417,6 +441,7 @@ def plugin_jobs_list(user, action, options):
     return json.dumps({"response": result})
 
 
+@options_supported(option_list=["id"])
 @options_required(option_list=["id"])
 @options_validator(option_list=["id"], regexp=r'^[0-9]+$')
 def plugin_jobs_kill(user, action, options):
