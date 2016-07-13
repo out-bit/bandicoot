@@ -44,7 +44,7 @@ def options_validator(option_list, regexp):
             if options is not None:
                 for key in options:
                     if key in option_list and not re.match(regexp, options[key]):
-                        return json.dumps({"response": "  option %s=%s has invalid characters" % (key, options[key])})
+                        return json.dumps({"exit_code": 1, "response": "  option %s=%s has invalid characters" % (key, options[key])})
             return f(*args)
         return wrapped_f
     return wrap
@@ -61,7 +61,7 @@ def options_required(option_list):
                 for key in option_list:
                     # Check if each required option was given by the users options
                     if key not in options:
-                        return json.dumps({"response": "  %s option is required" % key})
+                        return json.dumps({"exit_code": 1, "response": "  %s option is required" % key})
             return f(*args)
         return wrapped_f
     return wrap
@@ -78,7 +78,7 @@ def options_supported(option_list):
                 for key in options:
                     # Check if unsupported option was provided
                     if key not in option_list:
-                        return json.dumps({"response": "  %s option is not supported. Supported options are: %s." % (key, ", ".join(option_list))})
+                        return json.dumps({"exit_code": 1, "response": "  %s option is not supported. Supported options are: %s." % (key, ", ".join(option_list))})
             return f(*args)
         return wrapped_f
     return wrap
@@ -107,11 +107,11 @@ def plugin_help(user, action, options):
     # Append the exit builtin implemented on the client side
     response += "  exit \t\t\n"
 
-    return json.dumps({"response": response})
+    return json.dumps({"exit_code": 0, "response": response})
 
 
 def plugin_ping(user, action, options):
-    return json.dumps({"response": "  pong"})
+    return json.dumps({"exit_code": 0, "response": "  pong"})
 
 
 @options_supported(option_list=["username", "password"])
@@ -125,9 +125,9 @@ def plugin_users_add(user, action, options):
         password_md5 = str(m.hexdigest())
         post = {"username": options["username"], "password_md5": password_md5}
         outbit.cli.api.db.users.insert_one(post)
-        return json.dumps({"response": "  created user %s" % options["username"]})
+        return json.dumps({"exit_code": 0, "response": "  created user %s" % options["username"]})
     else:
-        return json.dumps({"response": "  user %s already exists" % options["username"]})
+        return json.dumps({"exit_code": 1, "response": "  user %s already exists" % options["username"]})
 
 
 @options_supported(option_list=["username"])
@@ -137,9 +137,9 @@ def plugin_users_del(user, action, options):
     post = {"username": options["username"]}
     result = outbit.cli.api.db.users.delete_many(post)
     if result.deleted_count > 0:
-        return json.dumps({"response": "  deleted user %s" % options["username"]})
+        return json.dumps({"exit_code": 0, "response": "  deleted user %s" % options["username"]})
     else:
-        return json.dumps({"response": "  user %s does not exist" % options["username"]})
+        return json.dumps({"exit_code": 1, "response": "  user %s does not exist" % options["username"]})
 
 
 @options_supported(option_list=["username", "password"])
@@ -152,9 +152,9 @@ def plugin_users_edit(user, action, options):
     result = outbit.cli.api.db.users.update_one({"username": options["username"]},
             {"$set": {"password_md5": password_md5},})
     if result.matched_count > 0:
-        return json.dumps({"response": "  modified user %s" % options["username"]})
+        return json.dumps({"exit_code": 0, "response": "  modified user %s" % options["username"]})
     else:
-        return json.dumps({"response": "  user %s does not exist" % options["username"]})
+        return json.dumps({"exit_code": 1, "response": "  user %s does not exist" % options["username"]})
 
 
 def plugin_users_list(user, action, options):
@@ -162,7 +162,7 @@ def plugin_users_list(user, action, options):
     cursor = outbit.cli.api.db.users.find()
     for doc in list(cursor):
         result += "  %s\n" % doc["username"]
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
+    return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
 @options_required(option_list=["name", "category", "action", "plugin", "desc"])
@@ -176,23 +176,23 @@ def plugin_actions_add(user, action, options):
     find_result = outbit.cli.api.db.actions.find_one({"name": options["name"]})
     if find_result is None:
         result = outbit.cli.api.db.actions.insert_one(options)
-        dat = json.dumps({"response": "  created action %s" % options["name"]})
+        dat = json.dumps({"exit_code": 0, "response": "  created action %s" % options["name"]})
     else:
-        dat = json.dumps({"response": "  action %s already exists" % options["name"]})
+        dat = json.dumps({"exit_code": 1, "response": "  action %s already exists" % options["name"]})
     return dat
 
 
 def plugin_command(user, action, options):
     result = ""
     if "command_run" not in action:
-        return json.dumps({"response": "  command_run required in action"})
+        return json.dumps({"exit_code": 1, "response": "  command_run required in action"})
     cmd = action["command_run"].split()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     for line in p.stdout:
         result += "  %s\n" % line
     p.wait()
     result += "  return code: %d\n"  % p.returncode
-    return json.dumps({ "response": result})
+    return json.dumps({ "exit_code": 0, "response": result})
 
 
 @options_required(option_list=["name"])
@@ -204,9 +204,9 @@ def plugin_actions_edit(user, action, options):
     result = outbit.cli.api.db.actions.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
-        return json.dumps({"response": "  modified action %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  modified action %s" % options["name"]})
     else:
-        return json.dumps({"response": "  action %s does not exist" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  action %s does not exist" % options["name"]})
 
 
 @options_supported(option_list=["name"])
@@ -218,9 +218,9 @@ def plugin_actions_del(user, action, options):
     post = {"name": options["name"]}
     result = outbit.cli.api.db.actions.delete_many(post)
     if result.deleted_count > 0:
-        dat = json.dumps({"response": "  deleted action %s" % options["name"]})
+        dat = json.dumps({"exit_code": 0, "response": "  deleted action %s" % options["name"]})
     else:
-        dat = json.dumps({"response": "  action %s does not exist" % options["name"]})
+        dat = json.dumps({"exit_code": 1, "response": "  action %s does not exist" % options["name"]})
     return dat
 
 
@@ -232,7 +232,7 @@ def plugin_actions_list(user, action, options):
             if key not in ["_id"]:
                 result += '  %s="%s" ' % (key, doc[key])
         result += "\n"
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
+    return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
 @options_required(option_list=["name"])
@@ -242,9 +242,9 @@ def plugin_roles_add(user, action, options):
     if result is None:
         post = options
         outbit.cli.api.db.roles.insert_one(post)
-        return json.dumps({"response": "  created role %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  created role %s" % options["name"]})
     else:
-        return json.dumps({"response": "  role %s already exists" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  role %s already exists" % options["name"]})
 
 
 @options_required(option_list=["name"])
@@ -253,9 +253,9 @@ def plugin_roles_edit(user, action, options):
     result = outbit.cli.api.db.roles.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
-        return json.dumps({"response": "  modified role %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  modified role %s" % options["name"]})
     else:
-        return json.dumps({"response": "  role %s does not exist" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  role %s does not exist" % options["name"]})
 
 
 @options_supported(option_list=["name"])
@@ -265,9 +265,9 @@ def plugin_roles_del(user, action, options):
     post = {"name": options["name"]}
     result = outbit.cli.api.db.roles.delete_many(post)
     if result.deleted_count > 0:
-        return json.dumps({"response": "  deleted role %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  deleted role %s" % options["name"]})
     else:
-        return json.dumps({"response": "  role %s does not exist" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  role %s does not exist" % options["name"]})
 
 
 def plugin_roles_list(user, action, options):
@@ -278,7 +278,7 @@ def plugin_roles_list(user, action, options):
             if key not in ["_id"]:
                 result += '  %s="%s" ' % (key, doc[key])
         result += "\n"
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
+    return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
 @options_required(option_list=["name"])
@@ -288,9 +288,9 @@ def plugin_secrets_add(user, action, options):
     if result is None:
         post = options
         outbit.cli.api.db.secrets.insert_one(post)
-        return json.dumps({"response": "  created secret %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  created secret %s" % options["name"]})
     else:
-        return json.dumps({"response": "  secret %s already exists" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  secret %s already exists" % options["name"]})
 
 
 @options_required(option_list=["name"])
@@ -299,9 +299,9 @@ def plugin_secrets_edit(user, action, options):
     result = outbit.cli.api.db.secrets.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
-        return json.dumps({"response": "  modified secret %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  modified secret %s" % options["name"]})
     else:
-        return json.dumps({"response": "  secret %s does not exist" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  secret %s does not exist" % options["name"]})
 
 
 @options_supported(option_list=["name"])
@@ -311,9 +311,9 @@ def plugin_secrets_del(user, action, options):
     post = {"name": options["name"]}
     result = outbit.cli.api.db.secrets.delete_many(post)
     if result.deleted_count > 0:
-        return json.dumps({"response": "  deleted secret %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  deleted secret %s" % options["name"]})
     else:
-        return json.dumps({"response": "  secret %s does not exist" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  secret %s does not exist" % options["name"]})
 
 
 def plugin_secrets_list(user, action, options):
@@ -326,11 +326,11 @@ def plugin_secrets_list(user, action, options):
             if key not in ["_id"]:
                 result += '  %s="%s" ' % (key, doc[key])
         result += "\n"
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
+    return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
 def plugin_plugins_list(user, action, options):
-    return json.dumps({"response": "\n  ".join(outbit.cli.api.plugins.keys())})
+    return json.dumps({"exit_code": 0, "response": "\n  ".join(outbit.cli.api.plugins.keys())})
 
 
 def plugin_logs(user, action, options):
@@ -347,7 +347,7 @@ def plugin_logs(user, action, options):
         if "date" not in doc:
             doc["date"] = datetime.date(1970, 1, 1) # unknown
         result += "  %s\t%s\t%s\t%s\t%s\n" % (doc["user"], doc["category"], doc["action"], doc["options"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
-    return json.dumps({"response": result})
+    return json.dumps({"exit_code": 0, "response": result})
 
 
 @queue_support()
@@ -358,7 +358,7 @@ def plugin_ansible(user, action, options, q):
     # Required options to be included in action
     for option in ["source_url", "playbook"]:
         if option not in action:
-            return json.dumps({"response": "  %s required in action" % option})
+            return json.dumps({"exit_code": 1, "response": "  %s required in action" % option})
 
     # Sudo
     if "sudo" in action and action["sudo"] == "yes":
@@ -384,7 +384,7 @@ def plugin_ansible(user, action, options, q):
 
     q.put(EOF)
     sys.exit(0)
-    return json.dumps({"response": "  success"}) # For unittesting
+    return json.dumps({"exit_code": 0, "response": "  success"}) # For unittesting
 
 
 @options_supported(option_list=["id"])
@@ -397,12 +397,12 @@ def plugin_jobs_status(user, action, options):
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
         exit_code = 1
-        return json.dumps({"response": "  The job id %s does not match a job" % str(options["id"]), "exit_code": exit_code})
+        return json.dumps({"exit_code": 1, "response": "  The job id %s does not match a job" % str(options["id"]), "exit_code": exit_code})
     else:
         int_id = int(options["id"])
         if result["user"] != user:
             exit_code = 1
-            return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id), "exit_code": exit_code})
+            return json.dumps({"exit_code": 1, "response": "  The job %s, is owned by another user" % str(int_id), "exit_code": exit_code})
 
         # Get all items from queue until its empty or EOF is reached
         while True:
@@ -428,7 +428,7 @@ def plugin_jobs_status(user, action, options):
             except Queue.Empty:
                 break
 
-        return json.dumps({"response": result["response"], "finished": not result["running"], "exit_code": exit_code})
+        return json.dumps({"exit_code": 0, "response": result["response"], "finished": not result["running"], "exit_code": exit_code})
 
 
 def plugin_jobs_list(user, action, options):
@@ -441,7 +441,7 @@ def plugin_jobs_list(user, action, options):
                                               str(doc["action"]["category"]).rstrip("/"),
                                               str(doc["action"]["action"]))
 
-    return json.dumps({"response": result})
+    return json.dumps({"exit_code": 0, "response": result})
 
 
 @options_supported(option_list=["id"])
@@ -452,17 +452,17 @@ def plugin_jobs_kill(user, action, options):
     
     result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
-        return json.dumps({"response": "  The job id %s does not match a job" % str(options["id"])})
+        return json.dumps({"exit_code": 1, "response": "  The job id %s does not match a job" % str(options["id"])})
     else:
         int_id = int(options["id"])
         if result["running"] == False:
-            return json.dumps({"response": "  The job %s, was already terminated" % str(int_id)})
+            return json.dumps({"exit_code": 1, "response": "  The job %s, was already terminated" % str(int_id)})
         elif result["user"] != user:
-            return json.dumps({"response": "  The job %s, is owned by another user" % str(int_id)})
+            return json.dumps({"exit_code": 1, "response": "  The job %s, is owned by another user" % str(int_id)})
         job_queue[int_id]["process"].terminate()
         result["running"] = False
         outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
-        return json.dumps({"response": "  The job %s, was terminated" % str(int_id)})
+        return json.dumps({"exit_code": 0, "response": "  The job %s, was terminated" % str(int_id)})
 
 
 @options_required(option_list=["name", "category", "action"])
@@ -474,9 +474,9 @@ def plugin_schedules_add(user, action, options):
         if "user" not in post:
             post["user"] = user
         outbit.cli.api.db.schedules.insert_one(post)
-        return json.dumps({"response": "  created schedule %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  created schedule %s" % options["name"]})
     else:
-        return json.dumps({"response": "  schedule %s already exists" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  schedule %s already exists" % options["name"]})
 
 
 @options_required(option_list=["name"])
@@ -485,9 +485,9 @@ def plugin_schedules_edit(user, action, options):
     result = outbit.cli.api.db.schedules.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
-        return json.dumps({"response": "  modified schedule %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  modified schedule %s" % options["name"]})
     else:
-        return json.dumps({"response": "  schedule %s does not exist" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  schedule %s does not exist" % options["name"]})
 
 
 @options_supported(option_list=["name"])
@@ -497,9 +497,9 @@ def plugin_schedules_del(user, action, options):
     post = {"name": options["name"]}
     result = outbit.cli.api.db.schedules.delete_many(post)
     if result.deleted_count > 0:
-        return json.dumps({"response": "  deleted schedule %s" % options["name"]})
+        return json.dumps({"exit_code": 0, "response": "  deleted schedule %s" % options["name"]})
     else:
-        return json.dumps({"response": "  schedule %s does not exist" % options["name"]})
+        return json.dumps({"exit_code": 1, "response": "  schedule %s does not exist" % options["name"]})
 
 
 def plugin_schedules_list(user, action, options):
@@ -507,4 +507,4 @@ def plugin_schedules_list(user, action, options):
     cursor = outbit.cli.api.db.schedules.find()
     for doc in list(cursor):
         result += "  %s\n" % doc["name"]
-    return json.dumps({"response": result.rstrip()}) # Do not return the last character (carrage return)
+    return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
