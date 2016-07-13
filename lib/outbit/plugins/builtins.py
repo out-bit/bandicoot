@@ -7,6 +7,7 @@ import re
 import shutil
 import time
 import multiprocessing
+import threading
 import sys
 import Queue
 import os
@@ -23,11 +24,12 @@ def queue_support():
             user = args[0]
             action = args[1]
             options = args[2]
+            exit_event = multiprocessing.Event()
             q = multiprocessing.Queue()
-            p = multiprocessing.Process(target=f, args=args+(q,))
+            p = multiprocessing.Process(target=f, args=args+(exit_event,q))
             job_id = int(outbit.cli.api.counters_db_getNextSequence("jobid"))
             outbit.cli.api.db.jobs.insert_one({"_id": int(job_id), "start_time": time.time(), "user": user, "action": action, "options": options, "running": True, "response": ""})
-            job_queue[job_id] = { "queue": q, "process": p }
+            job_queue[job_id] = { "queue": q, "process": p, "exit_event": exit_event}
             p.start()
             return json.dumps({"queue_id": job_id})
         wrapped_f._original = f
@@ -351,7 +353,13 @@ def plugin_logs(user, action, options):
 
 
 @queue_support()
-def plugin_ansible(user, action, options, q):
+def plugin_ansible(user, action, options, exit_event, q):
+    def process_stdout(p, q):
+        for line in p.stdout:
+            q.put("  %s\n" % line)
+        p.wait()
+        return 0
+
     ansible_options = ""
     temp_location = "/tmp/outbit/%s" % str(time.time())
 
@@ -367,16 +375,30 @@ def plugin_ansible(user, action, options, q):
     # Git
     cmd = str("git clone %s %s" % (action["source_url"], temp_location)).split()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    for line in p.stderr:
-        q.put("  %s\n" % line)
-    p.wait()
+    thread = threading.Thread(target=process_stdout, args=(p,q))
+    thread.start()
+    while thread.isAlive() and not exit_event.is_set():
+        time.sleep(0.25)
+
+    if thread.isAlive():
+        p.kill()
+
+    time.sleep(0.25)
+    thread.join()
 
     # Ansible
     cmd = str("ansible-playbook %s %s" % (ansible_options, action["playbook"])).split()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=temp_location)
-    for line in p.stdout:
-        q.put("  %s\n" % line)
-    p.wait()
+    thread = threading.Thread(target=process_stdout, args=(p,q))
+    thread.start()
+    while thread.isAlive() and not exit_event.is_set():
+        time.sleep(0.25)
+
+    if thread.isAlive():
+        p.kill()
+
+    time.sleep(0.25)
+    thread.join()
 
     # Delete temporary git directory
     if os.path.isdir(temp_location):
@@ -428,7 +450,7 @@ def plugin_jobs_status(user, action, options):
             except Queue.Empty:
                 break
 
-        return json.dumps({"exit_code": 0, "response": result["response"], "finished": not result["running"], "exit_code": exit_code})
+        return json.dumps({"response": result["response"], "finished": not result["running"], "exit_code": exit_code})
 
 
 def plugin_jobs_list(user, action, options):
@@ -459,7 +481,8 @@ def plugin_jobs_kill(user, action, options):
             return json.dumps({"exit_code": 1, "response": "  The job %s, was already terminated" % str(int_id)})
         elif result["user"] != user:
             return json.dumps({"exit_code": 1, "response": "  The job %s, is owned by another user" % str(int_id)})
-        job_queue[int_id]["process"].terminate()
+        job_queue[int_id]["exit_event"].set() # Set event to trigger exit
+        job_queue[int_id]["process"].join() # Wait for Plugin to exit
         result["running"] = False
         outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
         return json.dumps({"exit_code": 0, "response": "  The job %s, was terminated" % str(int_id)})
