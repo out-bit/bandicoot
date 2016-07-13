@@ -21,5 +21,6 @@ Contents:
    plugins
    jobs
    logs
+   schedules
 
 .. include:: ../README.rst
