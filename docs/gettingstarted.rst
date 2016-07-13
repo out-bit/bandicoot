@@ -57,6 +57,13 @@ The help command will display all the commands available to run.
       ping                  verify connectivity
       logs                  show the history log
       help                  print usage
+      jobs list             list jobs
+      jobs status           get status of job
+      jobs kill             kill a job
+      schedules add         add schedule
+      schedules edit        edit schedule
+      schedules list        list schedules
+      schedules del         del schedule
       exit
 
 The exit command will exit the application.
