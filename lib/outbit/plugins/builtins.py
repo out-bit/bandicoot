@@ -355,6 +355,8 @@ def plugin_logs(user, action, options):
 @queue_support()
 def plugin_ansible(user, action, options, exit_event, q):
     def process_stdout(p, q):
+        for line in p.stderr:
+            q.put("  %s\n" % line)
         for line in p.stdout:
             q.put("  %s\n" % line)
         p.wait()
@@ -405,7 +407,7 @@ def plugin_ansible(user, action, options, exit_event, q):
         shutil.rmtree(temp_location)
 
     q.put(EOF)
-    sys.exit(0)
+    #sys.exit(0)
     return json.dumps({"exit_code": 0, "response": "  success"}) # For unittesting
 
 
