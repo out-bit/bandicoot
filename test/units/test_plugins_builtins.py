@@ -283,7 +283,8 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_logs(self):
         result = builtins.plugin_logs(None, {}, {})
-        assert(result == json.dumps({"exit_code": 0, "response": "  category\t\taction\t\toptions\n"}))
+        print(result)
+        assert(result == json.dumps({"exit_code": 0, "response": "  category\t\taction\t\toptions\t\tdate\n"}))
 
     def test_plugin_logs_backwardcompat(self):
         post = {}
@@ -296,7 +297,8 @@ class TestCli(unittest.TestCase):
         # post["user"]
         outbit.cli.api.db.logs.insert_one(post)
         result = builtins.plugin_logs(None, {}, {})
-        assert(result == json.dumps({"exit_code": 0, "response": "  category\t\taction\t\toptions\n  unknown\t/testing\t{'name': 'testaction'}\t{'testopt': 'something'}\t01/01/1970 00:00\n"}))
+        print(result)
+        assert(result == json.dumps({"exit_code": 0, "response": "  category\t\taction\t\toptions\t\tdate\n  unknown\t/testing\t{'name': 'testaction'}\t{'testopt': 'something'}\t01/01/1970 00:00\n"}))
 
     def test_plugin_jobs_status_id_required(self):
         result = builtins.plugin_jobs_status(None, {}, {})
