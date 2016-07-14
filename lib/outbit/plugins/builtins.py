@@ -336,19 +336,34 @@ def plugin_plugins_list(user, action, options):
 
 
 def plugin_logs(user, action, options):
-    result = "  category\t\taction\t\toptions\n"
-    cursor = outbit.cli.api.db.logs.find().sort("date", 1)
-    for doc in list(cursor):
-        # Backward compat when user field did not exist
-        if "user" not in doc:
-            doc["user"] = "unknown"
-        # Backward compat when result field did not exist
-        if "result" not in doc:
-            doc["result"] = "unknown"
-        # Backward compat when date field did not exist
-        if "date" not in doc:
-            doc["date"] = datetime.date(1970, 1, 1) # unknown
-        result += "  %s\t%s\t%s\t%s\t%s\n" % (doc["user"], doc["category"], doc["action"], doc["options"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
+    result = ""
+    if options is not None and ("name" in options or ("type" in options and options["type"] == "changes")):
+        # List changes/logs for a specific inventory host
+        result += "  inventory_item\t\tdesc\t\tjob_id\t\tdate\n"
+        if "name" in options:
+            # Show changes for a specific inventory item
+            cursor = outbit.cli.api.db.inventory.changes.find({"name": options["name"]}).sort("date", 1)
+        else:
+            # Show all changes
+            cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
+        for doc in list(cursor):
+            if "date" in doc: # Backward compat
+                result += "  %s\t%s\t%s\t%s\n" % (doc["name"], doc["desc"], doc["job_id"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
+    else: # type=requests is the default
+        # Default List all requests to api server
+        result += "  category\t\taction\t\toptions\t\tdate\n"
+        cursor = outbit.cli.api.db.logs.find().sort("date", 1)
+        for doc in list(cursor):
+            # Backward compat when user field did not exist
+            if "user" not in doc:
+                doc["user"] = "unknown"
+            # Backward compat when result field did not exist
+            if "result" not in doc:
+                doc["result"] = "unknown"
+            # Backward compat when date field did not exist
+            if "date" not in doc:
+                doc["date"] = datetime.date(1970, 1, 1) # unknown
+            result += "  %s\t%s\t%s\t%s\t%s\n" % (doc["user"], doc["category"], doc["action"], doc["options"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
     return json.dumps({"exit_code": 0, "response": result})
 
 
@@ -448,6 +463,38 @@ def plugin_jobs_status(user, action, options):
                     outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
                     result["end_time"] = time.time()
                     outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"end_time": result["end_time"]},})
+
+                    # Discover New Inventory
+                    tmp_hosts = {}
+                    current_task_name = "unknown"
+
+                    for line in result["response"].split("\n"):
+                        line = line.strip()
+                        line = line.strip("\n")
+                        # Match Task name, example:   TASK [setup] *******************************************************************
+                        m = re.match(r'^\s*TASK\s+\[(.*?)\]', line)
+                        if m:
+                            current_task_name = m.group(1)
+                        # Match changed|ok|skipped|fatal, example:   ok: [ec2-52-89-49-1.us-west-2.compute.amazonaws.com]
+                        m = re.match(r'^\s*([a-z]+):\s+\[(.*?)\]', line)
+                        if m:
+                            change_state = m.group(1)
+                            hostname = m.group(2)
+                            if hostname not in tmp_hosts:
+                                tmp_hosts[hostname] = []
+                            if change_state == "changed" or change_state == "fatal": # Only log changes or failed changes
+                                tmp_hosts[hostname].append({"name": hostname, "date": datetime.datetime.utcnow(), "desc": current_task_name, "job_id": result["_id"]})
+
+                    for hostname in tmp_hosts:
+                        dbresult = outbit.cli.api.db.inventory.hosts.find_one({"name": hostname})
+                        if dbresult is None:
+                            # New Inventory Item discovered
+                            outbit.cli.api.db.inventory.hosts.insert_one({"name": hostname})
+
+                        # Log Inventory Changelog
+                        for document in tmp_hosts[hostname]:
+                            outbit.cli.api.db.inventory.changes.insert_one(document)
+
                     break
             except Queue.Empty:
                 break
@@ -533,3 +580,22 @@ def plugin_schedules_list(user, action, options):
     for doc in list(cursor):
         result += "  %s\n" % doc["name"]
     return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
+
+
+def plugin_inventory_list(user, action, options):
+    result = ""
+    cursor = outbit.cli.api.db.inventory.hosts.find()
+    for doc in list(cursor):
+        result += "  %s\n" % doc["name"]
+    return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
+
+
+@options_supported(option_list=["name"])
+@options_required(option_list=["name"])
+def plugin_inventory_del(user, action, options):
+    post = {"name": options["name"]}
+    result = outbit.cli.api.db.inventory.hosts.delete_many(post)
+    if result.deleted_count > 0:
+        return json.dumps({"exit_code": 0, "response": "  deleted inventory item %s" % options["name"]})
+    else:
+        return json.dumps({"exit_code": 1, "response": "  inventory item %s does not exist" % options["name"]})

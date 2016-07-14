@@ -71,6 +71,8 @@ The help command will display all the commands available to run.
       schedules edit        edit schedule
       schedules list        list schedules
       schedules del         del schedule
+      inventory list        list inventory
+      inventory del         del inventory item
       exit
 
 The exit command will exit the application.

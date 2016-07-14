@@ -159,7 +159,9 @@ plugins = {"command": builtins.plugin_command,
             "schedules_list": builtins.plugin_schedules_list,
             "schedules_del": builtins.plugin_schedules_del,
             "schedules_edit": builtins.plugin_schedules_edit,
-            "schedules_add": builtins.plugin_schedules_add
+            "schedules_add": builtins.plugin_schedules_add,
+            "inventory_list": builtins.plugin_inventory_list,
+            "inventory_del": builtins.plugin_inventory_del,
            }
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
@@ -189,6 +191,8 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/schedules', 'plugin': 'schedules_edit', 'action': 'edit', 'desc': 'edit schedule'},
                   {'category': '/schedules', 'plugin': 'schedules_list', 'action': 'list', 'desc': 'list schedules'},
                   {'category': '/schedules', 'plugin': 'schedules_del', 'action': 'del', 'desc': 'del schedule'},
+                  {'category': '/inventory', 'plugin': 'inventory_list', 'action': 'list', 'desc': 'list inventory'},
+                  {'category': '/inventory', 'plugin': 'inventory_del', 'action': 'del', 'desc': 'del inventory item'},
                   ]
 
 
