@@ -22,5 +22,6 @@ Contents:
    jobs
    logs
    schedules
+   inventory
 
 .. include:: ../README.rst
