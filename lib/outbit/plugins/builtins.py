@@ -337,14 +337,19 @@ def plugin_plugins_list(user, action, options):
 
 def plugin_logs(user, action, options):
     result = ""
-    if options is not None and "name" in options:
+    if options is not None and ("name" in options or ("type" in options and options["type"] == "changes")):
         # List changes/logs for a specific inventory host
-        result += "  inventory item\t\tdesc\t\tjob_id\t\tdate\n"
-        cursor = outbit.cli.api.db.inventory.changes.find({"name": options["name"]}).sort("date", 1)
+        result += "  inventory_item\t\tdesc\t\tjob_id\t\tdate\n"
+        if "name" in options:
+            # Show changes for a specific inventory item
+            cursor = outbit.cli.api.db.inventory.changes.find({"name": options["name"]}).sort("date", 1)
+        else:
+            # Show all changes
+            cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
         for doc in list(cursor):
             if "date" in doc: # Backward compat
                 result += "  %s\t%s\t%s\t%s\n" % (doc["name"], doc["desc"], doc["job_id"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
-    else:
+    else: # type=requests is the default
         # Default List all requests to api server
         result += "  category\t\taction\t\toptions\t\tdate\n"
         cursor = outbit.cli.api.db.logs.find().sort("date", 1)
@@ -583,3 +588,14 @@ def plugin_inventory_list(user, action, options):
     for doc in list(cursor):
         result += "  %s\n" % doc["name"]
     return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
+
+
+@options_supported(option_list=["name"])
+@options_required(option_list=["name"])
+def plugin_inventory_del(user, action, options):
+    post = {"name": options["name"]}
+    result = outbit.cli.api.db.inventory.hosts.delete_many(post)
+    if result.deleted_count > 0:
+        return json.dumps({"exit_code": 0, "response": "  deleted inventory item %s" % options["name"]})
+    else:
+        return json.dumps({"exit_code": 1, "response": "  inventory item %s does not exist" % options["name"]})
