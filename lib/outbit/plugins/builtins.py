@@ -537,23 +537,38 @@ def plugin_jobs_kill(user, action, options):
         return json.dumps({"exit_code": 0, "response": "  The job %s, was terminated" % str(int_id)})
 
 
+@options_supported(option_list=["name", "user", "category", "action", "minute", "hour", "day_of_month", "month", "day_of_week"])
 @options_required(option_list=["name", "category", "action"])
-@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
+@options_validator(option_list=["name", "user", "action"], regexp=r'^[a-zA-Z0-9_\-]+$')
+@options_validator(option_list=["category"], regexp=r'^[/a-zA-Z0-9_\-]+$')
+@options_validator(option_list=["minute", "hour", "day_of_month", "month", "day_of_week"], regexp=r'^([0-9]+|\*)$')
 def plugin_schedules_add(user, action, options):
     result = outbit.cli.api.db.schedules.find_one({"name": options["name"]})
     if result is None:
         post = options
+        # Prevent Users from setting up crons for other users
+        if "user" in post and post["user"] != user:
+            json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username %s." % user})
+        # Always set the cron by default to run as the user
         if "user" not in post:
             post["user"] = user
+
         outbit.cli.api.db.schedules.insert_one(post)
         return json.dumps({"exit_code": 0, "response": "  created schedule %s" % options["name"]})
     else:
         return json.dumps({"exit_code": 1, "response": "  schedule %s already exists" % options["name"]})
 
 
+@options_supported(option_list=["name", "user", "category", "action", "minute", "hour", "day_of_month", "month", "day_of_week"])
 @options_required(option_list=["name"])
-@options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
+@options_validator(option_list=["name", "user", "action"], regexp=r'^[a-zA-Z0-9_\-]+$')
+@options_validator(option_list=["category"], regexp=r'^[/a-zA-Z0-9_\-]+$')
+@options_validator(option_list=["minute", "hour", "day_of_month", "month", "day_of_week"], regexp=r'^([0-9]+|\*)$')
 def plugin_schedules_edit(user, action, options):
+    # Prevent Users from setting up crons for other users
+    if "user" in options and options["user"] != user:
+        json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username %s." % user})
+
     result = outbit.cli.api.db.schedules.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
@@ -578,7 +593,10 @@ def plugin_schedules_list(user, action, options):
     result = ""
     cursor = outbit.cli.api.db.schedules.find()
     for doc in list(cursor):
-        result += "  %s\n" % doc["name"]
+        for key in sorted(doc):
+            if key not in ["_id"]:
+                result += '  %s="%s" ' % (key, doc[key])
+        result += "\n"
     return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
 
 
