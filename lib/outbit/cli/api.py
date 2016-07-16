@@ -269,6 +269,11 @@ def roles_has_permission(user, action, options):
     # jobs kill is always allowed
     if action["category"] == "/jobs" and action["action"] == "kill":
         return True
+    """ This allows users to edit their own password.
+     sers edit password is allowed if the username is only changing their own password.
+     If username is not in options, that means their changing their own password. """
+    if action["category"] == "/users" and action["action"] == "edit" and ("username" not in options or options["username"] == user):
+        return True
 
     if action["category"][-1:] == "/":
         action_str = "%s%s" % (action["category"], action["action"])

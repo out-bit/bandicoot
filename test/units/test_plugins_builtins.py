@@ -86,10 +86,6 @@ class TestCli(unittest.TestCase):
         assert(result_uonly == json.dumps({"exit_code": 1, "response": "  password option is required"})
             and result_ponly == json.dumps({"exit_code": 1, "response": "  username option is required"}))
 
-    def test_plugin_users_edit_name_missing(self):
-        result = builtins.plugin_users_edit(None, None, {"password": "a"})
-        assert (result == json.dumps({"exit_code": 1, "response": "  username option is required"}))
-
     def test_plugin_users_edit_passwd_missing(self):
         result = builtins.plugin_users_edit(None, None, {"username": "a"})
         assert (result == json.dumps({"exit_code": 1, "response": "  password option is required"}))

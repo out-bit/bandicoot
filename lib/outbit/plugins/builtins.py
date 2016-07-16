@@ -145,12 +145,18 @@ def plugin_users_del(user, action, options):
 
 
 @options_supported(option_list=["username", "password"])
-@options_required(option_list=["username", "password"])
+@options_required(option_list=["password"])
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_edit(user, action, options):
+    # Hash the password
     m = hashlib.md5()
     m.update(options["password"])
     password_md5 = str(m.hexdigest())
+
+    # If no username was specified, by default edit the current user
+    if "username" not in options:
+        options["username"] = user
+
     result = outbit.cli.api.db.users.update_one({"username": options["username"]},
             {"$set": {"password_md5": password_md5},})
     if result.matched_count > 0:
