@@ -7,7 +7,7 @@ The schedules command is used to manage scheduled jobs, it works similar to a li
 
     outbit> schedules add name=patchdmz hour=16
       created schedule patchdmz
-    outbit> schedules add name=patchdmz category=/ action=patchdmz minute=30 hour=20 day_of_month=* month=* day_of_week=*
+    outbit> schedules edit name=patchdmz category=/ action=patchdmz minute=30 hour=20 day_of_month=* month=* day_of_week=*
       modified schedule patchdmz
     outbit> schedules list
       patchdmz

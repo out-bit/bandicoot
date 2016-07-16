@@ -7,7 +7,7 @@ The secrets command is used to manage passwords, ssh keys, git keys, credentials
 
     outbit> secrets add name=neptune_rootpw secret='verysecretpassword' desc="root pw for neptune server"
       created secret neptune_rootpw
-    outbit> secrets add name=neptune_rootpw secret="newpassword" desc="root pw for neptune server"
+    outbit> secrets edit name=neptune_rootpw secret="newpassword" desc="root pw for neptune server"
       modified secret neptune_rootpw
     outbit> secrets list
       desc="root pw for neptune server"   name="neptune_rootpw"   secret="..."

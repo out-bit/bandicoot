@@ -93,6 +93,15 @@ Example of adding a "hello world" action that prints hello world.
       ping                  verify connectivity
       logs                  show the history log
       help                  print usage
+      jobs list             list jobs
+      jobs status           get status of job
+      jobs kill             kill a job
+      schedules add         add schedule
+      schedules edit        edit schedule
+      schedules list        list schedules
+      schedules del         del schedule
+      inventory list        list inventory
+      inventory del         del inventory item
       exit
 
     outbit> actions add name=helloworld category=/hello action=world plugin=command desc="print hello world" command_run="echo 'hello world'"
@@ -118,6 +127,15 @@ Example of adding a "hello world" action that prints hello world.
       ping                  verify connectivity
       logs                  show the history log
       help                  print usage
+      jobs list             list jobs
+      jobs status           get status of job
+      jobs kill             kill a job
+      schedules add         add schedule
+      schedules edit        edit schedule
+      schedules list        list schedules
+      schedules del         del schedule
+      inventory list        list inventory
+      inventory del         del inventory item
       hello world           print hello world
       exit
 
