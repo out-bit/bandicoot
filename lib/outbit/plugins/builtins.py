@@ -337,6 +337,12 @@ def plugin_plugins_list(user, action, options):
 
 def plugin_logs(user, action, options):
     result = ""
+
+    # Index is required because of the sorting
+    # Not sure if this should be done at each call or only once when the first log is created
+    outbit.cli.api.db.logs.create_index([("date", 1)])
+    outbit.cli.api.db.inventory.changes.create_index([("date", 1)])
+
     if options is not None and ("name" in options or ("type" in options and options["type"] == "changes")):
         # List changes/logs for a specific inventory host
         result += "  inventory_item\t\tdesc\t\tjob_id\t\tdate\n"
@@ -348,7 +354,7 @@ def plugin_logs(user, action, options):
             cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
         for doc in list(cursor):
             if "date" in doc: # Backward compat
-                result += "  %s\t%s\t%s\t%s\n" % (doc["name"], doc["desc"], doc["job_id"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
+                result += '  %s\t"%s"\t%s\t%s\n' % (doc["name"], doc["desc"], doc["job_id"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
     else: # type=requests is the default
         # Default List all requests to api server
         result += "  category\t\taction\t\toptions\t\tdate\n"

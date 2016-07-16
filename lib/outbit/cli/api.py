@@ -22,8 +22,7 @@ import datetime
 import multiprocessing
 
 
-dbclient = MongoClient('localhost', 27017)
-db = dbclient.outbit
+db = None
 encryption_password = None
 
 
@@ -43,6 +42,10 @@ def counters_db_getNextSequence(name):
 
 def schedule_manager():
     schedule_last_run = {} # stores last run times for 
+    global db
+
+    # Setup DB Connection For Thread
+    db = MongoClient('localhost').outbit
 
     while True:
         # Get Current Time
@@ -462,6 +465,7 @@ class Cli(object):
 
     def run(self):
         """ EntryPoint Of Application """
+        global db
 
         # Setup logging to logfile (only if the file was touched)
         if os.path.isfile("/var/log/outbit.log"):
@@ -477,6 +481,13 @@ class Cli(object):
         default_password = "superadmin"
         default_role = "super"
 
+        # Start Scheduler
+        p = multiprocessing.Process(target=schedule_manager)
+        p.start()
+
+        # Setup DB Connection
+        db = MongoClient('localhost').outbit
+
         # Init db counters for jobs
         counters_db_init("jobid")
 
@@ -488,15 +499,12 @@ class Cli(object):
             password_md5 = str(m.hexdigest())
             post = {"username": default_user, "password_md5": password_md5}
             db.users.insert_one(post)
+
         # Create default role
         post = db.roles.find_one({"name": default_role})
         if post is None:
             post = {"name": default_role, "users": default_user, "actions": "/"}
             db.roles.insert_one(post)
-
-        # Start Scheduler
-        p = multiprocessing.Process(target=schedule_manager)
-        p.start()
 
         # Start API Server
         routes.app.logger.info("Starting outbit api server on %s://%s:%d" % ("https" if
