@@ -24,6 +24,9 @@ import multiprocessing
 
 db = None
 encryption_password = None
+ldap_server = None
+ldap_use_ssl = True
+ldap_user_cn = None
 
 
 def counters_db_init(name):
@@ -421,6 +424,22 @@ class Cli(object):
                           help="SSL certificate",
                           metavar="SSLCRT",
                           default=None)
+        parser.add_option("-l", "--ldap_server", dest="ldap_server",
+                          help="LDAP Server for Authentiation",
+                          metavar="LDAPSERVER",
+                          default=None)
+        parser.add_option("-z", "--ldap_use_ssl", dest="ldap_use_ssl",
+                          help="Enable SSL for LDAP",
+                          metavar="LDAPUSESSL",
+                          default=None)
+        parser.add_option("-x", "--ldap_user_cn", dest="ldap_user_cn",
+                          help="LDAP User CN",
+                          metavar="LDAPUSERCN",
+                          default=None)
+        global encryption_password
+        global ldap_server
+        global ldap_use_ssl
+        global ldap_user_cn
         (options, args) = parser.parse_args()
         self.server = options.server
         self.port = options.port
@@ -428,7 +447,9 @@ class Cli(object):
         self.is_debug = options.is_debug
         self.ssl_key = options.ssl_key
         self.ssl_crt = options.ssl_crt
-        global encryption_password
+        ldap_server = options.ldap_server
+        ldap_use_ssl = options.ldap_use_ssl
+        ldap_user_cn = options.ldap_user_cn
 
         # Assign values from conf
         outbit_config_locations = [os.path.expanduser("~")+"/.outbit-api.conf", "/etc/outbit-api.conf"]
@@ -454,6 +475,12 @@ class Cli(object):
             self.ssl_key = bool(outbit_conf_obj["ssl_key"])
         if self.ssl_crt == None and "ssl_crt" in outbit_conf_obj:
             self.ssl_crt = bool(outbit_conf_obj["ssl_crt"])
+        if ldap_server == None and "ldap_server" in outbit_conf_obj:
+            ldap_server = options.ldap_server
+        if ldap_use_ssl == None and "ldap_use_ssl" in outbit_conf_obj:
+            ldap_use_ssl = options.ldap_use_ssl
+        if ldap_user_cn == None and "ldap_user_cn" in outbit_conf_obj:
+            ldap_user_cn = options.ldap_user_cn
 
         # Assign Default values if they were not specified at the cli or in the conf
         if self.server is None:
@@ -464,6 +491,12 @@ class Cli(object):
             self.ssl_key = "/usr/local/etc/openssl/certs/outbit.key"
         if self.ssl_crt is None:
             self.ssl_crt = "/usr/local/etc/openssl/certs/outbit.crt"
+        if ldap_server is None:
+            ldap_server = options.ldap_server
+        if ldap_use_ssl is None:
+            ldap_use_ssl = options.ldap_use_ssl
+        if ldap_user_cn is None:
+            ldap_user_cn = options.ldap_user_cn
 
         # Clean any left over secret files
         clean_all_secrets()
