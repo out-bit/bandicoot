@@ -25,8 +25,9 @@ def check_auth(username, password):
 
     # Check If Local User Can Be Authenticated
     post = outbit.cli.api.db.users.find_one({"username": username})
-    if "password_md5" in post and post["password_md5"] == password_md5:
-        valid_auth = True
+    if post is not None:
+        if "password_md5" in post and post["password_md5"] == password_md5:
+            valid_auth = True
 
     # LDAP Auth, if Local User Not Authenticated
     if valid_auth == False and outbit.cli.api.ldap_server is not None and outbit.cli.api.ldap_user_cn is not None:
@@ -37,7 +38,7 @@ def check_auth(username, password):
             if  bind_success == True:
                 valid_auth = True
         except LDAPSocketOpenError:
-            print("Failed to connect to LDAP server %s" % ldap_server)
+            print("Failed to connect to LDAP server %s" % outbit.cli.api.ldap_server)
 
     return valid_auth
 
