@@ -21,9 +21,9 @@ def check_auth(username, password):
     password_md5 = m.hexdigest()
 
     post = outbit.cli.api.db.users.find_one({"username": username})
-
-    if "password_md5" in post and post["password_md5"] == password_md5:
-        valid_auth = True
+    if post is not None:
+        if "password_md5" in post and post["password_md5"] == password_md5:
+            valid_auth = True
 
     return valid_auth
 
