@@ -32,7 +32,7 @@ def check_auth(username, password):
     if valid_auth == False and outbit.cli.api.ldap_server is not None and outbit.cli.api.ldap_user_cn is not None:
         try:
             server = Server(outbit.cli.api.ldap_server, use_ssl=outbit.cli.api.ldap_use_ssl)
-            conn = Connection(server, "uid=%s" % (username, outbit.cli.api.ldap_user_cn), password)
+            conn = Connection(server, "uid=%s, %s" % (username, outbit.cli.api.ldap_user_cn), password)
             bind_success = conn.bind()
             if  bind_success == True:
                 valid_auth = True
