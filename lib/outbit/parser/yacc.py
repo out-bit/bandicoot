@@ -25,8 +25,6 @@ def p_action_run(t):
     elif len(t) == 2:
         parser_category = "/%s" % "/".join(t[1][:-1])
         parser_action = t[1][-1]
-    else:
-        print("error in action_run %d\n" % len(t))
 
 def p_actions(t):
     '''actions : actions SPACE ACTION
@@ -41,8 +39,6 @@ def p_actions(t):
         t[0].append(t[3])
     elif len(t) == 2:
         t[0].append(t[1])
-    else:
-        print("error in action %d\n" % len(t))
 
 def p_options(t):
     '''options : options SPACE option
@@ -54,8 +50,6 @@ def p_options(t):
         t[0].update(t[3])
     elif len(t) == 2:
         t[0].update(t[1])
-    else:
-        print("error in options %d\n" % len(t))
 
 def p_option(t):
     '''option : ACTION EQUAL ACTION

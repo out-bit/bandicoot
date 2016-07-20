@@ -35,14 +35,14 @@ class TestCli(unittest.TestCase):
         assert( routes.authenticate().status_code == 401)
 
     def test_log_action_password_filtering(self):
-        routes.log_action("jdoe1", {"category": "/users",
+        api.log_action("jdoe1", {"category": "/users",
                                     "action": "add",
                                     "options": {"username": "test", "password": "secret"}
                                     })
         assert( api.db.logs.find_one({"category": "/users"})["options"]["password"] == "..." )
 
     def test_log_action_password_nofiltering(self):
-        routes.log_action("jdoe1", {"category": "/users_nofiltering",
+        api.log_action("jdoe1", {"category": "/users_nofiltering",
                                     "action": "add",
                                     "options": {"username": "test", "notpassword": "notsecret"}
                                     })

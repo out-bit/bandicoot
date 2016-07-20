@@ -7,7 +7,7 @@ Installing outbit Client
 
     $ pip install outbit
 
-Installing outbit API Server
+Installing outbit Client and API Server
 
 .. sourcecode:: bash
 
@@ -19,6 +19,13 @@ Starting The API server on your localhost or on a dedicated ip.
 .. sourcecode:: bash
 
     $ outbit-api -s 127.0.0.1
+
+Install outbit API server using Docker.
+
+.. sourcecode:: bash
+
+  $ docker pull starboarder2001/outbit
+  $ docker run -d -p 8088:8088 starboarder2001/outbit
 
 Logging into the outbit shell. On the first login you will be prompted to change the default password.
 
@@ -57,6 +64,15 @@ The help command will display all the commands available to run.
       ping                  verify connectivity
       logs                  show the history log
       help                  print usage
+      jobs list             list jobs
+      jobs status           get status of job
+      jobs kill             kill a job
+      schedules add         add schedule
+      schedules edit        edit schedule
+      schedules list        list schedules
+      schedules del         del schedule
+      inventory list        list inventory
+      inventory del         del inventory item
       exit
 
 The exit command will exit the application.

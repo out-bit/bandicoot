@@ -5,6 +5,7 @@ import hashlib
 import outbit.cli.api
 import json
 import datetime
+from ldap3 import Server, Connection, LDAPSocketOpenError
 
 
 app = Flask(__name__)
@@ -16,14 +17,28 @@ def check_auth(username, password):
     password combination is valid.
     """
     valid_auth = False
+
+    # Hash of password provided
     m = hashlib.md5()
     m.update(password)
     password_md5 = m.hexdigest()
 
+    # Check If Local User Can Be Authenticated
     post = outbit.cli.api.db.users.find_one({"username": username})
+    if post is not None:
+        if "password_md5" in post and post["password_md5"] == password_md5:
+            valid_auth = True
 
-    if "password_md5" in post and post["password_md5"] == password_md5:
-        valid_auth = True
+    # LDAP Auth, if Local User Not Authenticated
+    if valid_auth == False and outbit.cli.api.ldap_server is not None and outbit.cli.api.ldap_user_cn is not None:
+        try:
+            server = Server(outbit.cli.api.ldap_server, use_ssl=outbit.cli.api.ldap_use_ssl)
+            conn = Connection(server, "uid=%s, %s" % (username, outbit.cli.api.ldap_user_cn), password)
+            bind_success = conn.bind()
+            if  bind_success == True:
+                valid_auth = True
+        except LDAPSocketOpenError:
+            print("Failed to connect to LDAP server %s" % outbit.cli.api.ldap_server)
 
     return valid_auth
 
@@ -46,19 +61,6 @@ def requires_auth(f):
     return decorated
 
 
-def log_action(username, post):
-    if post["category"] is not None and post["action"] is not None:
-        if post["options"] is not None:
-            # Filter sensitive information from options
-            for option in ["password", "secret"]:
-                if option in post["options"]:
-                    post["options"][option] = "..."
-        # Only Log Valid Requests
-        post["date"] = datetime.datetime.utcnow()
-        post["user"] = username
-        outbit.cli.api.db.logs.insert_one(post)
-
-
 @app.route("/", methods=["POST"])
 @requires_auth
 def outbit_base():
@@ -76,7 +78,7 @@ def outbit_base():
         dat = json.dumps({"response": "  action not found"})
 
     # Audit Logging / History
-    log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
+    outbit.cli.api.log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
 
     # http response
     resp = Response(response=dat, status=status, mimetype="application/json")

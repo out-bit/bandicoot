@@ -19,6 +19,9 @@ Contents:
    roles
    actions
    plugins
+   jobs
    logs
+   schedules
+   inventory
 
 .. include:: ../README.rst
