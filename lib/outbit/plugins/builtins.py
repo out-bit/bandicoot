@@ -387,7 +387,7 @@ def plugin_ansible(user, action, options, exit_event, q):
         for line in p.stdout:
             q.put("  %s\n" % line)
         p.wait()
-        time.sleep(0.1) # Delay For Queue Operations
+        #time.sleep(0.1) # Delay For Queue Operations
         return 0
 
     ansible_options = ""
