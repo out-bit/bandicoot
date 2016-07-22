@@ -17,6 +17,9 @@ class MockPopen(object):
     def wait(self):
         pass
 
+    def kill(self):
+        pass
+
 
 class TestCli(unittest.TestCase):
     def __init__(self, *args, **kwargs):

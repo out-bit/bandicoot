@@ -387,6 +387,7 @@ def plugin_ansible(user, action, options, exit_event, q):
         for line in p.stdout:
             q.put("  %s\n" % line)
         p.wait()
+        time.sleep(0.1) # Delay For Queue Operations
         return 0
 
     ansible_options = ""
@@ -434,6 +435,7 @@ def plugin_ansible(user, action, options, exit_event, q):
         shutil.rmtree(temp_location)
 
     q.put(EOF)
+    time.sleep(0.1) # Delay For Queue
     #sys.exit(0)
     return json.dumps({"exit_code": 0, "response": "  success"}) # For unittesting
 
