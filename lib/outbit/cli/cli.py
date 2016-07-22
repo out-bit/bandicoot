@@ -208,6 +208,7 @@ class Cli(object):
     def startshell(self, arg):
         self.screen = curses.initscr()
         self.welcome()
+        curses.curs_set(1)
         self.screen.addstr("outbit> ")
         self.screen.keypad(1)
         self.screen.scrollok(1)
