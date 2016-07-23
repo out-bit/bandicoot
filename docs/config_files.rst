@@ -1,7 +1,7 @@
 Config Files
 ==================
 
-The search path for the outbit config files is your home directory (~) and then /etc/.  The config file for the outbit CLI is outbit.conf and the API server is outbit-api.conf.
+The search path for the outbit config files is your home directory (~/.outbit.conf, ~/.outbit-api.conf) and then /etc/ (/etc/outbit.conf, /etc/outbit-api.conf).  The config file for the outbit CLI is outbit.conf and the API server is outbit-api.conf.
 
 Below are the configuration options available on both the outbit CLI client and API server.
 
