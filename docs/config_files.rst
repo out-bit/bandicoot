@@ -38,3 +38,18 @@ Below shows example config files to use for reference.
     server: 127.0.0.1
     secure: False
     encryption_password: "secretencryptpasswordForSecrets"
+
+    $ cat /etc/outbit.conf
+    ---
+    port: 8088
+    server: 192.168.1.100
+    password: secretpassword
+    secure: True
+    verify: True
+
+    $ cat /etc/outbit-api.conf
+    ---
+    port: 8088
+    server: 0.0.0.0
+    secure: True
+    encryption_password: "secretencryptpasswordForSecrets"
