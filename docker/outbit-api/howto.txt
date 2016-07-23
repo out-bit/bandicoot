@@ -3,3 +3,6 @@ docker build -t starboarder2001/outbit .
 
 # running
 docker run -d -p 8088:8088 starboarder2001/outbit
+
+# bash shell
+docker exec -i -t da426841d88f /bin/bash
