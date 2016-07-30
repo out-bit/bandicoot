@@ -221,12 +221,18 @@ def encrypt_dict(dictobj):
     for key in ["secret"]:
         if dictobj is not None and key in dictobj:
             dictobj[key] = encrypt_str(dictobj[key])
+    return True
 
 
 def decrypt_dict(dictobj):
     for key in ["secret"]:
         if dictobj is not None and key in dictobj:
-            dictobj[key] = decrypt_str(dictobj[key])
+            decrypted_str = decrypt_str(dictobj[key])
+            if decrypted_str is not None:
+                dictobj[key] = decrypted_str
+            else:
+                return False
+    return True
 
 
 def aes_derive_key_and_iv(password, salt, key_length, iv_length):
@@ -244,22 +250,37 @@ def aes_derive_key_and_iv(password, salt, key_length, iv_length):
 
 def encrypt_str(text, key_len=32):
     global encryption_password
+    encryption_prefix = "__outbit_encrypted__:"
+    encrypt_text = encryption_prefix + text
     if encryption_password is not None:
         salt = "__Salt__"
         key, iv = aes_derive_key_and_iv(encryption_password, salt, key_len, AES.block_size)
         encryption_suite = AES.new(key, AES.MODE_CFB, iv)
-        return str(binascii.b2a_base64(encryption_suite.encrypt(text)))
-    return str(text)
+        return str(binascii.b2a_base64(encryption_suite.encrypt(encrypt_text)))
+    return str(encrypt_text)
 
 
 def decrypt_str(text, key_len=32):
     global encryption_password
-    if encryption_password is not None:
+    encryption_prefix = "__outbit_encrypted__:"
+    if text[:len(encryption_prefix)] == encryption_prefix:
+        # Clear Text, No Encryption Password Provided
+        return str(text[len(encryption_prefix):])
+    elif encryption_password is not None:
+        # Decrypt using password
         salt = "__Salt__"
         key, iv = aes_derive_key_and_iv(encryption_password, salt, key_len, AES.block_size)
         decryption_suite = AES.new(key, AES.MODE_CFB, iv)
-        return str(decryption_suite.decrypt(binascii.a2b_base64(text)))
-    return str(text)
+        decrypt_text = str(decryption_suite.decrypt(binascii.a2b_base64(text)))
+        if decrypt_text[:len(encryption_prefix)] == encryption_prefix:
+            # Clear Text, No Encryption Password Provided
+            return str(decrypt_text[len(encryption_prefix):]) 
+        else:
+            # Decryption Failed, Probably Wrong Key
+            return None
+    else:
+        # Decryption Failed, Its Not Clear Text
+        return None
 
 
 def secret_has_permission(user, secret):
@@ -360,7 +381,10 @@ def render_secrets(user, dictobj):
 
     cursor = db.secrets.find()
     for doc in list(cursor):
-        decrypt_dict(doc)
+        res = decrypt_dict(doc)
+        if res is False:
+            # Decryption Failed
+            return None
         if secret_has_permission(user, doc["name"]):
             if "type" in doc and doc["type"] == "file":
                 secrets[doc["name"]] = render_secret_file(doc["name"], doc["secret"])
@@ -391,21 +415,27 @@ def parse_action(user, category, action, options):
                     return json.dumps({"response": "  you do not have permission to run this action"})
                 else:
                     # Admin functions do not allow secrets
-                    if dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]:
-                        render_vars("option", options, dbaction)
-                        tmp_files_dbaction = render_secrets(user, dbaction)
-                        tmp_files_options = render_secrets(user, options)
-                        response = plugins[dbaction["plugin"]](user, dbaction, options)
-                        response = json.loads(response)
-                        clean_secrets(tmp_files_dbaction)
-                        clean_secrets(tmp_files_options)
+                    if (dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]) and dbaction["category"] == "/" and dbaction["action"] not in ["ping"]:
+                            render_vars("option", options, dbaction)
+                            tmp_files_dbaction = render_secrets(user, dbaction)
+                            tmp_files_options = render_secrets(user, options)
 
-                        # Async, return queue_id
-                        if "response" not in response:
-                            if "queue_id" not in response:
-                                return json.dumps({"response": "  error: expected async queue id but found none"})
+                            # Check Decryption Worked
+                            if user is not None:
+                                if (dbaction is not None and tmp_files_dbaction is None) or (options is not None and tmp_files_options is None):
+                                    return json.dumps({"response": "  error: Failed to decrypt a secret. If you recently changed your encryption_password try 'secrets change_encryptpw oldpw=XXXX newpw=XXXX'."})
 
-                        return json.dumps(response)
+                            response = plugins[dbaction["plugin"]](user, dbaction, options)
+                            response = json.loads(response)
+                            clean_secrets(tmp_files_dbaction)
+                            clean_secrets(tmp_files_options)
+
+                            # async, return queue_id
+                            if "response" not in response:
+                                if "queue_id" not in response:
+                                    return json.dumps({"response": "  error: expected async queue id but found none"})
+
+                            return json.dumps(response)
                     else:
                         return plugins[dbaction["plugin"]](user, dbaction, options)
     return None
