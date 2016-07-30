@@ -423,7 +423,7 @@ def parse_action(user, category, action, options):
                             # Check Decryption Failed
                             if user is not None:
                                 if (dbaction is not None and tmp_files_dbaction is None) or (options is not None and tmp_files_options is None):
-                                    return json.dumps({"response": "  error: Failed to decrypt a secret. If you recently changed your encryption_password try 'secrets change_encryptpw oldpw=XXXX newpw=XXXX'."})
+                                    return json.dumps({"response": "  error: Failed to decrypt a secret. If you recently changed your encryption_password try 'secrets encryptpw oldpw=XXXX newpw=XXXX'."})
 
                             response = plugins[dbaction["plugin"]](user, dbaction, options)
                             response = json.loads(response)
