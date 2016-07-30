@@ -10,6 +10,7 @@ from pymongo import MongoClient
 from outbit.restapi import routes
 from outbit.plugins import builtins
 from Crypto.Cipher import AES
+from hashlib import md5
 import binascii
 from jinja2 import Template
 import ssl
@@ -228,18 +229,35 @@ def decrypt_dict(dictobj):
             dictobj[key] = decrypt_str(dictobj[key])
 
 
-def encrypt_str(text):
+def aes_derive_key_and_iv(password, salt, key_length, iv_length):
+    """ source: Ansible source code """
+    """ Create a key and an initialization vector """
+    d = d_i = ''
+    while len(d) < key_length + iv_length:
+        text = ''.join([d_i, password, salt])
+        d_i = str(md5(text).digest())
+        d += d_i
+    key = d[:key_length]
+    iv = d[key_length:key_length+iv_length]
+    return key, iv
+
+
+def encrypt_str(text, key_len=32):
     global encryption_password
     if encryption_password is not None:
-        encryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
+        salt = "__Salt__"
+        key, iv = aes_derive_key_and_iv(encryption_password, salt, key_len, AES.block_size)
+        encryption_suite = AES.new(key, AES.MODE_CFB, iv)
         return str(binascii.b2a_base64(encryption_suite.encrypt(text)))
     return str(text)
 
 
-def decrypt_str(text):
+def decrypt_str(text, key_len=32):
     global encryption_password
     if encryption_password is not None:
-        decryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
+        salt = "__Salt__"
+        key, iv = aes_derive_key_and_iv(encryption_password, salt, key_len, AES.block_size)
+        decryption_suite = AES.new(key, AES.MODE_CFB, iv)
         return str(decryption_suite.decrypt(binascii.a2b_base64(text)))
     return str(text)
 
