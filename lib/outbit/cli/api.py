@@ -9,6 +9,7 @@ import hashlib
 from pymongo import MongoClient
 from outbit.restapi import routes
 from outbit.plugins import builtins
+from outbit.exceptions import DecryptWrongKeyException, DecryptNotClearTextException, DecryptException
 from Crypto.Cipher import AES
 from hashlib import md5
 import binascii
@@ -227,10 +228,10 @@ def encrypt_dict(dictobj):
 def decrypt_dict(dictobj):
     for key in ["secret"]:
         if dictobj is not None and key in dictobj:
-            decrypted_str = decrypt_str(dictobj[key])
-            if decrypted_str is not None:
+            try:
+                decrypted_str = decrypt_str(dictobj[key], keyname=dictobj["name"])
                 dictobj[key] = decrypted_str
-            else:
+            except DecryptException:
                 return False
     return True
 
@@ -248,9 +249,8 @@ def aes_derive_key_and_iv(password, salt, key_length, iv_length):
     return key, iv
 
 
-def encrypt_str(text, key_len=32):
+def encrypt_str(text, key_len=32, encryption_prefix="__outbit_encrypted__:"):
     global encryption_password
-    encryption_prefix = "__outbit_encrypted__:"
     encrypt_text = encryption_prefix + text
     if encryption_password is not None:
         salt = "__Salt__"
@@ -260,9 +260,8 @@ def encrypt_str(text, key_len=32):
     return str(encrypt_text)
 
 
-def decrypt_str(text, key_len=32):
+def decrypt_str(text, key_len=32, encryption_prefix="__outbit_encrypted__:", keyname="unknown"):
     global encryption_password
-    encryption_prefix = "__outbit_encrypted__:"
     if text[:len(encryption_prefix)] == encryption_prefix:
         # Clear Text, No Encryption Password Provided
         return str(text[len(encryption_prefix):])
@@ -273,14 +272,14 @@ def decrypt_str(text, key_len=32):
         decryption_suite = AES.new(key, AES.MODE_CFB, iv)
         decrypt_text = str(decryption_suite.decrypt(binascii.a2b_base64(text)))
         if decrypt_text[:len(encryption_prefix)] == encryption_prefix:
-            # Clear Text, No Encryption Password Provided
+            # Decrypted Text
             return str(decrypt_text[len(encryption_prefix):]) 
         else:
-            # Decryption Failed, Probably Wrong Key
-            return None
+            # Probably Wrong Key
+            raise DecryptWrongKeyException("  error: Failed to decrypt a secret named %s. If you recently changed your encryption_password try 'secrets encryptpw oldpw=XXXX newpw=XXXX'." % keyname)
     else:
         # Decryption Failed, Its Not Clear Text
-        return None
+        raise DecryptNotClearTextException("  error: Failed to decrypt a secret named %s. If you recently disabled your encryption_password then re-enable it." % keyname)
 
 
 def secret_has_permission(user, secret):
@@ -415,7 +414,12 @@ def parse_action(user, category, action, options):
                     return json.dumps({"response": "  you do not have permission to run this action"})
                 else:
                     # Admin functions do not allow secrets
-                    if (dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]) and dbaction["category"] == "/" and dbaction["action"] not in ["ping"]:
+                    if dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]:
+                        if dbaction["category"] == "/" and dbaction["action"] in ["ping"]:
+                            # /ping does not allow secrets
+                            pass
+                        else:
+                            # Run Plugin With Secret
                             render_vars("option", options, dbaction)
                             tmp_files_dbaction = render_secrets(user, dbaction)
                             tmp_files_options = render_secrets(user, options)
@@ -436,8 +440,8 @@ def parse_action(user, category, action, options):
                                     return json.dumps({"response": "  error: expected async queue id but found none"})
 
                             return json.dumps(response)
-                    else:
-                        return plugins[dbaction["plugin"]](user, dbaction, options)
+                    # Run Plugin Without Secrets
+                    return plugins[dbaction["plugin"]](user, dbaction, options)
     return None
 
 

@@ -74,7 +74,7 @@ class TestCli(unittest.TestCase):
         # enable encryption pw
         orig = api.encryption_password
         api.encryption_password = "aaaaaaaaaaaaaaaa"
-        test_dict = {"secret": "test", "notsecret": "test"}
+        test_dict = {"name": "testsecret", "secret": "test", "notsecret": "test"}
         api.encrypt_dict(test_dict)
         api.decrypt_dict(test_dict)
         # put it back to whatever it was

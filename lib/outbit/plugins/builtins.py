@@ -1,4 +1,5 @@
 import outbit.cli.api
+from outbit.exceptions import DecryptWrongKeyException, DecryptNotClearTextException
 import json
 import subprocess
 import hashlib
@@ -329,7 +330,21 @@ def plugin_secrets_list(user, action, options):
     cursor = outbit.cli.api.db.secrets.find()
     for doc in list(cursor):
         if "secret" in doc:
-            doc["secret"] = "..." # do not print encrypted secret
+            # Detect status of secret
+            decrypted_secret = ""
+            doc["status"] = "encrypted"
+            try:
+                decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"])
+            except DecryptWrongKeyException:
+                doc["status"] = "wrongpw"
+            except DecryptNotClearTextException:
+                doc["status"] = "noencryptpw"
+            # Prefix is "__outbit_encrypted__:"
+            if decrypted_secret == doc["secret"][len("__outbit_encrypted__:"):]:
+                doc["status"] = "cleartext"
+
+            # Do Not Print Encrypted Secret
+            doc["secret"] = "..."
         for key in sorted(doc):
             if key not in ["_id"]:
                 result += '  %s="%s" ' % (key, doc[key])

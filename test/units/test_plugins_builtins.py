@@ -264,7 +264,8 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_secrets_list(self):
         result = builtins.plugin_secrets_list(None, None, {})
-        assert (result == json.dumps({"exit_code": 0, "response": "  name=\"test_secret1\"   secret=\"...\" \n  name=\"test_secret2\"   secret=\"...\" \n  name=\"add_test\""}) )
+        print(result)
+        assert (result == json.dumps({"exit_code": 0, "response": "  name=\"test_secret1\"   secret=\"...\"   status=\"cleartext\" \n  name=\"test_secret2\"   secret=\"...\"   status=\"cleartext\" \n  name=\"add_test\""}) )
 
     def test_plugin_command_commandrun_missing(self):
         result = builtins.plugin_command(None, {}, {})
