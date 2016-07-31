@@ -49,24 +49,14 @@ class TestCli(unittest.TestCase):
         assert(response == json.dumps({"response": "  you do not have permission to run this action"}))
 
     def test_encrypt_str(self):
-        # enable encryption pw
-        orig = api.encryption_password
-        api.encryption_password = "aaaaaaaaaaaaaaaa"
         # encrypt
-        enc_str = api.encrypt_str("testabcdtestabcdtestabcd")
-        # put it back to whatever it was
-        api.encryption_password = orig
+        enc_str = api.encrypt_str("testabcdtestabcdtestabcd", encrypt_password="aaaaaaaaaaaaaaaa")
         print(len(enc_str))
         assert(len(enc_str) == 61)
 
     def test_encrypt_decrypt_str(self):
-        # enable encryption pw
-        orig = api.encryption_password
-        api.encryption_password = "aaaaaaaaaaaaaaaa"
-        enc_str = api.encrypt_str("testabcdtestabcdtestabcd")
-        dec_str = api.decrypt_str(enc_str)
-        # put it back to whatever it was
-        api.encryption_password = orig
+        enc_str = api.encrypt_str("testabcdtestabcdtestabcd", encrypt_password="aaaaaaaaaaaaaaaa")
+        dec_str = api.decrypt_str(enc_str, encrypt_password="aaaaaaaaaaaaaaaa")
         print("%s, %s" % (len(enc_str), dec_str))
         assert(len(enc_str) == 61 and dec_str == "testabcdtestabcdtestabcd")
 

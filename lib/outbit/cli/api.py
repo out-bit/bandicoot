@@ -156,6 +156,7 @@ plugins = {"command": builtins.plugin_command,
             "secrets_del": builtins.plugin_secrets_del,
             "secrets_edit": builtins.plugin_secrets_edit,
             "secrets_add": builtins.plugin_secrets_add,
+            "secrets_encryptpw": builtins.plugin_secrets_encryptpw,
             "plugins_list": builtins.plugin_plugins_list,
             "ping": builtins.plugin_ping,
             "logs": builtins.plugin_logs,
@@ -188,6 +189,7 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/secrets', 'plugin': 'secrets_del', 'action': 'del', 'desc': 'del secrets'},
                   {'category': '/secrets', 'plugin': 'secrets_edit', 'action': 'edit', 'desc': 'edit secrets'},
                   {'category': '/secrets', 'plugin': 'secrets_add', 'action': 'add', 'desc': 'add secrets'},
+                  {'category': '/secrets', 'plugin': 'secrets_encryptpw', 'action': 'encryptpw', 'desc': 'Change password encryption'},
                   {'category': '/plugins', 'plugin': 'plugins_list', 'action': 'list', 'desc': 'list plugins'},
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
@@ -219,17 +221,20 @@ def log_action(username, post):
 
 def encrypt_dict(dictobj):
     # encrypt sensitive option vals
+    global encryption_password
     for key in ["secret"]:
         if dictobj is not None and key in dictobj:
-            dictobj[key] = encrypt_str(dictobj[key])
+            dictobj[key] = encrypt_str(dictobj[key], encryption_password)
     return True
 
 
 def decrypt_dict(dictobj):
+    # decrypt sensitive option vals
+    global encryption_password
     for key in ["secret"]:
         if dictobj is not None and key in dictobj:
             try:
-                decrypted_str = decrypt_str(dictobj[key], keyname=dictobj["name"])
+                decrypted_str = decrypt_str(dictobj[key], encryption_password, keyname=dictobj["name"])
                 dictobj[key] = decrypted_str
             except DecryptException:
                 return False
@@ -249,26 +254,32 @@ def aes_derive_key_and_iv(password, salt, key_length, iv_length):
     return key, iv
 
 
-def encrypt_str(text, key_len=32, encryption_prefix="__outbit_encrypted__:"):
+def encrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__outbit_encrypted__:"):
     global encryption_password
+    if encrypt_password is None and encryption_password is not None:
+        # If No encryption password provided, use global encryption password
+        encrypt_password = encryption_password
     encrypt_text = encryption_prefix + text
-    if encryption_password is not None:
+    if encrypt_password is not None:
         salt = "__Salt__"
-        key, iv = aes_derive_key_and_iv(encryption_password, salt, key_len, AES.block_size)
+        key, iv = aes_derive_key_and_iv(encrypt_password, salt, key_len, AES.block_size)
         encryption_suite = AES.new(key, AES.MODE_CFB, iv)
         return str(binascii.b2a_base64(encryption_suite.encrypt(encrypt_text)))
     return str(encrypt_text)
 
 
-def decrypt_str(text, key_len=32, encryption_prefix="__outbit_encrypted__:", keyname="unknown"):
+def decrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__outbit_encrypted__:", keyname="unknown"):
     global encryption_password
+    if encrypt_password is None and encryption_password is not None:
+        # If No encryption password provided, use global encryption password
+        encrypt_password = encryption_password
     if text[:len(encryption_prefix)] == encryption_prefix:
         # Clear Text, No Encryption Password Provided
         return str(text[len(encryption_prefix):])
-    elif encryption_password is not None:
+    elif encrypt_password is not None:
         # Decrypt using password
         salt = "__Salt__"
-        key, iv = aes_derive_key_and_iv(encryption_password, salt, key_len, AES.block_size)
+        key, iv = aes_derive_key_and_iv(encrypt_password, salt, key_len, AES.block_size)
         decryption_suite = AES.new(key, AES.MODE_CFB, iv)
         decrypt_text = str(decryption_suite.decrypt(binascii.a2b_base64(text)))
         if decrypt_text[:len(encryption_prefix)] == encryption_prefix:

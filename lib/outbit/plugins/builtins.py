@@ -1,5 +1,5 @@
 import outbit.cli.api
-from outbit.exceptions import DecryptWrongKeyException, DecryptNotClearTextException
+from outbit.exceptions import DecryptWrongKeyException, DecryptNotClearTextException, DecryptException
 import json
 import subprocess
 import hashlib
@@ -323,6 +323,72 @@ def plugin_secrets_del(user, action, options):
         return json.dumps({"exit_code": 0, "response": "  deleted secret %s" % options["name"]})
     else:
         return json.dumps({"exit_code": 1, "response": "  secret %s does not exist" % options["name"]})
+
+
+@options_supported(option_list=["oldpw", "newpw"])
+def plugin_secrets_encryptpw(user, action, options):
+    def update_secret_pw(name, options):
+        result = outbit.cli.api.db.secrets.update_one({"name": name},
+                {"$set": options})
+        if result.matched_count > 0:
+            return True
+        else:
+            return False
+    result = ""
+    cursor = outbit.cli.api.db.secrets.find()
+    # secrets encryptpw newpw=XXXX -- encrypt clear text pw with newpw
+    # secrets encryptpw oldpw=XXXX newpw=XXXX - reencrypt secrets that use oldpw to use the newpw
+    # secrets encryptpw legacy=v0.0.5 - migrate secrets from a legacy release of outbit
+    for doc in list(cursor):
+        if "secret" in doc:
+            # Detect status of secret
+            decrypted_secret = ""
+            encrypted_secret = None
+            what_to_do = "nothing"
+            encrypt_password = None # Default assumes secret is clear text, if no oldpw is provided this is assumed
+            if "oldpw" in options:
+                # Old password provided, so use it
+                encrypt_password = str(options["oldpw"])
+            if "newpw" not in options:
+                # newpw is REQUIRED for this
+                return json.dumps({"exit_code": 0, "response": "newpw option is required\n"})
+
+            # Detect if newpw works or not
+            try:
+                decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password)
+            except DecryptWrongKeyException:
+                # P
+                what_to_do = "updatepw"
+            except DecryptNotClearTextException:
+                # User said it was clear text, but its not. Skip, Do Nothing.
+                what_to_do = "notcleartext"
+            # Prefix is "__outbit_encrypted__:"
+            if decrypted_secret == doc["secret"][len("__outbit_encrypted__:"):]:
+                # Clear text to encrypted
+                what_to_do = "encrypt"
+
+            if what_to_do == "updatepw":
+                try:
+                    decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password)
+                except DecryptException:
+                    result += "secret %s failed to update to new password\n" % doc["name"]
+                    continue
+                encrypted_secret = outbit.cli.api.encrypt_str(decrypted_secret, str(options["newpw"]))
+                result += "secret %s updated to new password\n" % doc["name"]
+            elif what_to_do == "encrypt":
+                try:
+                    decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password)
+                except DecryptException:
+                    result += "secret %s failed to update because the secret is not clear text\n" % doc["name"]
+                    continue
+                encrypted_secret = outbit.cli.api.encrypt_str(decrypted_secret, str(options["newpw"]))
+                result += "secret %s encrypted using new password\n" % doc["name"]
+
+            # Secret Was Updated
+            if encrypted_secret is not None:
+                update_secret_pw(doc["name"], {"secret": encrypted_secret})
+
+    return json.dumps({"exit_code": 0, "response": result})
 
 
 def plugin_secrets_list(user, action, options):
