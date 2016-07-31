@@ -19,7 +19,7 @@ Below are the configuration options only available for the outbit API server.
 
 - ssl_key - Private SSL key to use.
 - ssl_crt - Public SSL key to use.
-- encryption_password - Encrypt sensitive information in mongodb using this password.  Currently outbit does not support changing the encryption_password after installation.  The password length must be 2^x, for example: 16, 32, and 64 are valid lengths.
+- encryption_password - Encrypt sensitive information in mongodb using this password. If you change this password after adding secrets, use 'secrets encryptpw oldpw=XXXX' to migrate secrets to the new password.
 
 Below shows example config files to use for reference.
 
