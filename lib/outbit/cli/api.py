@@ -472,7 +472,7 @@ class Cli(object):
                           metavar="PORT",
                           default=None)
         parser.add_option("-t", "--insecure", dest="is_secure",
-                          help="Use SSL",
+                          help="Do Not Use SSL",
                           metavar="SECURE",
                           action="store_false",
                           default=True)

@@ -54,12 +54,12 @@ class Cli(object):
                           metavar="PORT",
                           default=None)
         parser.add_option("-t", "--insecure", dest="is_secure",
-                          help="Use SSL",
+                          help="Do Not Use SSL",
                           metavar="SECURE",
                           action="store_false",
                           default=True)
-        parser.add_option("-v", "--no_verify", dest="is_ssl_verify",
-                          help="Verify Certificate",
+        parser.add_option("-k", "--no-check-certificates", dest="is_ssl_verify",
+                          help="Ignore Unverified Certificate",
                           metavar="VERIFY",
                           action="store_false",
                           default=True)
@@ -74,6 +74,9 @@ class Cli(object):
         self.noninteractive_commands = []
         self.password = None
         self.app_running = True
+
+        # Do Not Display SSL Verify Warning to stderr
+        requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
         # Non-Interactive Command Parsing
         if len(args) > 0:
@@ -185,7 +188,7 @@ class Cli(object):
         self.exit(0)
 
     def run_action(self, actionjson):
-        r = session.post(self.url, verify=False, headers={'Content-Type': 'application/json'},
+        r = session.post(self.url, verify=self.is_ssl_verify, headers={'Content-Type': 'application/json'},
             auth=(self.user, self.password), data=json.dumps(actionjson))
 
         if r.status_code == requests.codes.ok:
