@@ -53,14 +53,16 @@ class Cli(object):
                           help="tcp port of outbit-api server",
                           metavar="PORT",
                           default=None)
-        parser.add_option("-t", "--secure", dest="is_secure",
+        parser.add_option("-t", "--insecure", dest="is_secure",
                           help="Use SSL",
                           metavar="SECURE",
-                          action="store_true")
-        parser.add_option("-v", "--ssl_verify", dest="is_ssl_verify",
+                          action="store_false",
+                          default=True)
+        parser.add_option("-v", "--no_verify", dest="is_ssl_verify",
                           help="Verify Certificate",
                           metavar="VERIFY",
-                          action="store_true")
+                          action="store_false",
+                          default=True)
         # Assign values from cli
         (options, args) = parser.parse_args()
         self.user = options.user

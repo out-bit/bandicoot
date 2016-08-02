@@ -71,7 +71,7 @@ class TestCli(unittest.TestCase):
             out = StringIO()
             sys.stdout = out
 
-            m.post("http://127.0.0.1:8088/", text=json.dumps({"response": "  pong"}))
+            m.post("https://127.0.0.1:8088/", text=json.dumps({"response": "  pong"}))
             cliobj = cli.Cli()
             cliobj.interactive_mode = False
             cliobj.noninteractive_commands = ["ping"]
@@ -87,7 +87,7 @@ class TestCli(unittest.TestCase):
     @patch('curses.initscr', return_value=CursesMock("ping\nexit\n"))
     @patch('getpass.getpass', return_value='password') # Mock password typed in stdin
     def test_run_interactive_ping(self, m, mock_getpass, mock_initscr, mock_exit):
-        m.post("http://127.0.0.1:8088/", text=json.dumps({"response": "  pong"}))
+        m.post("https://127.0.0.1:8088/", text=json.dumps({"response": "  pong"}))
         cliobj = cli.Cli()
         cliobj.interactive_mode = True
         cliobj.run()
