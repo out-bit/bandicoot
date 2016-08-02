@@ -102,9 +102,9 @@ class Cli(object):
             self.server = str(outbit_conf_obj["server"])
         if self.port is None and "port" in outbit_conf_obj:
             self.port = int(outbit_conf_obj["port"])
-        if self.is_secure == False and "secure" in outbit_conf_obj:
+        if self.is_secure == True and "secure" in outbit_conf_obj:
             self.is_secure = bool(outbit_conf_obj["secure"])
-        if self.is_ssl_verify == False and "ssl_verify" in outbit_conf_obj:
+        if self.is_ssl_verify == True and "ssl_verify" in outbit_conf_obj:
             self.is_ssl_verify = bool(outbit_conf_obj["ssl_verify"])
 
         # Assign Default values if they were not specified at the cli or in the conf
