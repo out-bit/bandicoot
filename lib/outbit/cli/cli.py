@@ -53,14 +53,16 @@ class Cli(object):
                           help="tcp port of outbit-api server",
                           metavar="PORT",
                           default=None)
-        parser.add_option("-t", "--secure", dest="is_secure",
-                          help="Use SSL",
+        parser.add_option("-t", "--insecure", dest="is_secure",
+                          help="Do Not Use SSL",
                           metavar="SECURE",
-                          action="store_true")
-        parser.add_option("-v", "--ssl_verify", dest="is_ssl_verify",
-                          help="Verify Certificate",
+                          action="store_false",
+                          default=True)
+        parser.add_option("-k", "--no-check-certificates", dest="is_ssl_verify",
+                          help="Ignore Unverified Certificate",
                           metavar="VERIFY",
-                          action="store_true")
+                          action="store_false",
+                          default=True)
         # Assign values from cli
         (options, args) = parser.parse_args()
         self.user = options.user
@@ -72,6 +74,9 @@ class Cli(object):
         self.noninteractive_commands = []
         self.password = None
         self.app_running = True
+
+        # Do Not Display SSL Verify Warning to stderr
+        requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
         # Non-Interactive Command Parsing
         if len(args) > 0:
@@ -97,9 +102,9 @@ class Cli(object):
             self.server = str(outbit_conf_obj["server"])
         if self.port is None and "port" in outbit_conf_obj:
             self.port = int(outbit_conf_obj["port"])
-        if self.is_secure == False and "secure" in outbit_conf_obj:
+        if self.is_secure == True and "secure" in outbit_conf_obj:
             self.is_secure = bool(outbit_conf_obj["secure"])
-        if self.is_ssl_verify == False and "ssl_verify" in outbit_conf_obj:
+        if self.is_ssl_verify == True and "ssl_verify" in outbit_conf_obj:
             self.is_ssl_verify = bool(outbit_conf_obj["ssl_verify"])
 
         # Assign Default values if they were not specified at the cli or in the conf
@@ -183,7 +188,7 @@ class Cli(object):
         self.exit(0)
 
     def run_action(self, actionjson):
-        r = session.post(self.url, verify=False, headers={'Content-Type': 'application/json'},
+        r = session.post(self.url, verify=self.is_ssl_verify, headers={'Content-Type': 'application/json'},
             auth=(self.user, self.password), data=json.dumps(actionjson))
 
         if r.status_code == requests.codes.ok:
@@ -208,6 +213,7 @@ class Cli(object):
     def startshell(self, arg):
         self.screen = curses.initscr()
         self.welcome()
+        curses.curs_set(1)
         self.screen.addstr("outbit> ")
         self.screen.keypad(1)
         self.screen.scrollok(1)

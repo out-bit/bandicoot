@@ -9,7 +9,9 @@ import hashlib
 from pymongo import MongoClient
 from outbit.restapi import routes
 from outbit.plugins import builtins
+from outbit.exceptions import DecryptWrongKeyException, DecryptNotClearTextException, DecryptException
 from Crypto.Cipher import AES
+from hashlib import md5
 import binascii
 from jinja2 import Template
 import ssl
@@ -154,6 +156,7 @@ plugins = {"command": builtins.plugin_command,
             "secrets_del": builtins.plugin_secrets_del,
             "secrets_edit": builtins.plugin_secrets_edit,
             "secrets_add": builtins.plugin_secrets_add,
+            "secrets_encryptpw": builtins.plugin_secrets_encryptpw,
             "plugins_list": builtins.plugin_plugins_list,
             "ping": builtins.plugin_ping,
             "logs": builtins.plugin_logs,
@@ -186,6 +189,7 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/secrets', 'plugin': 'secrets_del', 'action': 'del', 'desc': 'del secrets'},
                   {'category': '/secrets', 'plugin': 'secrets_edit', 'action': 'edit', 'desc': 'edit secrets'},
                   {'category': '/secrets', 'plugin': 'secrets_add', 'action': 'add', 'desc': 'add secrets'},
+                  {'category': '/secrets', 'plugin': 'secrets_encryptpw', 'action': 'encryptpw', 'desc': 'Change password encryption'},
                   {'category': '/plugins', 'plugin': 'plugins_list', 'action': 'list', 'desc': 'list plugins'},
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
@@ -217,31 +221,76 @@ def log_action(username, post):
 
 def encrypt_dict(dictobj):
     # encrypt sensitive option vals
+    global encryption_password
     for key in ["secret"]:
         if dictobj is not None and key in dictobj:
-            dictobj[key] = encrypt_str(dictobj[key])
+            dictobj[key] = encrypt_str(dictobj[key], encryption_password)
+    return True
 
 
 def decrypt_dict(dictobj):
+    # decrypt sensitive option vals
+    global encryption_password
     for key in ["secret"]:
         if dictobj is not None and key in dictobj:
-            dictobj[key] = decrypt_str(dictobj[key])
+            try:
+                decrypted_str = decrypt_str(dictobj[key], encryption_password, keyname=dictobj["name"])
+                dictobj[key] = decrypted_str
+            except DecryptException:
+                return False
+    return True
 
 
-def encrypt_str(text):
+def aes_derive_key_and_iv(password, salt, key_length, iv_length):
+    """ source: Ansible source code """
+    """ Create a key and an initialization vector """
+    d = d_i = ''
+    while len(d) < key_length + iv_length:
+        text = ''.join([d_i, password, salt])
+        d_i = str(md5(text).digest())
+        d += d_i
+    key = d[:key_length]
+    iv = d[key_length:key_length+iv_length]
+    return key, iv
+
+
+def encrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__outbit_encrypted__:"):
     global encryption_password
-    if encryption_password is not None:
-        encryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
-        return str(binascii.b2a_base64(encryption_suite.encrypt(text)))
-    return str(text)
+    if encrypt_password is None and encryption_password is not None:
+        # If No encryption password provided, use global encryption password
+        encrypt_password = encryption_password
+    encrypt_text = encryption_prefix + text
+    if encrypt_password is not None:
+        salt = "__Salt__"
+        key, iv = aes_derive_key_and_iv(encrypt_password, salt, key_len, AES.block_size)
+        encryption_suite = AES.new(key, AES.MODE_CFB, iv)
+        return str(binascii.b2a_base64(encryption_suite.encrypt(encrypt_text)))
+    return str(encrypt_text)
 
 
-def decrypt_str(text):
+def decrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__outbit_encrypted__:", keyname="unknown"):
     global encryption_password
-    if encryption_password is not None:
-        decryption_suite = AES.new(encryption_password, AES.MODE_CFB, 'This is an IV456')
-        return str(decryption_suite.decrypt(binascii.a2b_base64(text)))
-    return str(text)
+    if encrypt_password is None and encryption_password is not None:
+        # If No encryption password provided, use global encryption password
+        encrypt_password = encryption_password
+    if text[:len(encryption_prefix)] == encryption_prefix:
+        # Clear Text, No Encryption Password Provided
+        return str(text[len(encryption_prefix):])
+    elif encrypt_password is not None:
+        # Decrypt using password
+        salt = "__Salt__"
+        key, iv = aes_derive_key_and_iv(encrypt_password, salt, key_len, AES.block_size)
+        decryption_suite = AES.new(key, AES.MODE_CFB, iv)
+        decrypt_text = str(decryption_suite.decrypt(binascii.a2b_base64(text)))
+        if decrypt_text[:len(encryption_prefix)] == encryption_prefix:
+            # Decrypted Text
+            return str(decrypt_text[len(encryption_prefix):]) 
+        else:
+            # Probably Wrong Key
+            raise DecryptWrongKeyException("  error: Failed to decrypt a secret named %s. If you recently changed your encryption_password try 'secrets encryptpw oldpw=XXXX newpw=XXXX'." % keyname)
+    else:
+        # Decryption Failed, Its Not Clear Text
+        raise DecryptNotClearTextException("  error: Failed to decrypt a secret named %s. If you recently disabled your encryption_password then re-enable it." % keyname)
 
 
 def secret_has_permission(user, secret):
@@ -342,7 +391,10 @@ def render_secrets(user, dictobj):
 
     cursor = db.secrets.find()
     for doc in list(cursor):
-        decrypt_dict(doc)
+        res = decrypt_dict(doc)
+        if res is False:
+            # Decryption Failed
+            return None
         if secret_has_permission(user, doc["name"]):
             if "type" in doc and doc["type"] == "file":
                 secrets[doc["name"]] = render_secret_file(doc["name"], doc["secret"])
@@ -374,22 +426,33 @@ def parse_action(user, category, action, options):
                 else:
                     # Admin functions do not allow secrets
                     if dbaction["category"] not in ["/actions", "/users", "/roles", "/secrets", "/plugins"]:
-                        render_vars("option", options, dbaction)
-                        tmp_files_dbaction = render_secrets(user, dbaction)
-                        tmp_files_options = render_secrets(user, options)
-                        response = plugins[dbaction["plugin"]](user, dbaction, options)
-                        response = json.loads(response)
-                        clean_secrets(tmp_files_dbaction)
-                        clean_secrets(tmp_files_options)
+                        if dbaction["category"] == "/" and dbaction["action"] in ["ping"]:
+                            # /ping does not allow secrets
+                            pass
+                        else:
+                            # Run Plugin With Secret
+                            render_vars("option", options, dbaction)
+                            tmp_files_dbaction = render_secrets(user, dbaction)
+                            tmp_files_options = render_secrets(user, options)
 
-                        # Async, return queue_id
-                        if "response" not in response:
-                            if "queue_id" not in response:
-                                return json.dumps({"response": "  error: expected async queue id but found none"})
+                            # Check Decryption Failed
+                            if user is not None:
+                                if (dbaction is not None and tmp_files_dbaction is None) or (options is not None and tmp_files_options is None):
+                                    return json.dumps({"response": "  error: Failed to decrypt a secret. If you recently changed your encryption_password try 'secrets encryptpw oldpw=XXXX newpw=XXXX'."})
 
-                        return json.dumps(response)
-                    else:
-                        return plugins[dbaction["plugin"]](user, dbaction, options)
+                            response = plugins[dbaction["plugin"]](user, dbaction, options)
+                            response = json.loads(response)
+                            clean_secrets(tmp_files_dbaction)
+                            clean_secrets(tmp_files_options)
+
+                            # async, return queue_id
+                            if "response" not in response:
+                                if "queue_id" not in response:
+                                    return json.dumps({"response": "  error: expected async queue id but found none"})
+
+                            return json.dumps(response)
+                    # Run Plugin Without Secrets
+                    return plugins[dbaction["plugin"]](user, dbaction, options)
     return None
 
 
@@ -408,14 +471,16 @@ class Cli(object):
                           help="tcp port of outbit-api server",
                           metavar="PORT",
                           default=None)
-        parser.add_option("-t", "--secure", dest="is_secure",
-                          help="Use SSL",
+        parser.add_option("-t", "--insecure", dest="is_secure",
+                          help="Do Not Use SSL",
                           metavar="SECURE",
-                          action="store_true")
+                          action="store_false",
+                          default=True)
         parser.add_option("-d", "--debug", dest="is_debug",
                           help="Debug Mode",
                           metavar="DEBUG",
-                          action="store_true")
+                          action="store_true",
+                          default=False)
         parser.add_option("-k", "--ssl_key", dest="ssl_key",
                           help="SSL key",
                           metavar="SSLKEY",
@@ -465,9 +530,9 @@ class Cli(object):
             self.server = str(outbit_conf_obj["server"])
         if self.port is None and "port" in outbit_conf_obj:
             self.port = int(outbit_conf_obj["port"])
-        if self.is_secure == False and "secure" in outbit_conf_obj:
+        if self.is_secure == True and "secure" in outbit_conf_obj:
             self.is_secure = bool(outbit_conf_obj["secure"])
-        if self.is_debug == False and "debug" in outbit_conf_obj:
+        if self.is_debug == True and "debug" in outbit_conf_obj:
             self.is_debug = bool(outbit_conf_obj["debug"])
         if encryption_password is None and "encryption_password" in outbit_conf_obj:
             encryption_password = str(outbit_conf_obj["encryption_password"])

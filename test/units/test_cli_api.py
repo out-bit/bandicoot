@@ -19,7 +19,7 @@ class TestCli(unittest.TestCase):
     def mock_db_basic_database(self):
         api.db.users.insert_one({"username": "jdoe1", "password_md5": "md5test"})
         api.db.users.insert_one({"username": "jdoe2", "password_md5": "md5test"})
-        api.db.secrets.insert_one({"name": "test_secret1", "secret": "test"})
+        api.db.secrets.insert_one({"name": "test_secret1", "secret": "__outbit_encrypted__:"+"test"})
         api.db.roles.insert_one({"name": "test_role1", "users": "jdoe1", "actions": "/", "secrets": "test_secret1"})
 
     def test_counters_db_init(self):
@@ -35,7 +35,8 @@ class TestCli(unittest.TestCase):
 
     def test_render_secrets_noperm(self):
         testobj = {"a": "hello {{ test_secret1 }}", "b": "no render"}
-        api.render_secrets("jdoe2", testobj)
+        res = api.render_secrets("jdoe2", testobj)
+        print("%s, %s" % (res, testobj))
         assert(testobj["a"] == "hello ")
 
 #    def test_render_secrets(self):
@@ -48,30 +49,22 @@ class TestCli(unittest.TestCase):
         assert(response == json.dumps({"response": "  you do not have permission to run this action"}))
 
     def test_encrypt_str(self):
-        # enable encryption pw
-        orig = api.encryption_password
-        api.encryption_password = "aaaaaaaaaaaaaaaa"
         # encrypt
-        enc_str = api.encrypt_str("testabcdtestabcdtestabcd")
-        # put it back to whatever it was
-        api.encryption_password = orig
-        assert(len(enc_str) == 33)
+        enc_str = api.encrypt_str("testabcdtestabcdtestabcd", encrypt_password="aaaaaaaaaaaaaaaa")
+        print(len(enc_str))
+        assert(len(enc_str) == 61)
 
     def test_encrypt_decrypt_str(self):
-        # enable encryption pw
-        orig = api.encryption_password
-        api.encryption_password = "aaaaaaaaaaaaaaaa"
-        enc_str = api.encrypt_str("testabcdtestabcdtestabcd")
-        dec_str = api.decrypt_str(enc_str)
-        # put it back to whatever it was
-        api.encryption_password = orig
-        assert(len(enc_str) == 33 and dec_str == "testabcdtestabcdtestabcd")
+        enc_str = api.encrypt_str("testabcdtestabcdtestabcd", encrypt_password="aaaaaaaaaaaaaaaa")
+        dec_str = api.decrypt_str(enc_str, encrypt_password="aaaaaaaaaaaaaaaa")
+        print("%s, %s" % (len(enc_str), dec_str))
+        assert(len(enc_str) == 61 and dec_str == "testabcdtestabcdtestabcd")
 
     def test_encrypt_decrypt_dict(self):
         # enable encryption pw
         orig = api.encryption_password
         api.encryption_password = "aaaaaaaaaaaaaaaa"
-        test_dict = {"secret": "test", "notsecret": "test"}
+        test_dict = {"name": "testsecret", "secret": "test", "notsecret": "test"}
         api.encrypt_dict(test_dict)
         api.decrypt_dict(test_dict)
         # put it back to whatever it was

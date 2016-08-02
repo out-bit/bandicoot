@@ -1,4 +1,5 @@
 import outbit.cli.api
+from outbit.exceptions import DecryptWrongKeyException, DecryptNotClearTextException, DecryptException
 import json
 import subprocess
 import hashlib
@@ -324,12 +325,90 @@ def plugin_secrets_del(user, action, options):
         return json.dumps({"exit_code": 1, "response": "  secret %s does not exist" % options["name"]})
 
 
+@options_supported(option_list=["oldpw"])
+def plugin_secrets_encryptpw(user, action, options):
+    def update_secret_pw(name, options):
+        result = outbit.cli.api.db.secrets.update_one({"name": name},
+                {"$set": options})
+        if result.matched_count > 0:
+            return True
+        else:
+            return False
+    result = ""
+    cursor = outbit.cli.api.db.secrets.find()
+    # secrets encryptpw --- encrypt clear text pw using the current password
+    # secrets encryptpw oldpw=XXXX --- re-encrypt secrets that use oldpw to use the current password
+    for doc in list(cursor):
+        if "secret" in doc:
+            # Detect status of secret
+            decrypted_secret = ""
+            encrypted_secret = None
+            what_to_do = "nothing"
+            old_encrypt_password = None # Default assumes secret is clear text, if no oldpw is provided this is assumed
+            new_encrypt_password = None # use global pw
+            if options is not None and "oldpw" in options:
+                # Old password provided, so use it
+                old_encrypt_password = str(options["oldpw"])
+
+
+            # Detect The Problem With Decryption
+            try:
+                decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password=new_encrypt_password)
+            except DecryptWrongKeyException:
+                # P
+                what_to_do = "updatepw"
+            except DecryptNotClearTextException:
+                # User said it was clear text, but its not. Skip, Do Nothing.
+                what_to_do = "notcleartext"
+            # Prefix is "__outbit_encrypted__:"
+            if decrypted_secret == doc["secret"][len("__outbit_encrypted__:"):]:
+                # Clear text to encrypted
+                what_to_do = "encrypt"
+
+            if what_to_do == "updatepw":
+                try:
+                    decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password=old_encrypt_password)
+                except DecryptException:
+                    result += "secret %s failed to update to new password\n" % doc["name"]
+                    continue
+                encrypted_secret = outbit.cli.api.encrypt_str(decrypted_secret, new_encrypt_password)
+                result += "secret %s updated to new password\n" % doc["name"]
+            elif what_to_do == "encrypt":
+                try:
+                    decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password=old_encrypt_password)
+                except DecryptException:
+                    result += "secret %s failed to update because the secret is not clear text\n" % doc["name"]
+                    continue
+                encrypted_secret = outbit.cli.api.encrypt_str(decrypted_secret, new_encrypt_password)
+                result += "secret %s encrypted using new password\n" % doc["name"]
+
+            # Secret Was Updated
+            if encrypted_secret is not None:
+                update_secret_pw(doc["name"], {"secret": encrypted_secret})
+
+    return json.dumps({"exit_code": 0, "response": result})
+
+
 def plugin_secrets_list(user, action, options):
     result = ""
     cursor = outbit.cli.api.db.secrets.find()
     for doc in list(cursor):
         if "secret" in doc:
-            doc["secret"] = "..." # do not print encrypted secret
+            # Detect status of secret
+            decrypted_secret = ""
+            doc["status"] = "encrypted"
+            try:
+                decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"])
+            except DecryptWrongKeyException:
+                doc["status"] = "wrongpw"
+            except DecryptNotClearTextException:
+                doc["status"] = "noencryptpw"
+            # Prefix is "__outbit_encrypted__:"
+            if decrypted_secret == doc["secret"][len("__outbit_encrypted__:"):]:
+                doc["status"] = "cleartext"
+
+            # Do Not Print Encrypted Secret
+            doc["secret"] = "..."
         for key in sorted(doc):
             if key not in ["_id"]:
                 result += '  %s="%s" ' % (key, doc[key])
@@ -387,6 +466,7 @@ def plugin_ansible(user, action, options, exit_event, q):
         for line in p.stdout:
             q.put("  %s\n" % line)
         p.wait()
+        #time.sleep(0.1) # Delay For Queue Operations
         return 0
 
     ansible_options = ""
@@ -434,6 +514,7 @@ def plugin_ansible(user, action, options, exit_event, q):
         shutil.rmtree(temp_location)
 
     q.put(EOF)
+    time.sleep(0.1) # Delay For Queue
     #sys.exit(0)
     return json.dumps({"exit_code": 0, "response": "  success"}) # For unittesting
 

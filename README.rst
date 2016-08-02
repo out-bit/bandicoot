@@ -35,14 +35,14 @@ Install outbit client only. This is if you already have a dedicated outbit api s
 
     $ pip install outbit
 
-Install outbit client and api server.
+Install outbit api server.
 
 .. sourcecode:: bash
 
   $ pip install outbit
   $ sudo outbit-api-install
 
-Install outbit api server using Docker.
+Install and Starting the outbit api server using Docker.
 
 .. sourcecode:: bash
 
@@ -52,17 +52,17 @@ Install outbit api server using Docker.
 Usage
 ============
 
-Start the API server on your localhost or on a dedicated ip.
+Start the API server on your localhost or on a dedicated IP.  If your using the Docker container then make sure you have pulled the image and have run the image using the above example.
 
 .. sourcecode:: bash
 
-    $ outbit-api -s 127.0.0.1
+    $ outbit-api -s 127.0.0.1 --insecure
 
-Login to the outbit shell. On the first login you will be prompted to change the default password.
+Login to the outbit shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by default its configured to use ssl.
 
 .. sourcecode:: bash
 
-    $ outbit -u superadmin -s 127.0.0.1
+    $ outbit -u superadmin -s 127.0.0.1 --insecure --no-check-certificates
       Password: superadmin
       Changing Password From Default
       Enter New Password: **********
@@ -89,6 +89,7 @@ Example of adding a "hello world" action that prints hello world.
       secrets del           del secrets
       secrets edit          edit secrets
       secrets add           add secrets
+      secrets encryptpw     Change password encryption
       plugins list          list plugins
       ping                  verify connectivity
       logs                  show the history log
@@ -123,6 +124,7 @@ Example of adding a "hello world" action that prints hello world.
       secrets del           del secrets
       secrets edit          edit secrets
       secrets add           add secrets
+      secrets encryptpw     Change password encryption
       plugins list          list plugins
       ping                  verify connectivity
       logs                  show the history log
