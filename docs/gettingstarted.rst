@@ -1,37 +1,37 @@
 Getting Started with outbit
 ==================
 
-Installing outbit Client
+Installing outbit client
 
 .. sourcecode:: bash
 
     $ pip install outbit
 
-Installing outbit Client and API Server
+Installing outbit api server
 
 .. sourcecode:: bash
 
   $ pip install outbit
   $ sudo outbit-api-install
 
-Starting The API server on your localhost or on a dedicated ip.
+Starting the outbit api server.
 
 .. sourcecode:: bash
 
-    $ outbit-api -s 127.0.0.1
+    $ outbit-api -s 127.0.0.1 --insecure
 
-Install outbit API server using Docker.
+Installing and Starting the outbit api server using Docker.
 
 .. sourcecode:: bash
 
   $ docker pull starboarder2001/outbit
   $ docker run -d -p 8088:8088 starboarder2001/outbit
 
-Logging into the outbit shell. On the first login you will be prompted to change the default password.
+Login to the outbit shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by its configured to use ssl.  If you are using valid ssl certificates and not self signed certificates you can also remove the "--no-check-certificates" flag.
 
 .. sourcecode:: bash
 
-    $ outbit -u superadmin -s 127.0.0.1
+    $ outbit -u superadmin -s 127.0.0.1 --insecure --no-check-certificates
       Password: superadmin
       Changing Password From Default
       Enter New Password: **********
@@ -60,6 +60,7 @@ The help command will display all the commands available to run.
       secrets del           del secrets
       secrets edit          edit secrets
       secrets add           add secrets
+      secrets encryptpw     Change password encryption
       plugins list          list plugins
       ping                  verify connectivity
       logs                  show the history log

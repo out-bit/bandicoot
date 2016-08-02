@@ -30,7 +30,7 @@ Below shows example config files to use for reference.
     port: 8088
     password: secretpassword
     secure: False
-    verify: False
+    ssl_verify: False
 
     $ cat ~/.outbit-api.conf
     ---
@@ -45,7 +45,7 @@ Below shows example config files to use for reference.
     server: 192.168.1.100
     password: secretpassword
     secure: True
-    verify: True
+    ssl_verify: True
 
     $ cat /etc/outbit-api.conf
     ---
