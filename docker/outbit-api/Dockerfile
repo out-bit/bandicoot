@@ -1,7 +1,7 @@
 FROM debian:stable
 MAINTAINER David Whiteside <david@davidwhiteside.com>
 
-# outbit-api installation
+# outbit-api dependencies
 RUN apt-get update && apt-get install -y python \
   python-setuptools \
   python-dev \
@@ -12,17 +12,30 @@ RUN apt-get update && apt-get install -y python \
   python-pip
 RUN pip install -U pip
 RUN pip install -U setuptools
-RUN pip install outbit
-RUN outbit-api-install
 
 # outbit application user and group
 RUN groupadd -r outbit && useradd -r -g outbit outbit
+
+# outbit-api install latest stable
+RUN pip install -U outbit
+RUN outbit-api-install
+
+# outbit-api install latest unstable
+#RUN apt-get install -y git
+#RUN mkdir -p /opt/outbit-dev/ && chmod 700 /opt/outbit-dev/ && chown outbit: /opt/outbit-dev/
+#WORKDIR /opt/outbit-dev/
+#RUN git clone https://github.com/starboarder2001/outbit.git
+#WORKDIR /opt/outbit-dev/outbit/
+#RUN python setup.py install
+#RUN outbit-api-install
 
 # outbit-api config
 RUN echo "---" > /etc/outbit-api.conf
 RUN chmod 400 /etc/outbit-api.conf && chown outbit:outbit /etc/outbit-api.conf
 RUN echo "encryption_password: \"$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)\"" >> /etc/outbit-api.conf
+#RUN echo "port: 8088" >> /etc/outbit-api.conf
 RUN echo "secure: True" >> /etc/outbit-api.conf
+#RUN echo "server: 0.0.0.0" >> /etc/outbit-api.conf
 RUN echo "ssl_key: /etc/ssl/localcerts/outbit.com.key" >> /etc/outbit-api.conf
 RUN echo "ssl_crt: /etc/ssl/localcerts/outbit.com.crt" >> /etc/outbit-api.conf
 
