@@ -20,8 +20,8 @@ outbit
 .. image:: https://coveralls.io/repos/starboarder2001/outbit/badge.svg?branch=master
     :target: https://coveralls.io/r/starboarder2001/outbit?branch=master
 
-.. image:: https://readthedocs.org/projects/outbit/badge/?version=latest
-    :target: http://outbit.readthedocs.org/en/develop/?badge=latest
+.. image:: https://readthedocs.org/projects/outbit/badge/?version=stable
+    :target: http://outbit.readthedocs.io/en/stable/
     :alt: Documentation Status
 
 outbit provides a simple UI for orchestrating changes or applying configurations in a datacenter or cloud environment.  outbit provides a layer on top of Ansible that allows you to easily wrap up automated tasks and provide a simple way to execute them.  The role based access control allows you to implement seperations of duties and limit specific actions to be executed by specific roles.  The logging feature allows you to track the history of changes in the environment.
