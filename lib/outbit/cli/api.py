@@ -613,7 +613,7 @@ class Cli(object):
         routes.app.logger.info("Starting outbit api server on %s://%s:%d" % ("https" if
             self.is_secure else "http", self.server, self.port))
         if self.is_secure:
-            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.check_hostname = False
             context.load_cert_chain(certfile=self.ssl_crt, keyfile=self.ssl_key)
             routes.app.run(host=self.server, ssl_context=context, port=self.port, debug=self.is_debug)
