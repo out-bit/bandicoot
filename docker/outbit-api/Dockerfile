@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y python \
   libffi-dev \
   openssl \
   libssl-dev \
+  nginx \
   python-pip
 RUN pip install -U pip
 RUN pip install -U setuptools
@@ -33,11 +34,9 @@ RUN outbit-api-install
 RUN echo "---" > /etc/outbit-api.conf
 RUN chmod 400 /etc/outbit-api.conf && chown outbit:outbit /etc/outbit-api.conf
 RUN echo "encryption_password: \"$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)\"" >> /etc/outbit-api.conf
-#RUN echo "port: 8088" >> /etc/outbit-api.conf
-RUN echo "secure: True" >> /etc/outbit-api.conf
-#RUN echo "server: 0.0.0.0" >> /etc/outbit-api.conf
-RUN echo "ssl_key: /etc/ssl/localcerts/outbit.com.key" >> /etc/outbit-api.conf
-RUN echo "ssl_crt: /etc/ssl/localcerts/outbit.com.crt" >> /etc/outbit-api.conf
+RUN echo "port: 8080" >> /etc/outbit-api.conf
+RUN echo "secure: False" >> /etc/outbit-api.conf
+RUN echo "server: 127.0.0.1" >> /etc/outbit-api.conf
 
 # SSL Cert Generation
 COPY ./gencert.sh /sbin/
@@ -49,6 +48,10 @@ RUN chown outbit: /etc/ssl/localcerts/outbit.com*
 
 # Log file
 RUN touch /var/log/outbit.log && chmod 755 /var/log/outbit.log && chown outbit: /var/log/outbit.log
+
+# NGINX SSL Proxy
+COPY ./outbit-nginx.conf /etc/nginx/sites-available/outbit
+RUN ln -s /etc/nginx/sites-available/outbit /etc/nginx/sites-enabled/outbit
 
 # Entry Point
 COPY ./docker-entrypoint.sh /sbin/
