@@ -24,7 +24,7 @@ outbit
     :target: http://outbit.readthedocs.io/en/stable/
     :alt: Documentation Status
 
-outbit provides a simple UI for orchestrating changes or applying configurations in a datacenter or cloud environment.  outbit provides a layer on top of Ansible that allows you to easily wrap up automated tasks and provide a simple way to execute them.  The role based access control allows you to implement seperations of duties and limit specific actions to be executed by specific roles.  The logging feature allows you to track the history of changes in the environment.
+outbit provides a simple UI for orchestrating changes or applying configurations in a datacenter and cloud environment.  outbit provides a layer on top of Ansible that allows you to easily wrap up automated tasks and provide a simple way to execute them.  The role based access control allows you to implement seperations of duties and limit specific actions to be executed by specific roles.  The logging feature allows you to track the history of changes in the environment.
 
 Installation
 ============
