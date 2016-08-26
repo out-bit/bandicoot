@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html ng-app="outbitApp" lang="en">
+    <head>
+        <title>outbit gui</title>
+        <link rel="stylesheet" type="text/css" href="css/main.css"/>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.js"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-route.js"></script>
+        <script type="text/javascript" src="js/app.js"></script>
+        <script type="text/javascript" src="js/controllers.js"></script>
+    </head>
+    <body ng-controller="outbitCtrl">
+        <div id="header">
+            <div id="logo">outbit</div>
+            <div id="nav">
+                <a href="#jobs"><img id="job" src="imgs/job.png"></img></a> &nbsp;&nbsp;&nbsp;
+                <a href="#actions"><img id="action" src="imgs/action.png"></img></a> &nbsp;&nbsp;&nbsp;
+                <a href="#user"><img id="gear" src="imgs/gear.png"></img></a>
+            </div>
+        </div>
+        <div id="content" ng-view>
+        </div>
+        <div id="footer">
+            <hr/>
+            Copyright &#169;2016 outbit
+        </div>
+    </body>
+</html>
