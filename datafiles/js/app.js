@@ -1,10 +1,17 @@
 var outbitApp = angular.module('outbitApp', [ 'ngRoute', 'outbitControllers', 'satellizer', 'toaster']);
 
+outbitApp.run(function($rootScope){
+      // Global Vars
+      $rootScope.outbitapi_ip = "127.0.0.1"
+      $rootScope.outbitapi_port = "8088"
+});
+
 outbitApp.config(['$routeProvider', '$httpProvider', '$authProvider',
   function($routeProvider, $httpProvider, $authProvider) {
-
       // Login URL
-      $authProvider.loginUrl = 'http://127.0.0.1:8088/login';
+      $authProvider.loginUrl = 'http://127.0.0.1:8088/login'
+      // The below doesnt work for some reason??
+      //$authProvider.loginUrl = 'http://' + $rootScope.outbitapi_ip + ':' + $rootScope.outbitapi_port + '/login';
 
       // Support Cross-Domain
       $httpProvider.defaults.useXDomain = true;

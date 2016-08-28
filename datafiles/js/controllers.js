@@ -46,10 +46,10 @@ outbitControllers.controller('outbitLogoutCtrl', ["$auth", "$location", "toaster
   }
  ]); 
 
-outbitControllers.controller('outbitJobsCtrl', ['$auth', '$scope', '$http',
-  function ($auth, $scope, $http) {
+outbitControllers.controller('outbitJobsCtrl', ['$auth', '$scope', '$http', '$rootScope',
+  function ($auth, $scope, $http, $rootScope) {
       outbitdata = {"action": "list", "category": "/jobs", "options": null}
-      $http.post('http://127.0.0.1:8088/api', outbitdata).success(function (data) {
+      $http.post('http://' + $rootScope.outbitapi_ip + ':' + $rootScope.outbitapi_port + '/api', outbitdata).success(function (data) {
         $scope.jobs = data.api_response
       }).error(function (data) {
         console.log(data);
@@ -57,8 +57,8 @@ outbitControllers.controller('outbitJobsCtrl', ['$auth', '$scope', '$http',
   }
 ]);
 
-outbitControllers.controller('outbitActionsCtrl', ['$auth', '$scope', '$http',
-  function ($auth, $scope, $http) {
+outbitControllers.controller('outbitActionsCtrl', ['$auth', '$scope', '$http', '$rootScope',
+  function ($auth, $scope, $http, $rootScope) {
       $scope.builtinActionsFilter = function(element) {
         var category_filter = element.category.match(/^actions$|^users$|^roles$|^secrets$|^plugins$|^jobs$|^schedules$|^inventory$/) ? false : true;
         var action_filter = element.action.match(/^ping$|^logs$|^help$/) ? false : true;
@@ -67,7 +67,7 @@ outbitControllers.controller('outbitActionsCtrl', ['$auth', '$scope', '$http',
 
       $scope.runJob = function(category, action, options=null) {
           outbitdata = {"action": action, "category": "/"+category, "options": options}
-          $http.post('http://127.0.0.1:8088/api', outbitdata).success(function (data) {
+          $http.post('http://' + $rootScope.outbitapi_ip + ':' + $rootScope.outbitapi_port + '/api', outbitdata).success(function (data) {
             $scope.jobs = data.api_response
           }).error(function (data) {
             console.log(outbitdata);
@@ -76,7 +76,7 @@ outbitControllers.controller('outbitActionsCtrl', ['$auth', '$scope', '$http',
       };
 
       outbitdata = {"action": "help", "category": "/", "options": null}
-      $http.post('http://127.0.0.1:8088/api', outbitdata).success(function (data) {
+      $http.post('http://' + $rootScope.outbitapi_ip + ':' + $rootScope.outbitapi_port + '/api', outbitdata).success(function (data) {
         $scope.actions = data.api_response
       }).error(function (data) {
         console.log(data);
@@ -84,10 +84,10 @@ outbitControllers.controller('outbitActionsCtrl', ['$auth', '$scope', '$http',
   }
 ]);
 
-outbitControllers.controller('outbitUserCtrl', ['$auth', '$scope', '$http',
-  function ($auth, $scope, $http) {
+outbitControllers.controller('outbitUserCtrl', ['$auth', '$scope', '$http', '$rootScope',
+  function ($auth, $scope, $http, $rootScope) {
       outbitdata = {"action": "list", "category": "/users", "options": null}
-      $http.post('http://127.0.0.1:8088/api', outbitdata).success(function (data) {
+      $http.post('http://' + $rootScope.outbitapi_ip + ':' + $rootScope.outbitapi_port + '/api', outbitdata).success(function (data) {
         $scope.users = data.response.split("\n");
       }).error(function (data) {
         console.log(data);
