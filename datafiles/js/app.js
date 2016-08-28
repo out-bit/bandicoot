@@ -15,10 +15,9 @@ outbitApp.config(['$routeProvider', '$httpProvider', '$authProvider',
         when('/login', {
          templateUrl: 'templates/login.html',
          controller: 'outbitLoginCtrl',
-         /*
          resolve: {
             skipIfLoggedIn: skipIfLoggedIn
-         }*/
+         }
         }).
         when('/jobs', {
          templateUrl: 'templates/jobs.html',
