@@ -32,14 +32,14 @@ outbitApp.config(['$routeProvider', '$httpProvider', '$authProvider',
         }).
         when('/actions', {
          templateUrl: 'templates/actions.html',
-         controller: 'outbitJobsCtrl',
+         controller: 'outbitActionsCtrl',
          resolve: {
             loginRequired: loginRequired
          }
         }).
         when('/user', {
          templateUrl: 'templates/user.html',
-         controller: 'outbitJobsCtrl',
+         controller: 'outbitUserCtrl',
          resolve: {
             loginRequired: loginRequired
          }
