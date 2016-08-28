@@ -19,6 +19,10 @@ outbitApp.config(['$routeProvider', '$httpProvider', '$authProvider',
             skipIfLoggedIn: skipIfLoggedIn
          }
         }).
+        when('/logout', {
+         template: null,
+         controller: 'outbitLogoutCtrl'
+        }).
         when('/jobs', {
          templateUrl: 'templates/jobs.html',
          controller: 'outbitJobsCtrl',

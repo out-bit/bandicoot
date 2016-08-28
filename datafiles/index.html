@@ -13,9 +13,9 @@
         <script type="text/javascript" src="js/controllers.js"></script>
     </head>
     <body>
-        <div id="header">
+        <div id="header" ng-controller="outbitNavCtrl">
             <div id="logo">outbit</div>
-            <div id="nav">
+            <div id="nav" ng-if="isAuthenticated()">
                 <a href="#jobs"><img id="job" src="imgs/job.png"></img></a> &nbsp;&nbsp;&nbsp;
                 <a href="#actions"><img id="action" src="imgs/action.png"></img></a> &nbsp;&nbsp;&nbsp;
                 <a href="#user"><img id="gear" src="imgs/gear.png"></img></a>

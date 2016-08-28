@@ -23,6 +23,28 @@ outbitControllers.controller('outbitLoginCtrl', ['$auth', '$scope', '$http', 'to
     }
   }
 ]);
+ 
+outbitControllers.controller('outbitNavCtrl', function($auth,  $scope) {
+    // Nav only for auth users
+    $scope.isAuthenticated = function() {
+      return $auth.isAuthenticated();
+    };
+});
+
+outbitControllers.controller('outbitLogoutCtrl', ["$auth", "$location", "toaster",
+  function($auth, $location, toaster) { // Logout the user if they are authenticated.
+    if (!$auth.isAuthenticated()) { return; }
+     $auth.logout()
+      .then(function() {
+        toaster.pop({
+                type: 'success',
+                body: 'Logging out',
+                showCloseButton: true,
+                });
+        $location.url('/login');
+        });
+  }
+ ]); 
 
 outbitControllers.controller('outbitJobsCtrl', ['$auth', '$scope', '$http',
   function ($auth, $scope, $http) {
