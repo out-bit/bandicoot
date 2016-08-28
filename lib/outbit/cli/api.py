@@ -616,9 +616,9 @@ class Cli(object):
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.check_hostname = False
             context.load_cert_chain(certfile=self.ssl_crt, keyfile=self.ssl_key)
-            routes.app.run(host=self.server, ssl_context=context, port=self.port, debug=self.is_debug)
+            routes.app.run(threaded=True, host=self.server, ssl_context=context, port=self.port, debug=self.is_debug)
         else:
-            routes.app.run(host=self.server, port=self.port, debug=self.is_debug)
+            routes.app.run(threaded=True, host=self.server, port=self.port, debug=self.is_debug)
 
 
 
