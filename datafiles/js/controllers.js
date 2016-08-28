@@ -50,7 +50,7 @@ outbitControllers.controller('outbitJobsCtrl', ['$auth', '$scope', '$http',
   function ($auth, $scope, $http) {
       outbitdata = {"action": "list", "category": "/jobs", "options": null}
       $http.post('http://127.0.0.1:8088/api', outbitdata).success(function (data) {
-        $scope.jobs = data.response.split("\n");
+        $scope.jobs = data.api_response
       }).error(function (data) {
         console.log(data);
       });
@@ -59,9 +59,25 @@ outbitControllers.controller('outbitJobsCtrl', ['$auth', '$scope', '$http',
 
 outbitControllers.controller('outbitActionsCtrl', ['$auth', '$scope', '$http',
   function ($auth, $scope, $http) {
+      $scope.builtinActionsFilter = function(element) {
+        var category_filter = element.category.match(/^actions$|^users$|^roles$|^secrets$|^plugins$|^jobs$|^schedules$|^inventory$/) ? false : true;
+        var action_filter = element.action.match(/^ping$|^logs$|^help$/) ? false : true;
+        return action_filter && category_filter;
+      };
+
+      $scope.runJob = function(category, action, options=null) {
+          outbitdata = {"action": action, "category": "/"+category, "options": options}
+          $http.post('http://127.0.0.1:8088/api', outbitdata).success(function (data) {
+            $scope.jobs = data.api_response
+          }).error(function (data) {
+            console.log(outbitdata);
+            console.log(data);
+          });
+      };
+
       outbitdata = {"action": "help", "category": "/", "options": null}
       $http.post('http://127.0.0.1:8088/api', outbitdata).success(function (data) {
-        $scope.actions = data.response.split("\n");
+        $scope.actions = data.api_response
       }).error(function (data) {
         console.log(data);
       });

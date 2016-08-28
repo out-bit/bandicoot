@@ -99,18 +99,21 @@ def category_fix(options):
 def plugin_help(user, action, options):
     cursor = outbit.cli.api.db.actions.find()
     response = ""
+    api_response = []
     for dbaction in outbit.cli.api.builtin_actions + list(cursor):
         if outbit.cli.api.roles_has_permission(user, {"category": dbaction["category"], "action": dbaction["action"]}, {}):
             category_str = dbaction["category"].strip("/").replace("/", " ")
             if category_str is None or len(category_str) <= 0:
+                api_response.append({"category": "", "action": dbaction["action"], "desc": dbaction["desc"]})
                 response += "  %s \t\t\t%-60s\n" % (dbaction["action"], dbaction["desc"])
             else:
+                api_response.append({"category": dbaction["category"].strip("/").replace("/", " "), "action": dbaction["action"], "desc": dbaction["desc"]})
                 response += "  %s %s \t\t%-60s\n" % (dbaction["category"].strip("/").replace("/", " "), dbaction["action"], dbaction["desc"])
 
     # Append the exit builtin implemented on the client side
     response += "  exit \t\t\n"
 
-    return json.dumps({"exit_code": 0, "response": response})
+    return json.dumps({"exit_code": 0, "response": response, "api_response": api_response})
 
 
 def plugin_ping(user, action, options):
@@ -597,15 +600,17 @@ def plugin_jobs_status(user, action, options):
 
 def plugin_jobs_list(user, action, options):
     result = "  Job ID\tIs Running?\tUser\tCommand\n"
+    api_result = []
     cursor = outbit.cli.api.db.jobs.find()
     for doc in list(cursor):
         is_running = doc["_id"] in job_queue and doc["running"]
+        api_result.append({"_id": doc["_id"], "is_running": is_running, "user": doc["user"], "category": doc["action"]["category"], "action": doc["action"]["action"]})
         result += "  %s\t\t%s\t\t%s\t\t%s/%s\n" % (str(doc["_id"]), str(is_running),
                                               str(doc["user"]),
                                               str(doc["action"]["category"]).rstrip("/"),
                                               str(doc["action"]["action"]))
 
-    return json.dumps({"exit_code": 0, "response": result})
+    return json.dumps({"exit_code": 0, "response": result, "api_response": api_result})
 
 
 @options_supported(option_list=["id"])
