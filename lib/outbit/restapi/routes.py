@@ -137,6 +137,7 @@ def outbit_login():
     return(resp)
 
 
+# Support Authorization headers for auth (outbit-cli uses this API)
 @app.route("/", methods=["POST"])
 @requires_auth
 def outbit_base():
@@ -164,6 +165,7 @@ def outbit_base():
     return(resp)
 
 
+# Support Token for auth (outbit-gui uses this API)
 @app.route("/api", methods=["POST"])
 @token_required
 def outbit_api():
