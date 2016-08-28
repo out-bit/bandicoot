@@ -1,7 +1,26 @@
-var outbitApp = angular.module('outbitApp', [ 'ngRoute', 'outbitControllers']);
+var outbitApp = angular.module('outbitApp', [ 'ngRoute', 'outbitControllers', 'satellizer']);
 
-outbitApp.config(['$routeProvider',
-  function($routeProvider) {
+outbitApp.config(['$routeProvider', '$httpProvider', '$authProvider',
+  function($routeProvider, $httpProvider, $authProvider) {
+    // Login Required
+    function loginRequired($q, $location, $auth, $route) {
+        var deferred = $q.defer();
+        if ($auth.isAuthenticated()) {
+            deferred.resolve();
+        } else {
+            $location.path('http://127.0.0.1:8088/login');
+        }
+        return deferred.promise;
+    }
+
+      // Login URL
+      $authProvider.loginUrl = 'http://127.0.0.1:8088/login';
+
+      // Support Cross-Domain
+      $httpProvider.defaults.useXDomain = true;
+      delete $httpProvider.defaults.headers.common["X-Requested-With"];
+
+      // Routes
       $routeProvider.
         when('/login', {
          templateUrl: 'templates/login.html',
@@ -9,18 +28,30 @@ outbitApp.config(['$routeProvider',
         }).
         when('/jobs', {
          templateUrl: 'templates/jobs.html',
-         controller: 'outbitCtrl'
+         controller: 'outbitCtrl',
+         resolve: {
+            loginRequired: loginRequired
+         }
         }).
         when('/actions', {
          templateUrl: 'templates/actions.html',
-         controller: 'outbitCtrl'
+         controller: 'outbitCtrl',
+         resolve: {
+            loginRequired: loginRequired
+         }
         }).
         when('/user', {
          templateUrl: 'templates/user.html',
-         controller: 'outbitCtrl'
+         controller: 'outbitCtrl',
+         resolve: {
+            loginRequired: loginRequired
+         }
         }).
         otherwise( {
          templateUrl: 'templates/login.html',
-         controller: 'dwCtrl'
+         controller: 'outbitCtrl',
+         resolve: {
+            loginRequired: loginRequired
+         }
         });
   }]);

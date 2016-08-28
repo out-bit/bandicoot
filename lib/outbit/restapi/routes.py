@@ -1,4 +1,6 @@
 from flask import Flask, Response, request
+from flask_cors import CORS, cross_origin
+import jwt
 import os
 from functools import wraps
 import hashlib
@@ -9,7 +11,29 @@ from ldap3 import Server, Connection, LDAPSocketOpenError
 
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = os.urandom(24)
+
+
+def create_token(user):
+    global app
+    payload = {
+        # subject
+        'sub': user,
+        #issued at
+        'iat': datetime.datetime.utcnow(),
+        #expiry
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    }
+ 
+    token = jwt.encode(payload, app.secret_key, algorithm='HS256')
+    return token.decode('unicode_escape')
+ 
+
+def parse_token(req):
+    global app
+    token = req.headers.get('Authorization').split()[1]
+    return jwt.decode(token, app.secret_key, algorithms='HS256')
 
 
 def check_auth(username, password):
@@ -54,11 +78,63 @@ def authenticate():
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        g = f.func_globals
         auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
+        data = request.get_json(force=True)
+        username = None
+        password = None
+
+        if auth is None:
+            # user post username/password
+            username = data["username"]
+            password = data["password"]
+        else:
+            # username/password from Authorized Headers
+            username = auth.username
+            password = auth.password
+
+        # Set username for decorated func
+        g["username"] = username
+
+        if not check_auth(username, password):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        g = f.func_globals
+
+        if not request.headers.get('Authorization'):
+            return Response(response="Missing authorization header", status=401)
+        try:
+            payload = parse_token(request)
+        except jwt.DecodeError:
+            return Response(response="Token is invalid", status=401)
+        except jwt.ExpiredSignature:
+            return Response(response="Token has expired", status=401)
+
+        # Set username for decorated func
+        g["username"] = payload['sub']
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.route("/login", methods=["POST"])
+@requires_auth
+def outbit_login():
+    dat = None
+    status = 200
+
+    # Authenticate user, return a token
+    dat = json.dumps({ "token": create_token(username) })
+
+    # http response
+    resp = Response(response=dat, status=status, mimetype="application/json")
+    return(resp)
 
 
 @app.route("/", methods=["POST"])
@@ -67,7 +143,10 @@ def outbit_base():
     indata = request.get_json()
     dat = None
     status = 200
-    username = request.authorization.username
+
+    # Error on invalid request
+    if "options" not in indata or "category" not in indata or "action" not in indata:
+        return Response(response="Invalid Request", status=401, mimetype="application/json")
 
     # Encrypt indata values that are sensitive
     outbit.cli.api.encrypt_dict(indata["options"])
@@ -76,6 +155,34 @@ def outbit_base():
     dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
     if dat is None:
         dat = json.dumps({"response": "  action not found"})
+
+    # Audit Logging / History
+    outbit.cli.api.log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
+
+    # http response
+    resp = Response(response=dat, status=status, mimetype="application/json")
+    return(resp)
+
+
+@app.route("/api", methods=["POST"])
+@token_required
+def outbit_api():
+    indata = request.get_json()
+    dat = None
+    status = 200
+
+    # Error on invalid request
+    if indata is None or "options" not in indata or "category" not in indata or "action" not in indata:
+        return Response(response=json.dumps({"response": "  invalid request"}), status=400, mimetype="application/json")
+
+    # Encrypt indata values that are sensitive
+    outbit.cli.api.encrypt_dict(indata["options"])
+
+    # Run Action
+    dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
+    if dat is None:
+        dat = json.dumps({"response": "  action not found"})
+        status = 400
 
     # Audit Logging / History
     outbit.cli.api.log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
