@@ -49,6 +49,13 @@ div {
     z-index: 100;
 }
 
+#jobs {
+    padding-bottom: 90px; // Add Space at the bottom of the jobs list
+}
+#actions {
+    padding-bottom: 90px; // Add Space at the bottom of the actions list
+}
+
 #content {
     background-color: #E2DEE4;
     width: 100%;
