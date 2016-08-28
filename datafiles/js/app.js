@@ -1,4 +1,4 @@
-var outbitApp = angular.module('outbitApp', [ 'ngRoute', 'outbitControllers', 'satellizer']);
+var outbitApp = angular.module('outbitApp', [ 'ngRoute', 'outbitControllers', 'satellizer', 'toaster']);
 
 outbitApp.config(['$routeProvider', '$httpProvider', '$authProvider',
   function($routeProvider, $httpProvider, $authProvider) {

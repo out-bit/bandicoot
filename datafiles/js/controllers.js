@@ -1,16 +1,26 @@
 var outbitControllers = angular.module('outbitControllers', []);
 
-outbitControllers.controller('outbitLoginCtrl', ['$auth', '$scope', '$http',
-  function ($auth, $scope, $http) {
+outbitControllers.controller('outbitLoginCtrl', ['$auth', '$scope', '$http', 'toaster',
+  function ($auth, $scope, $http, toaster) {
+    $scope.login = function() {
       credentials = {
-            username: "superadmin",
-            password: "password",
+            username: $scope.username,
+            password: $scope.password,
       }
 
       $auth.login(credentials).then(function(data) {
         console.log(data)
-      });
-      console.log("login")
+      })
+      .catch(function(response){ // If login is unsuccessful, display relevant error message.
+               toaster.pop({
+                type: 'error',
+                title: 'Login Error',
+                body: response.data,
+                showCloseButton: true,
+                timeout: 0
+                });
+       });
+    }
   }
 ]);
 

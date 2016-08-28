@@ -1,1 +1,14 @@
-Login
+<span class="errormsg">
+    <toaster-container></toaster-container>
+    </br>
+</span>
+
+<form ng-submit="login()">            
+    Username:
+    <input type="username" placeholder="Username" ng-model="username" required>
+    </br>
+    Password:
+    <input type="password"  placeholder="Password" ng-model="password" required>
+    </br>
+    <button class="button-primary" >Login</button>
+</form>
