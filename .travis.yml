@@ -11,7 +11,9 @@ install:
     - pip install nose
     - pip install pyyaml
     - pip install Flask
+    - pip install flask-cors
     - pip install requests
+    - pip install PyJWT
     - pip install pymongo
     - pip install ply
     - pip install pycrypto
