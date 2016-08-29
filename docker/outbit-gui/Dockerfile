@@ -37,7 +37,7 @@ RUN chmod 400 /etc/outbit-api.conf && chown outbit:outbit /etc/outbit-api.conf
 RUN echo "encryption_password: \"$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)\"" >> /etc/outbit-api.conf
 RUN echo "port: 8088" >> /etc/outbit-api.conf
 RUN echo "secure: False" >> /etc/outbit-api.conf
-RUN echo "server: 127.0.0.1" >> /etc/outbit-api.conf
+RUN echo "server: 0.0.0.0" >> /etc/outbit-api.conf
 
 # SSL Cert
 RUN chown outbit: /etc/ssl/certs/outbit*
@@ -47,6 +47,7 @@ RUN chmod 440 /etc/ssl/certs/outbit*
 RUN touch /var/log/outbit.log && chmod 755 /var/log/outbit.log && chown outbit: /var/log/outbit.log
 
 # NGINX SSL Proxy
+RUN rm -f /etc/nginx/sites-available/default
 COPY ./outbit-nginx.conf /etc/nginx/sites-available/outbit
 RUN ln -s /etc/nginx/sites-available/outbit /etc/nginx/sites-enabled/outbit
 
