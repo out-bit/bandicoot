@@ -10,4 +10,4 @@ docker exec -i -t da426841d88f /bin/bash
 # image cleanup
 for img in $(docker ps|awk '{print $1}'|grep -v CONT); do docker stop $img; done
 for img in $(docker ps -a|awk '{print $1}'|grep -v CONT); do docker rm $img; done
-for img in $(docker images|awk '{print $3}'|grep -v IMAGES); do docker rmi $img; done
+for img in $(docker images|grep -v debian|grep -v IMAGE|awk '{print $3}'); do docker rmi $img; done
