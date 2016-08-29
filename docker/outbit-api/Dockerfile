@@ -38,13 +38,9 @@ RUN echo "port: 8080" >> /etc/outbit-api.conf
 RUN echo "secure: False" >> /etc/outbit-api.conf
 RUN echo "server: 127.0.0.1" >> /etc/outbit-api.conf
 
-# SSL Cert Generation
-COPY ./gencert.sh /sbin/
-RUN chown root:root /sbin/gencert.sh && chmod 700 /sbin/gencert.sh
-RUN mkdir -p /etc/ssl/localcerts/ && chmod 700 /etc/ssl/localcerts/ && chown outbit: /etc/ssl/localcerts/
-WORKDIR /etc/ssl/localcerts/
-RUN /sbin/gencert.sh outbit.com
-RUN chown outbit: /etc/ssl/localcerts/outbit.com*
+# SSL Cert
+RUN chown outbit: /etc/ssl/certs/outbit*
+RUN chmod 440 /etc/ssl/certs/outbit*
 
 # Log file
 RUN touch /var/log/outbit.log && chmod 755 /var/log/outbit.log && chown outbit: /var/log/outbit.log
