@@ -28,7 +28,7 @@ WORKDIR /opt/outbit-dev/
 RUN git clone https://github.com/starboarder2001/outbit.git
 WORKDIR /opt/outbit-dev/outbit/
 RUN python setup.py sdist
-RUN pip install "$(ls -tr dist/|tail -1)"
+RUN pip install "dist/$(ls -tr dist/|tail -1)"
 RUN outbit-api-install
 
 # outbit-api config
