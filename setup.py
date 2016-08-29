@@ -46,5 +46,5 @@ setup(name='outbit',
          'bin/outbit-api-install',
          'bin/outbit-api-install.yml',
       ],
-      data_files=[],
+      package_data={"": ["data_files/outbit-gui/*", "data_files/outbit-gui/css/*", "data_files/outbit-gui/imgs/*", "data_files/outbit-gui/js/*", "data_files/outbit-gui/templates/*"]},
 )
