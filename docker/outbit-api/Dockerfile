@@ -47,6 +47,7 @@ RUN chmod 440 /etc/ssl/certs/outbit*
 RUN touch /var/log/outbit.log && chmod 755 /var/log/outbit.log && chown outbit: /var/log/outbit.log
 
 # NGINX SSL Proxy
+RUN rm -f /etc/nginx/sites-available/default
 COPY ./outbit-nginx.conf /etc/nginx/sites-available/outbit
 RUN ln -s /etc/nginx/sites-available/outbit /etc/nginx/sites-enabled/outbit
 
