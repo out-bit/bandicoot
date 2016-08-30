@@ -17,10 +17,6 @@ RUN pip install -U setuptools
 # outbit application user and group
 RUN groupadd -r outbit && useradd -r -g outbit outbit
 
-# outbit-api install latest stable
-#RUN pip install -U outbit
-#RUN outbit-api-install
-
 # outbit-api install latest unstable
 RUN apt-get install -y git
 RUN mkdir -p /opt/outbit-dev/ && chmod 700 /opt/outbit-dev/ && chown outbit: /opt/outbit-dev/

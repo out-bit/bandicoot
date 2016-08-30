@@ -21,16 +21,6 @@ RUN groupadd -r outbit && useradd -r -g outbit outbit
 RUN pip install -U outbit
 RUN outbit-api-install
 
-# outbit-api install latest unstable
-#RUN apt-get install -y git
-#RUN mkdir -p /opt/outbit-dev/ && chmod 700 /opt/outbit-dev/ && chown outbit: /opt/outbit-dev/
-#WORKDIR /opt/outbit-dev/
-#RUN git clone https://github.com/starboarder2001/outbit.git
-#WORKDIR /opt/outbit-dev/outbit/
-#RUN python setup.py sdist
-#RUN pip install "$(ls -trh dist/|tail -1)"
-#RUN outbit-api-install
-
 # outbit-api config
 RUN echo "---" > /etc/outbit-api.conf
 RUN chmod 400 /etc/outbit-api.conf && chown outbit:outbit /etc/outbit-api.conf
