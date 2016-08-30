@@ -35,9 +35,9 @@ RUN outbit-api-install
 RUN echo "---" > /etc/outbit-api.conf
 RUN chmod 400 /etc/outbit-api.conf && chown outbit:outbit /etc/outbit-api.conf
 RUN echo "encryption_password: \"$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)\"" >> /etc/outbit-api.conf
-RUN echo "port: 8088" >> /etc/outbit-api.conf
+RUN echo "port: 8080" >> /etc/outbit-api.conf
 RUN echo "secure: False" >> /etc/outbit-api.conf
-RUN echo "server: 0.0.0.0" >> /etc/outbit-api.conf
+RUN echo "server: 127.0.0.1" >> /etc/outbit-api.conf
 
 # SSL Cert
 RUN chown outbit: /etc/ssl/certs/outbit*
