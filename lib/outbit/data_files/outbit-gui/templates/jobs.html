@@ -1,5 +1,6 @@
 <div id="jobs">
-    <h1>Jobs</h1>
+    <h2>Jobs</h2>
+    <toaster-container toaster-options="{'position-class':'toast-top-full-width'}"></toaster-container>
     <table id="jobslist">
         <tr>
             <th>Job ID</th>
@@ -9,7 +10,7 @@
         </tr>
         <tr ng-repeat="item in jobs | orderBy:'-_id'">
             <td>
-                {{item._id}}
+                <a ng-click="statusJob(item._id)" href="">{{item._id}}</a>
             </td>
             <td>
                 {{item.category}}{{item.action}}
