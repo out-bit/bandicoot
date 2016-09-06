@@ -7,6 +7,7 @@ import hashlib
 import outbit.cli.api
 import json
 import datetime
+import re
 from ldap3 import Server, Connection, LDAPSocketOpenError
 
 
@@ -20,6 +21,24 @@ def rest_request_is_valid(indata):
     # Verify required dict objects were present
     if indata is None or "options" not in indata or "category" not in indata or "action" not in indata:
         return False
+    # Verify type of each
+    if not (indata["options"] is None or isinstance(indata["options"], dict)) or not isinstance(indata["category"], basestring) or not isinstance(indata["action"], basestring):
+        return False
+    # Check options
+    if isinstance(indata["options"], dict):
+        print(indata["options"])
+        for option in indata["options"]:
+            # Check Key
+            if not re.match(r'^[/_a-zA-Z0-9\-]+$', option):
+                return False
+            # Check Value
+            if not re.match(r'^[/_a-zA-Z0-9\*:\.\-=\?\~]+$', indata["options"][option]):
+                return False
+    if not re.match(r'^[a-zA-Z0-9_\-/]+$', indata["category"]):
+        return False
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', indata["action"]):
+        return False
+
     return True
 
 
