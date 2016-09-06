@@ -15,6 +15,14 @@ CORS(app)
 app.secret_key = os.urandom(24)
 
 
+def rest_request_is_valid(indata):
+    """Validate Request"""
+    # Verify required dict objects were present
+    if indata is None or "options" not in indata or "category" not in indata or "action" not in indata:
+        return False
+    return True
+
+
 def create_token(user):
     global app
     payload = {
@@ -146,8 +154,8 @@ def outbit_base():
     status = 200
 
     # Error on invalid request
-    if "options" not in indata or "category" not in indata or "action" not in indata:
-        return Response(response="Invalid Request", status=401, mimetype="application/json")
+    if not rest_request_is_valid(indata):
+        return Response(response=json.dumps({"response": "  invalid request"}), status=400, mimetype="application/json")
 
     # Encrypt indata values that are sensitive
     outbit.cli.api.encrypt_dict(indata["options"])
@@ -174,7 +182,7 @@ def outbit_api():
     status = 200
 
     # Error on invalid request
-    if indata is None or "options" not in indata or "category" not in indata or "action" not in indata:
+    if not rest_request_is_valid(indata):
         return Response(response=json.dumps({"response": "  invalid request"}), status=400, mimetype="application/json")
 
     # Encrypt indata values that are sensitive
