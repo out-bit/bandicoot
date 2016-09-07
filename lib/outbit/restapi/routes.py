@@ -29,10 +29,10 @@ def rest_request_is_valid(indata):
         print(indata["options"])
         for option in indata["options"]:
             # Check Key
-            if not re.match(r'^[/_a-zA-Z0-9\-]+$', option):
+            if not re.match(r'^[/_a-zA-Z0-9\-]+$', str(option)):
                 return False
             # Check Value
-            if not re.match(r'^[/_a-zA-Z0-9\*:\.\-=\?\~]+$', indata["options"][option]):
+            if not re.match(r'^[/_a-zA-Z0-9\*:\.\-=\?\~]+$', str(indata["options"][str(option)])):
                 return False
     if not re.match(r'^[a-zA-Z0-9_\-/]+$', indata["category"]):
         return False

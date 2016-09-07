@@ -31,6 +31,39 @@ class TestCli(unittest.TestCase):
     def test_check_auth(self):
         assert( routes.check_auth("jdoe1", "password") == True )
 
+    def test_rest_request_is_valid_empty(self):
+        assert( routes.rest_request_is_valid({}) == False)
+
+    def test_rest_request_is_valid_options_only(self):
+        assert( routes.rest_request_is_valid({"options": None}) == False)
+
+    def test_rest_request_is_valid_options_category(self):
+        assert( routes.rest_request_is_valid({"options": None, "category": "/"}) == False)
+
+    def test_rest_request_is_valid_options_category_action(self):
+        assert( routes.rest_request_is_valid({"options": None, "category": "/", "action": "help"}) == True)
+
+    def test_rest_request_is_valid_optionslist_category_action(self):
+        assert( routes.rest_request_is_valid({"options": {"id": "1"}, "category": "/", "action": "help"}) == True)
+
+    def test_rest_request_is_valid_options_wrongtype(self):
+        assert( routes.rest_request_is_valid({"options": [1,2,3], "category": "/", "action": "help"}) == False)
+
+    def test_rest_request_is_valid_category_wrongtype(self):
+        assert( routes.rest_request_is_valid({"options": None, "category": [], "action": "help"}) == False)
+
+    def test_rest_request_is_valid_action_wrongtype(self):
+        assert( routes.rest_request_is_valid({"options": None, "category": "/", "action": []}) == False)
+
+    def test_rest_request_is_valid_options_invalidinput(self):
+        assert( routes.rest_request_is_valid({"options": {"id": "<script echo/>"}, "category": "/", "action": "help"}) == False)
+
+    def test_rest_request_is_valid_category_invalidinput(self):
+        assert( routes.rest_request_is_valid({"options": None, "category": "/<script something>", "action": "help"}) == False)
+
+    def test_rest_request_is_valid_action_invalidinput(self):
+        assert( routes.rest_request_is_valid({"options": None, "category": "/", "action": "<script help>"}) == False)
+
     def test_authenticate_checkstatus(self):
         assert( routes.authenticate().status_code == 401)
 
