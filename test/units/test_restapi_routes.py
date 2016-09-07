@@ -55,8 +55,11 @@ class TestCli(unittest.TestCase):
     def test_rest_request_is_valid_action_wrongtype(self):
         assert( routes.rest_request_is_valid({"options": None, "category": "/", "action": []}) == False)
 
-    def test_rest_request_is_valid_options_invalidinput(self):
+    def test_rest_request_is_valid_options_invalidinput_value(self):
         assert( routes.rest_request_is_valid({"options": {"id": "<script echo/>"}, "category": "/", "action": "help"}) == False)
+
+    def test_rest_request_is_valid_options_invalidinput_key(self):
+        assert( routes.rest_request_is_valid({"options": {"id<script echo/>": "1"}, "category": "/", "action": "help"}) == False)
 
     def test_rest_request_is_valid_category_invalidinput(self):
         assert( routes.rest_request_is_valid({"options": None, "category": "/<script something>", "action": "help"}) == False)
