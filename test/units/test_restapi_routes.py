@@ -67,6 +67,9 @@ class TestCli(unittest.TestCase):
     def test_rest_request_is_valid_action_invalidinput(self):
         assert( routes.rest_request_is_valid({"options": None, "category": "/", "action": "<script help>"}) == False)
 
+    def test_create_token(self):
+        assert ( routes.parse_token(routes.create_token("testuser1"))["sub"] == "testuser1" )
+
     def test_authenticate_checkstatus(self):
         assert( routes.authenticate().status_code == 401)
 

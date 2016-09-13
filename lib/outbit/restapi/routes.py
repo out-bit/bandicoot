@@ -57,9 +57,8 @@ def create_token(user):
     return token.decode('unicode_escape')
  
 
-def parse_token(req):
+def parse_token(token):
     global app
-    token = req.headers.get('Authorization').split()[1]
     return jwt.decode(token, app.secret_key, algorithms='HS256')
 
 
@@ -137,7 +136,7 @@ def token_required(f):
         if not request.headers.get('Authorization'):
             return Response(response="Missing authorization header", status=401)
         try:
-            payload = parse_token(request)
+            payload = parse_token(request.headers.get('Authorization').split()[1])
         except jwt.DecodeError:
             return Response(response="Token is invalid", status=401)
         except jwt.ExpiredSignature:
