@@ -646,7 +646,7 @@ def plugin_schedules_add(user, action, options):
         post = options
         # Prevent Users from setting up crons for other users
         if "user" in post and post["user"] != user:
-            json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username %s." % user})
+            return json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username %s." % user})
         # Always set the cron by default to run as the user
         if "user" not in post:
             post["user"] = user
@@ -665,7 +665,7 @@ def plugin_schedules_add(user, action, options):
 def plugin_schedules_edit(user, action, options):
     # Prevent Users from setting up crons for other users
     if "user" in options and options["user"] != user:
-        json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username %s." % user})
+        return json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username %s." % user})
 
     result = outbit.cli.api.db.schedules.update_one({"name": options["name"]},
             {"$set": options})
