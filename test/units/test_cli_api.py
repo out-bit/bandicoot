@@ -60,6 +60,11 @@ class TestCli(unittest.TestCase):
         print("%s, %s" % (len(enc_str), dec_str))
         assert(len(enc_str) == 61 and dec_str == "testabcdtestabcdtestabcd")
 
+    def test_encrypt_decrypt_dict_exception(self):
+        # enable encryption pw
+        test_dict = {"name": "testsecret", "secret": "test", "notsecret": "test"}
+        assert( api.decrypt_dict(test_dict) == False )
+
     def test_encrypt_decrypt_dict(self):
         # enable encryption pw
         orig = api.encryption_password
