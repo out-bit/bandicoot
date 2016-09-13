@@ -79,6 +79,10 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_users_add("jdoe3", None, {"username": "add_test", "password": "a"})
         assert (result == json.dumps({"exit_code": 0, "response": "  created user add_test"}))
 
+    def test_plugin_users_add_options_supported(self):
+        result = builtins.plugin_users_add("jdoe3", None, {"unsupported_option": "unsupported","username": "add_test", "password": "a"})
+        assert ( json.loads(result)["exit_code"] == 1 )
+
     def test_plugin_users_add_already_exists(self):
         result = builtins.plugin_users_add(None, None, {"username": "jdoe1", "password": "a"})
         assert (result == json.dumps({"exit_code": 1, "response": "  user jdoe1 already exists"}))
@@ -99,6 +103,11 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_users_edit(self):
         result = builtins.plugin_users_edit(None, None, {"username": "jdoe2", "password": "newpw"})
+        assert (result == json.dumps({"exit_code": 0, "response": "  modified user jdoe2"}))
+
+    def test_plugin_users_edit_nousername(self):
+        result = builtins.plugin_users_edit("jdoe2", None, {"password": "newpw"})
+        print(result)
         assert (result == json.dumps({"exit_code": 0, "response": "  modified user jdoe2"}))
 
     def test_plugin_users_list(self):
