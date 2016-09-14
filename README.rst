@@ -58,7 +58,7 @@ Start the API server on your localhost or on a dedicated IP.  If your using the 
 
     $ outbit-api -s 127.0.0.1 --insecure
 
-Login to the outbit shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by default its configured to use ssl.
+Login to the outbit shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by default its configured to use ssl.  If you are using valid ssl certificates and not self signed certificates you can also remove the “-–no-check-certificates” flag.
 
 .. sourcecode:: bash
 
