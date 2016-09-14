@@ -22,12 +22,12 @@ CLI
 .. toctree::
    :maxdepth: 3
 
-   users
-   secrets
-   roles
-   actions
-   plugins
-   jobs
+   cli/users
+   cli/secrets
+   cli/roles
+   cli/actions
+   cli/plugins
+   cli/jobs
    cli/logs
    cli/schedules
    cli/inventory
