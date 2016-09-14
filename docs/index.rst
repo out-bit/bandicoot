@@ -19,19 +19,17 @@ Overview
 CLI
 --------
 
-   cli/users
-   cli/secrets
-   cli/roles
-   cli/actions
-   cli/plugins
-   cli/jobs
-   cli/logs
-   cli/schedules
-   cli/inventory
+.. toctree::
+   :glob:
+
+   cli/*
 
 GUI
 --------
 
-   gui/gui
+.. toctree::
+   :glob:
+
+   gui/*
 
 .. include:: ../README.rst
