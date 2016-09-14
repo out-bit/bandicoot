@@ -7,7 +7,7 @@ Welcome to outbit's documentation!
 ==================================
 
 Overview
-======
+--------
 
 .. toctree::
    :maxdepth: 1
@@ -17,7 +17,7 @@ Overview
    config_files
 
 CLI
-======
+--------
 
 .. toctree::
    :maxdepth: 1
@@ -33,7 +33,7 @@ CLI
    cli/inventory
 
 GUI
-======
+--------
 
 .. toctree::
    :maxdepth: 3
