@@ -20,7 +20,7 @@ CLI
 ======
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    users
    secrets
@@ -28,16 +28,19 @@ CLI
    actions
    plugins
    jobs
-   logs
-   schedules
-   inventory
+   cli/logs
+   cli/schedules
+   cli/inventory
 
 GUI
 ======
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   gui
+   gui/gui
+
+Introduction
+======
 
 .. include:: ../README.rst
