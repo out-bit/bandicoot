@@ -25,7 +25,7 @@ Installing and Starting the outbit api server using Docker.
 .. sourcecode:: bash
 
   $ docker pull starboarder2001/outbit
-  $ docker run -d -p 8088:8088 starboarder2001/outbit
+  $ docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/outbit
 
 Login to the outbit shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by its configured to use ssl.  If you are using valid ssl certificates and not self signed certificates you can also remove the "--no-check-certificates" flag.
 
