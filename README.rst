@@ -47,7 +47,7 @@ Install and Starting the outbit api server using Docker.
 .. sourcecode:: bash
 
   $ docker pull starboarder2001/outbit
-  $ docker run -d -p 8088:8088 starboarder2001/outbit
+  $ docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/outbit
 
 Usage
 ============

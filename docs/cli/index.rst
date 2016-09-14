@@ -11,10 +11,12 @@ Contents:
 .. toctree::
    :maxdepth: 5
 
-   whyoutbit
-   gettingstarted
-   config_files
-   cli
-   gui
-
-.. include:: ../README.rst
+   users
+   secrets
+   roles
+   actions
+   plugins
+   jobs
+   logs
+   schedules
+   inventory
