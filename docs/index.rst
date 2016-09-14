@@ -20,7 +20,7 @@ CLI
 ======
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
 
    cli/users
    cli/secrets
@@ -39,8 +39,5 @@ GUI
    :maxdepth: 3
 
    gui/gui
-
-Introduction
-======
 
 .. include:: ../README.rst
