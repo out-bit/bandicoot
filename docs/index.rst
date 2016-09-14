@@ -14,7 +14,7 @@ Contents:
    whyoutbit
    gettingstarted
    config_files
-   cli
-   gui
+   cli/
+   gui/
 
 .. include:: ../README.rst
