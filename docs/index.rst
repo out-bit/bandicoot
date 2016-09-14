@@ -6,7 +6,8 @@
 Welcome to outbit's documentation!
 ==================================
 
-Contents:
+Overview
+--------
 
 .. toctree::
    :maxdepth: 5
@@ -14,14 +15,23 @@ Contents:
    whyoutbit
    gettingstarted
    config_files
-   users
-   secrets
-   roles
-   actions
-   plugins
-   jobs
-   logs
-   schedules
-   inventory
+
+CLI
+--------
+
+.. toctree::
+   :maxdepth: 5
+   :glob:
+
+   cli/*
+
+GUI
+--------
+
+.. toctree::
+   :maxdepth: 5
+   :glob:
+
+   gui/*
 
 .. include:: ../README.rst

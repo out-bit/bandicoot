@@ -79,6 +79,10 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_users_add("jdoe3", None, {"username": "add_test", "password": "a"})
         assert (result == json.dumps({"exit_code": 0, "response": "  created user add_test"}))
 
+    def test_plugin_users_add_options_supported(self):
+        result = builtins.plugin_users_add("jdoe3", None, {"unsupported_option": "unsupported","username": "add_test", "password": "a"})
+        assert ( json.loads(result)["exit_code"] == 1 )
+
     def test_plugin_users_add_already_exists(self):
         result = builtins.plugin_users_add(None, None, {"username": "jdoe1", "password": "a"})
         assert (result == json.dumps({"exit_code": 1, "response": "  user jdoe1 already exists"}))
@@ -99,6 +103,11 @@ class TestCli(unittest.TestCase):
 
     def test_plugin_users_edit(self):
         result = builtins.plugin_users_edit(None, None, {"username": "jdoe2", "password": "newpw"})
+        assert (result == json.dumps({"exit_code": 0, "response": "  modified user jdoe2"}))
+
+    def test_plugin_users_edit_nousername(self):
+        result = builtins.plugin_users_edit("jdoe2", None, {"password": "newpw"})
+        print(result)
         assert (result == json.dumps({"exit_code": 0, "response": "  modified user jdoe2"}))
 
     def test_plugin_users_list(self):
@@ -382,3 +391,60 @@ class TestCli(unittest.TestCase):
         q = multiprocessing.Queue()
         result = builtins.plugin_ansible._original(None, {"action": "test", "category": "/", "source_url": "git://test", "playbook": "test.yml", "sudo": "no"}, {}, multiprocessing.Event(), q)
         assert(result == json.dumps({"exit_code": 0, "response": "  success"}))
+
+    def test_plugin_schedules_add(self):
+        result = builtins.plugin_schedules_add(None, None, {"name": "add_test", "category": "/", "action": "help"})
+        assert(result == json.dumps({"exit_code": 0, "response": "  created schedule add_test"}))
+
+    def test_plugin_schedules_add_usernone(self):
+        result = builtins.plugin_schedules_add(None, None, {"name": "add_test_usernone", "category": "/", "action": "help"})
+        assert(result == json.dumps({"exit_code": 0, "response": "  created schedule add_test_usernone"}))
+
+    def test_plugin_schedules_add_duplicatename(self):
+        result = builtins.plugin_schedules_add(None, None, {"name": "add_test", "category": "/", "action": "help"})
+        assert(result == json.dumps({"exit_code": 1, "response": "  schedule add_test already exists"}))
+
+    def test_plugin_schedules_add_forgingrequest(self):
+        result = builtins.plugin_schedules_add("forgeuser", None, {"user": "jdoe2", "name": "add_test_forge", "category": "/", "action": "help"})
+        print(result)
+        assert(result == json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username forgeuser."}))
+
+    def test_plugin_schedules_edit(self):
+        result = builtins.plugin_schedules_edit(None, None, {"name": "add_test_usernone", "category": "/", "action": "help"})
+        print(result)
+        assert(result == json.dumps({"exit_code": 0, "response": "  modified schedule add_test_usernone"}))
+
+    def test_plugin_schedules_edit_noexist(self):
+        result = builtins.plugin_schedules_edit(None, None, {"name": "doesnotexist", "category": "/", "action": "help"})
+        print(result)
+        assert(result == json.dumps({"exit_code": 1, "response": "  schedule doesnotexist does not exist"}))
+
+    def test_plugin_schedules_edit_forgingrequest(self):
+        result = builtins.plugin_schedules_edit("forgeuser", None, {"user": "jdoe3", "name": "add_test_usernone", "category": "/", "action": "help"})
+        print(result)
+        assert(result == json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username forgeuser."}))
+
+    def test_plugin_schedules_del(self):
+        result = builtins.plugin_schedules_del(None, None, {"name": "add_test"})
+        print(result)
+        assert(result == json.dumps({"exit_code": 0, "response": "  deleted schedule add_test"}))
+
+    def test_plugin_schedules_del_doesnotexist(self):
+        result = builtins.plugin_schedules_del(None, None, {"name": "does_not_exist"})
+        print(result)
+        assert(result == json.dumps({"exit_code": 1, "response": "  schedule does_not_exist does not exist"}))
+
+    def test_plugin_schedules_list(self):
+        result = builtins.plugin_schedules_list(None, None, {})
+        print(result)
+        assert(result == json.dumps({"exit_code": 0, "response": "  action=\"help\"   category=\"/\"   name=\"add_test_usernone\"   user=\"None\""}))
+
+    def test_plugin_inventory_list(self):
+        result = builtins.plugin_inventory_list(None, None, {})
+        print(result)
+        assert(result == json.dumps({"exit_code": 0, "response": ""}))
+
+    def test_plugin_inventory_del_doesnotexist(self):
+        result = builtins.plugin_inventory_del(None, None, {"name": "doesnotexist"})
+        print(result)
+        assert(result == json.dumps({"exit_code": 1, "response": "  inventory item doesnotexist does not exist"}))
