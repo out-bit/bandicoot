@@ -19,9 +19,6 @@ Overview
 CLI
 --------
 
-.. toctree::
-   :maxdepth: 1
-
    cli/users
    cli/secrets
    cli/roles
@@ -34,9 +31,6 @@ CLI
 
 GUI
 --------
-
-.. toctree::
-   :maxdepth: 3
 
    gui/gui
 
