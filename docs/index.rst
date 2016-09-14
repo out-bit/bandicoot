@@ -10,7 +10,7 @@ Overview
 --------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 5
 
    whyoutbit
    gettingstarted
@@ -20,6 +20,7 @@ CLI
 --------
 
 .. toctree::
+   :maxdepth: 5
    :glob:
 
    cli/*
@@ -28,6 +29,7 @@ GUI
 --------
 
 .. toctree::
+   :maxdepth: 5
    :glob:
 
    gui/*
