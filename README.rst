@@ -149,7 +149,7 @@ Example of adding a "hello world" action that prints hello world.
 
 License
 ============
-outbit is released under the MIT License
+outbit is released under the MIT-License_ .. _MIT-License: LICENSE.rst
 
 Author
 ============
