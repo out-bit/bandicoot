@@ -8,7 +8,8 @@ import outbit.cli.api
 import json
 import datetime
 import re
-from ldap3 import Server, Connection, LDAPSocketOpenError
+from ldap3 import Server, Connection
+from ldap3.core.exceptions import LDAPSocketOpenError
 
 
 app = Flask(__name__)
