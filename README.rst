@@ -5,10 +5,6 @@ outbit
         :target: http://travis-ci.org/starboarder2001/outbit
         :alt: Travis CI
 
-.. image:: https://img.shields.io/pypi/dm/outbit.svg
-    :target: https://pypi.python.org/pypi/outbit
-    :alt: Number of PyPI downloads
-    
 .. image:: https://img.shields.io/pypi/v/outbit.svg
     :target: https://pypi.python.org/pypi/outbit
     :alt: PyPI version
