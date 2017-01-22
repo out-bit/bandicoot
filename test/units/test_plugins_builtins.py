@@ -23,6 +23,7 @@ class MockPopen(object):
 
 class TestCli(unittest.TestCase):
     def __init__(self, *args, **kwargs):
+        outbit.cli.api.load_plugins()
         self.mock_db_setup()
         self.mock_db_basic_database()
         outbit.cli.api.counters_db_init("jobid") # setup counters in mockdb
