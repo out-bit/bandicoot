@@ -415,7 +415,7 @@ def parse_action(user, category, action, options):
     cursor = db.actions.find()
     for dbaction in builtin_actions + list(cursor):
         if dbaction["category"] == category and (dbaction["action"] == action or dbaction["action"] == "*"):
-            new_dbaction = copy.copy(dbaction)
+            new_dbaction = copy.copy(dbaction) # Make a copy to prevent modifying global builtin_actions
             new_dbaction["action"] = action
             if "plugin" in dbaction:
                 if not roles_has_permission(user, dbaction, options):
