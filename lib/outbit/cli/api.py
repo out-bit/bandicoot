@@ -139,39 +139,7 @@ def schedule_manager():
         time.sleep(10)
 
 
-plugins = {"command": builtins.plugin_command,
-            "actions_list": builtins.plugin_actions_list,
-            "actions_del": builtins.plugin_actions_del,
-            "actions_edit": builtins.plugin_actions_edit,
-            "actions_add": builtins.plugin_actions_add,
-            "users_list": builtins.plugin_users_list,
-            "users_del": builtins.plugin_users_del,
-            "users_edit": builtins.plugin_users_edit,
-            "users_add": builtins.plugin_users_add,
-            "roles_list": builtins.plugin_roles_list,
-            "roles_del": builtins.plugin_roles_del,
-            "roles_edit": builtins.plugin_roles_edit,
-            "roles_add": builtins.plugin_roles_add,
-            "secrets_list": builtins.plugin_secrets_list,
-            "secrets_del": builtins.plugin_secrets_del,
-            "secrets_edit": builtins.plugin_secrets_edit,
-            "secrets_add": builtins.plugin_secrets_add,
-            "secrets_encryptpw": builtins.plugin_secrets_encryptpw,
-            "plugins_list": builtins.plugin_plugins_list,
-            "ping": builtins.plugin_ping,
-            "logs": builtins.plugin_logs,
-            "help": builtins.plugin_help,
-            "ansible": builtins.plugin_ansible,
-            "jobs_list": builtins.plugin_jobs_list,
-            "jobs_status": builtins.plugin_jobs_status,
-            "jobs_kill": builtins.plugin_jobs_kill,
-            "schedules_list": builtins.plugin_schedules_list,
-            "schedules_del": builtins.plugin_schedules_del,
-            "schedules_edit": builtins.plugin_schedules_edit,
-            "schedules_add": builtins.plugin_schedules_add,
-            "inventory_list": builtins.plugin_inventory_list,
-            "inventory_del": builtins.plugin_inventory_del,
-           }
+plugins = {}
 
 builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 'list', 'desc': 'list actions'},
                   {'category': '/actions', 'plugin': 'actions_del', 'action': 'del', 'desc': 'del actions'},
@@ -194,6 +162,7 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
+                  {'category': '/help', 'plugin': 'help', 'action': '*', 'desc': 'print usage'},
                   {'category': '/jobs', 'plugin': 'jobs_list', 'action': 'list', 'desc': 'list jobs'},
                   {'category': '/jobs', 'plugin': 'jobs_status', 'action': 'status', 'desc': 'get status of job'},
                   {'category': '/jobs', 'plugin': 'jobs_kill', 'action': 'kill', 'desc': 'kill a job'},
@@ -204,6 +173,32 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/inventory', 'plugin': 'inventory_list', 'action': 'list', 'desc': 'list inventory'},
                   {'category': '/inventory', 'plugin': 'inventory_del', 'action': 'del', 'desc': 'del inventory item'},
                   ]
+
+
+def load_plugins(plugin_paths=None):
+    default_plugin_path = os.path.dirname(os.path.realpath(__file__)) + "/../plugins/"
+    if plugin_paths is None:
+        plugin_paths = default_plugin_path
+    for plugin_path in plugin_paths.split(":"):
+        sys.path.append(plugin_path)
+        for file in os.listdir(plugin_path):
+            if file.endswith(".py") and file != "__init__.py":
+                plugin_module = __import__(file.rstrip(".py"), fromlist=[''])
+                load_plugins_from_module(plugin_module)
+
+
+def load_plugins_from_module(module):
+    import inspect
+    global plugins
+    for member in inspect.getmembers(module):
+        plugin_name = member[0]
+        plugin_function = member[1]
+        if inspect.isfunction(plugin_function):
+            if plugin_name not in plugins:
+                m = re.match(r'^plugin_(.*?)$', plugin_name)
+                if m:
+                    plugin_short_name = m.group(1)
+                    plugins[plugin_short_name] = plugin_function
 
 
 def log_action(username, post):
@@ -355,7 +350,6 @@ def clean_all_secrets():
 
 
 def clean_secrets(secrets):
-
     if secrets is None:
         return None
 
@@ -419,7 +413,7 @@ def render_vars(varname, vardict, dictobj):
 def parse_action(user, category, action, options):
     cursor = db.actions.find()
     for dbaction in builtin_actions + list(cursor):
-        if dbaction["category"] == category and dbaction["action"] == action:
+        if dbaction["category"] == category and (dbaction["action"] == action or dbaction["action"] == "*"):
             if "plugin" in dbaction:
                 if not roles_has_permission(user, dbaction, options):
                     return json.dumps({"response": "  you do not have permission to run this action"})
@@ -501,6 +495,10 @@ class Cli(object):
                           help="LDAP User CN",
                           metavar="LDAPUSERCN",
                           default=None)
+        parser.add_option("-P", "--pluginpath", dest="pluginpath",
+                          help="Plugin Paths, seperated by :",
+                          metavar="PLUGINPATH",
+                          default=None)
         global encryption_password
         global ldap_server
         global ldap_use_ssl
@@ -515,6 +513,7 @@ class Cli(object):
         ldap_server = options.ldap_server
         ldap_use_ssl = options.ldap_use_ssl
         ldap_user_cn = options.ldap_user_cn
+        pluginpath = options.pluginpath
 
         # Assign values from conf
         outbit_config_locations = [os.path.expanduser("~")+"/.outbit-api.conf", "/etc/outbit-api.conf"]
@@ -541,11 +540,13 @@ class Cli(object):
         if self.ssl_crt == None and "ssl_crt" in outbit_conf_obj:
             self.ssl_crt = bool(outbit_conf_obj["ssl_crt"])
         if ldap_server == None and "ldap_server" in outbit_conf_obj:
-            ldap_server = options.ldap_server
+            ldap_server = str(outbit_conf_obj["ldap_server"])
         if ldap_use_ssl == None and "ldap_use_ssl" in outbit_conf_obj:
-            ldap_use_ssl = options.ldap_use_ssl
+            ldap_use_ssl = str(outbit_conf_obj["ldap_use_ssl"])
         if ldap_user_cn == None and "ldap_user_cn" in outbit_conf_obj:
-            ldap_user_cn = options.ldap_user_cn
+            ldap_user_cn = str(outbit_conf_obj["ldap_user_cn"])
+        if pluginpath == None and "pluginpath" in outbit_conf_obj:
+            pluginpath = str(outbit_conf_obj["pluginpath"])
 
         # Assign Default values if they were not specified at the cli or in the conf
         if self.server is None:
@@ -562,6 +563,39 @@ class Cli(object):
             ldap_use_ssl = options.ldap_use_ssl
         if ldap_user_cn is None:
             ldap_user_cn = options.ldap_user_cn
+
+        # Load Plugins
+        load_plugins(pluginpath)
+
+        # Clean any left over secret files
+        clean_all_secrets()
+
+    def run(self):
+        """ EntryPoint Of Application """
+        global db
+
+        # Setup logging to logfile (only if the file was touched)
+        if os.path.isfile("/var/log/outbit.log"):
+            handler = RotatingFileHandler('/var/log/outbit.log', maxBytes=10000, backupCount=1)
+
+        # Assign Default values if they were not specified at the cli or in the conf
+        if self.server is None:
+            self.server = "127.0.0.1"
+        if self.port is None:
+            self.port = 8088
+        if self.ssl_key is None:
+            self.ssl_key = "/usr/local/etc/openssl/certs/outbit.key"
+        if self.ssl_crt is None:
+            self.ssl_crt = "/usr/local/etc/openssl/certs/outbit.crt"
+        if ldap_server is None:
+            ldap_server = options.ldap_server
+        if ldap_use_ssl is None:
+            ldap_use_ssl = options.ldap_use_ssl
+        if ldap_user_cn is None:
+            ldap_user_cn = options.ldap_user_cn
+
+        # Load Plugins
+        load_plugins(pluginpath)
 
         # Clean any left over secret files
         clean_all_secrets()
