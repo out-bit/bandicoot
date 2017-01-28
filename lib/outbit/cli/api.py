@@ -162,6 +162,7 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/', 'plugin': 'ping', 'action': 'ping', 'desc': 'verify connectivity'},
                   {'category': '/', 'plugin': 'logs', 'action': 'logs', 'desc': 'show the history log'},
                   {'category': '/', 'plugin': 'help', 'action': 'help', 'desc': 'print usage'},
+                  {'category': '/help', 'plugin': 'help', 'action': '*', 'desc': 'print usage'},
                   {'category': '/jobs', 'plugin': 'jobs_list', 'action': 'list', 'desc': 'list jobs'},
                   {'category': '/jobs', 'plugin': 'jobs_status', 'action': 'status', 'desc': 'get status of job'},
                   {'category': '/jobs', 'plugin': 'jobs_kill', 'action': 'kill', 'desc': 'kill a job'},
@@ -412,7 +413,7 @@ def render_vars(varname, vardict, dictobj):
 def parse_action(user, category, action, options):
     cursor = db.actions.find()
     for dbaction in builtin_actions + list(cursor):
-        if dbaction["category"] == category and dbaction["action"] == action:
+        if dbaction["category"] == category and (dbaction["action"] == action or dbaction["action"] == "*"):
             if "plugin" in dbaction:
                 if not roles_has_permission(user, dbaction, options):
                     return json.dumps({"response": "  you do not have permission to run this action"})
