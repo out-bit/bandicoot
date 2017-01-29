@@ -4,6 +4,7 @@ Secrets
 The secrets command is used to manage passwords, ssh keys, git keys, credentials, and other sensitive information that might be required by an action.  These values are not visible to users after they are stored in the database, but actions users can execute may access them.
 
 Adding, Editing, and Deleting Secrets
+
 .. sourcecode:: bash
 
     outbit> secrets add name=neptune_rootpw secret='verysecretpassword' desc="root pw for neptune server"
@@ -16,7 +17,9 @@ Adding, Editing, and Deleting Secrets
       deleted secret neptune_rootpw
 
 Examples of migrating secrets encrypted with an older "encryption_password" or unencrypted secrets
+
 .. sourcecode:: bash
+
     outbit> secrets encryptpw
       secret secretusingoldpw encrypted using new password
     outbit> secrets encryptpw name=noencsecret

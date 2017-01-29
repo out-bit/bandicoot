@@ -15,6 +15,9 @@ session = requests.Session()
 sig_bg_pressed = 0
 sig_kill_pressed = 0
 
+# UNICODE
+import locale
+locale.setlocale(locale.LC_ALL, '')
 
 # catch ctrl-z
 def sig_background(signum, frame):
@@ -278,7 +281,8 @@ class Cli(object):
                         self.screen.addstr(result)
                 else:
                     result = self.shell_parse_line(line)
-                    self.screen.addstr(result)
+                    if result is not None:
+                        self.screen.addstr(result.encode("UTF-8"))
                 self.screen.addstr("\noutbit> ")
                 line = ""
                 history_index = 0

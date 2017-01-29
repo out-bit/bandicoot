@@ -25,7 +25,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'outbit-cli':
           author_email='david@davidwhiteside.com',
           url='https://github.com/starboarder2001/outbit',
           license='MIT',
-          install_requires=["PyYAML", 'setuptools', 'ply'],
+          install_requires=["PyYAML", 'setuptools', 'ply', 'ascii_graph'],
           package_dir={ '': 'lib' },
           packages=find_packages('lib'),
           classifiers=[
