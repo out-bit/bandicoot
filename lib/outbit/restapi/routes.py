@@ -27,7 +27,6 @@ def rest_request_is_valid(indata):
         return False
     # Check options
     if isinstance(indata["options"], dict):
-        print(indata["options"])
         for option in indata["options"]:
             # Check Key
             if not re.match(r'^[/_a-zA-Z0-9\-]+$', str(option)):
