@@ -44,36 +44,18 @@ The help command will display all the commands available to run.
 .. sourcecode:: bash
 
     outbit> help
-      actions list          list actions
-      actions del           del actions
-      actions edit          edit actions
-      actions add           add actions
-      users list            list users
-      users del             del users
-      users edit            edit users
-      users add             add users
-      roles list            list roles
-      roles del             del roles
-      roles edit            edit roles
-      roles add             add roles
-      secrets list          list secrets
-      secrets del           del secrets
-      secrets edit          edit secrets
-      secrets add           add secrets
-      secrets encryptpw     Change password encryption
-      plugins list          list plugins
-      ping                  verify connectivity
-      logs                  show the history log
-      help                  print usage
-      jobs list             list jobs
-      jobs status           get status of job
-      jobs kill             kill a job
-      schedules add         add schedule
-      schedules edit        edit schedule
-      schedules list        list schedules
-      schedules del         del schedule
-      inventory list        list inventory
-      inventory del         del inventory item
+      actions [list|del|edit|add]
+      users [list|del|edit|add]
+      roles [list|del|edit|add]
+      secrets [list|del|edit|add|encryptpw]
+      plugins [list]
+      help [*]
+      jobs [list|status|kill]
+      schedules [add|edit|list|del]
+      inventory [list|del]
+      ping
+      logs
+      help
       exit
 
 The exit command will exit the application.

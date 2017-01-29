@@ -13,11 +13,11 @@ The actions command is used to create user defined actions.  This is how the fun
     outbit> help
       ...
       ....
-      testing helloworld            print hello world
+      testing helloworld
     outbit> actions edit name=helloworld action=helloworld category=/ command_run="echo 'hello world'" desc="print hello world" plugin=command
     outbit> help
       ...
       ....
-      helloworld            print hello world
+      helloworld
     outbit> actions del name=helloworld
       deleted action pwd
