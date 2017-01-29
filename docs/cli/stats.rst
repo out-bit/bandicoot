@@ -1,7 +1,7 @@
 Stats
 ==================
 
-The actions command is used to create user defined actions.  This is how the functionality of outbit is extended and customized for each environment.
+The stats command is used to display statistics and graphs from outbit data.
 
 .. sourcecode:: bash
 
