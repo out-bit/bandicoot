@@ -100,15 +100,46 @@ def plugin_help(user, action, options):
     cursor = outbit.cli.api.db.actions.find()
     response = ""
     api_response = []
+    compact_actions = {}
+    dbaction_count = 0
+
+    # Build Compact, Sortable, Dictinary like: {"roles": {"actions": ["list", "edit"], "num": 0}}
     for dbaction in outbit.cli.api.builtin_actions + list(cursor):
-        if outbit.cli.api.roles_has_permission(user, {"category": dbaction["category"], "action": dbaction["action"]}, {}):
-            category_str = dbaction["category"].strip("/").replace("/", " ")
+        if not outbit.cli.api.roles_has_permission(user, {"category": dbaction["category"], "action": dbaction["action"]}, {}):
+            continue
+
+        if dbaction["category"] not in compact_actions:
+            compact_actions[dbaction["category"]] = {"actions" : [dbaction["action"]], "descs": [dbaction["desc"]]}
+            compact_actions[dbaction["category"]]["num"] = dbaction_count
+        else:
+            compact_actions[dbaction["category"]]["actions"].append(dbaction["action"])
+            compact_actions[dbaction["category"]]["descs"].append(dbaction["desc"])
+            compact_actions[dbaction["category"]]["num"] = dbaction_count
+        dbaction_count += 1
+
+    # Print Compact Help for the top level
+    for db_item in sorted(compact_actions.items(), key=lambda x: x[1]['num']):
+        dbaction["category"] = db_item[0]
+        dbaction["actions"] = db_item[1]["actions"]
+        dbaction["descs"] = db_item[1]["descs"]
+        # Help specifying command
+        if action["category"] == "/help":
+            a_count = 0
+            for actionline in dbaction["actions"]:
+                if dbaction["category"].strip("/") == action["action"].strip("/"):
+                    response += "  %s\t%s\n" % (actionline, dbaction["descs"][a_count])
+                    a_count += 1
+            api_response.append({"category": "", "action": dbaction["actions"], "desc": dbaction["descs"]})
+        # Help by itself, no command
+        else:
+            category_str = dbaction['category'].strip("/").replace("/", " ")
             if category_str is None or len(category_str) <= 0:
-                api_response.append({"category": "", "action": dbaction["action"], "desc": dbaction["desc"]})
-                response += "  %s \t\t\t%-60s\n" % (dbaction["action"], dbaction["desc"])
+                api_response.append({"category": "", "action": dbaction["actions"], "desc": dbaction["descs"]})
+                for actionline in dbaction["actions"]:
+                    response += "  %s\n" % actionline
             else:
-                api_response.append({"category": dbaction["category"].strip("/").replace("/", " "), "action": dbaction["action"], "desc": dbaction["desc"]})
-                response += "  %s %s \t\t%-60s\n" % (dbaction["category"].strip("/").replace("/", " "), dbaction["action"], dbaction["desc"])
+                api_response.append({"category": dbaction["category"].strip("/").replace("/", " "), "action": dbaction["actions"], "desc": dbaction["descs"]})
+                response += "  %s [%s]\n" % (dbaction["category"].strip("/").replace("/", " "), "|".join(dbaction["actions"]))
 
     # Append the exit builtin implemented on the client side
     response += "  exit \t\t\n"

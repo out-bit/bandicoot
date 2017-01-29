@@ -22,6 +22,7 @@ from glob import glob
 import shutil
 import datetime
 import multiprocessing
+import copy
 
 
 db = None
@@ -414,6 +415,8 @@ def parse_action(user, category, action, options):
     cursor = db.actions.find()
     for dbaction in builtin_actions + list(cursor):
         if dbaction["category"] == category and (dbaction["action"] == action or dbaction["action"] == "*"):
+            new_dbaction = copy.copy(dbaction) # Make a copy to prevent modifying global builtin_actions
+            new_dbaction["action"] = action
             if "plugin" in dbaction:
                 if not roles_has_permission(user, dbaction, options):
                     return json.dumps({"response": "  you do not have permission to run this action"})
@@ -434,7 +437,7 @@ def parse_action(user, category, action, options):
                                 if (dbaction is not None and tmp_files_dbaction is None) or (options is not None and tmp_files_options is None):
                                     return json.dumps({"response": "  error: Failed to decrypt a secret. If you recently changed your encryption_password try 'secrets encryptpw oldpw=XXXX newpw=XXXX'."})
 
-                            response = plugins[dbaction["plugin"]](user, dbaction, options)
+                            response = plugins[dbaction["plugin"]](user, new_dbaction, options)
                             response = json.loads(response)
                             clean_secrets(tmp_files_dbaction)
                             clean_secrets(tmp_files_options)
@@ -446,7 +449,7 @@ def parse_action(user, category, action, options):
 
                             return json.dumps(response)
                     # Run Plugin Without Secrets
-                    return plugins[dbaction["plugin"]](user, dbaction, options)
+                    return plugins[dbaction["plugin"]](user, new_dbaction, options)
     return None
 
 
