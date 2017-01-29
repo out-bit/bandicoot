@@ -173,6 +173,7 @@ builtin_actions = [{'category': '/actions', 'plugin': 'actions_list', 'action': 
                   {'category': '/schedules', 'plugin': 'schedules_del', 'action': 'del', 'desc': 'del schedule'},
                   {'category': '/inventory', 'plugin': 'inventory_list', 'action': 'list', 'desc': 'list inventory'},
                   {'category': '/inventory', 'plugin': 'inventory_del', 'action': 'del', 'desc': 'del inventory item'},
+                  {'category': '/', 'plugin': 'stats', 'action': 'stats', 'desc': 'statistics'},
                   ]
 
 

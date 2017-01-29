@@ -746,3 +746,26 @@ def plugin_inventory_del(user, action, options):
         return json.dumps({"exit_code": 0, "response": "  deleted inventory item %s" % options["name"]})
     else:
         return json.dumps({"exit_code": 1, "response": "  inventory item %s does not exist" % options["name"]})
+
+
+def plugin_stats(user, action, options):
+    from ascii_graph import Pyasciigraph
+    response = ""
+    stat_data = []
+
+    # Sum up Job By User
+    user_stats = {}
+    cursor = outbit.cli.api.db.jobs.find()
+    for doc in list(cursor):
+        if doc["user"] not in user_stats:
+            user_stats[doc["user"]] = 1
+        else:
+            user_stats[doc["user"]] += 1
+
+    # Graph Data
+    graph = Pyasciigraph()
+    stat_data = [(k, v) for k, v in user_stats.iteritems()] # Convert Dict to List of Tuples
+    for line in graph.graph('Stats User Job Runs', stat_data):
+        response += "%s\n" % line
+
+    return json.dumps({"exit_code": 0, "response": "  %s" % response})
