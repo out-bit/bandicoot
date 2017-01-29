@@ -449,3 +449,28 @@ class TestCli(unittest.TestCase):
         result = builtins.plugin_inventory_del(None, None, {"name": "doesnotexist"})
         print(result)
         assert(result == json.dumps({"exit_code": 1, "response": "  inventory item doesnotexist does not exist"}))
+
+    def test_plugin_stats(self):
+        result = builtins.plugin_stats(None, None, {})
+        print(result)
+        assert(u"Jobs Submitted Per User" in json.loads(result)["response"])
+
+    def test_plugin_stats_users(self):
+        result = builtins.plugin_stats(None, None, {"type": "users"})
+        print(result)
+        assert(u"Jobs Submitted Per User" in json.loads(result)["response"])
+
+    def test_plugin_stats_system(self):
+        result = builtins.plugin_stats(None, None, {"type": "system"})
+        print(result)
+        assert(u"Changes Per Inventory Item" in json.loads(result)["response"])
+
+    def test_plugin_stats_jobs(self):
+        result = builtins.plugin_stats(None, None, {"type": "jobs"})
+        print(result)
+        assert(u"Jobs Submitted By Date" in json.loads(result)["response"])
+
+    def test_plugin_stats_badtype(self):
+        result = builtins.plugin_stats(None, None, {"type": "abcdefg"})
+        print(result)
+        assert(u"Jobs Submitted Per User" in json.loads(result)["response"])

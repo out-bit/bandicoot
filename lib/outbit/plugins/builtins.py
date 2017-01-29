@@ -748,24 +748,54 @@ def plugin_inventory_del(user, action, options):
         return json.dumps({"exit_code": 1, "response": "  inventory item %s does not exist" % options["name"]})
 
 
+@options_supported(option_list=["type"])
 def plugin_stats(user, action, options):
     from ascii_graph import Pyasciigraph
     response = ""
     stat_data = []
+    stat_type = "users"
+    stat_title = ""
+    stat_type_supported = ("users", "system", "jobs")
+    if options is not None and "type" in options and options["type"] in stat_type_supported:
+        stat_type = options["type"]
 
     # Sum up Job By User
-    user_stats = {}
-    cursor = outbit.cli.api.db.jobs.find()
-    for doc in list(cursor):
-        if doc["user"] not in user_stats:
-            user_stats[doc["user"]] = 1
-        else:
-            user_stats[doc["user"]] += 1
+    if stat_type == "users":
+        stat_title = "Jobs Submitted Per User"
+        user_stats = {}
+        cursor = outbit.cli.api.db.jobs.find()
+        for doc in list(cursor):
+            if doc["user"] not in user_stats:
+                user_stats[doc["user"]] = 1
+            else:
+                user_stats[doc["user"]] += 1
+        stat_data = [(k, v) for k, v in user_stats.iteritems()] # Convert Dict to List of Tuples
+    elif stat_type == "system":
+        stat_title = "Changes Per Inventory Item"
+        system_stats = {}
+        cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
+        for doc in list(cursor):
+            if doc["name"] not in system_stats:
+                system_stats[doc["name"]] = 1
+            else:
+                system_stats[doc["name"]] += 1
+        stat_data = [(k, v) for k, v in system_stats.iteritems()] # Convert Dict to List of Tuples
+    elif stat_type == "jobs":
+        stat_title = "Jobs Submitted By Date"
+        job_stats = {}
+        cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
+        for doc in list(cursor):
+            if "date" in doc:
+                doc_date = "{:%m/%d/%Y %M:%H}".format(doc["date"])
+                if doc_date not in job_stats:
+                    job_stats[doc_date] = 1
+                else:
+                    job_stats[doc_date] += 1
+        stat_data = [(k, v) for k, v in job_stats.iteritems()] # Convert Dict to List of Tuples
 
     # Graph Data
     graph = Pyasciigraph()
-    stat_data = [(k, v) for k, v in user_stats.iteritems()] # Convert Dict to List of Tuples
-    for line in graph.graph('Stats User Job Runs', stat_data):
+    for line in graph.graph(stat_title, stat_data):
         response += "%s\n" % line
 
     return json.dumps({"exit_code": 0, "response": "  %s" % response})
