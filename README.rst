@@ -81,6 +81,7 @@ Example of adding a "hello world" action that prints hello world.
       ping
       logs
       help
+      stats
       exit
 
     outbit> actions add name=helloworld category=/hello action=world plugin=command desc="print hello world" command_run="echo 'hello world'"
@@ -98,6 +99,7 @@ Example of adding a "hello world" action that prints hello world.
       ping
       logs
       help
+      stats
       hello [world]
       exit
 

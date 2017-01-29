@@ -56,6 +56,7 @@ The help command will display all the commands available to run.
       ping
       logs
       help
+      stats
       exit
 
 The exit command will exit the application.

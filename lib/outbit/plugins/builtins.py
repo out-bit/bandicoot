@@ -786,7 +786,7 @@ def plugin_stats(user, action, options):
         cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
         for doc in list(cursor):
             if "date" in doc:
-                doc_date = "{:%m/%d/%Y %M:%H}".format(doc["date"])
+                doc_date = "{:%m/%d/%Y}".format(doc["date"])
                 if doc_date not in job_stats:
                     job_stats[doc_date] = 1
                 else:
