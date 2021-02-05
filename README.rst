@@ -13,8 +13,8 @@ bandicoot
    :alt: Join the chat at https://gitter.im/outbit/bandicoot
    :target: https://gitter.im/outbit/bandicoot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-.. image:: https://coveralls.io/repos/outbit/bandicoot/badge.svg?branch=master
-    :target: https://coveralls.io/r/outbit/bandicoot?branch=master
+.. image:: https://coveralls.io/repos/out-bit/bandicoot/badge.svg?branch=master
+    :target: https://coveralls.io/r/out-bit/bandicoot?branch=master
 
 .. image:: https://readthedocs.org/projects/bandicoot/badge/?version=stable
     :target: http://bandicoot.readthedocs.io/en/stable/
