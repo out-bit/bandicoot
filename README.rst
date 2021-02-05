@@ -16,8 +16,8 @@ bandicoot
 .. image:: https://coveralls.io/repos/out-bit/bandicoot/badge.svg?branch=master
     :target: https://coveralls.io/r/out-bit/bandicoot?branch=master
 
-.. image:: https://readthedocs.org/projects/bandicoot/badge/?version=stable
-    :target: http://bandicoot.readthedocs.io/en/stable/
+.. image:: https://readthedocs.org/projects/outbit/badge/?version=stable
+    :target: http://outbit.readthedocs.io/en/stable/
     :alt: Documentation Status
 
 bandicoot provides a simple UI for orchestrating changes or applying configurations in a datacenter and cloud environment.  bandicoot provides a layer on top of Ansible that allows you to easily wrap up automated tasks and provide a simple way to execute them.  The role based access control allows you to implement seperations of duties and limit specific actions to be executed by specific roles.  The logging feature allows you to track the history of changes in the environment.
