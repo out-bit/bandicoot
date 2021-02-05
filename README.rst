@@ -1,8 +1,8 @@
 bandicoot
 ============
 
-.. image:: https://secure.travis-ci.org/starboarder2001/bandicoot.png?branch=master
-        :target: http://travis-ci.org/starboarder2001/bandicoot
+.. image:: https://secure.travis-ci.org/outbit/bandicoot.png?branch=master
+        :target: http://travis-ci.org/outbit/bandicoot
         :alt: Travis CI
 
 .. image:: https://img.shields.io/pypi/v/bandicoot.svg
@@ -10,11 +10,11 @@ bandicoot
     :alt: PyPI version
 
 .. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/starboarder2001/bandicoot
-   :target: https://gitter.im/starboarder2001/bandicoot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+   :alt: Join the chat at https://gitter.im/outbit/bandicoot
+   :target: https://gitter.im/outbit/bandicoot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-.. image:: https://coveralls.io/repos/starboarder2001/bandicoot/badge.svg?branch=master
-    :target: https://coveralls.io/r/starboarder2001/bandicoot?branch=master
+.. image:: https://coveralls.io/repos/outbit/bandicoot/badge.svg?branch=master
+    :target: https://coveralls.io/r/outbit/bandicoot?branch=master
 
 .. image:: https://readthedocs.org/projects/bandicoot/badge/?version=stable
     :target: http://bandicoot.readthedocs.io/en/stable/
@@ -42,8 +42,8 @@ Install and Starting the bandicoot api server using Docker.
 
 .. sourcecode:: bash
 
-  $ docker pull starboarder2001/bandicoot
-  $ docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/bandicoot
+  $ docker pull outbit/bandicoot
+  $ docker run -d -p 8088:8088 -p 80:80 -p 443:443 outbit/bandicoot
 
 Usage
 ============
