@@ -6,7 +6,7 @@ import curses
 from StringIO import StringIO
 import requests_mock
 from mock import patch
-from outbit.cli import cli
+from bandicoot.cli import cli
 
 
 class CursesMock(object):

@@ -7,23 +7,23 @@ This example assumes an action named ansibletest exists and uses the ansible plu
 
 .. sourcecode:: bash
 
-  outbit> actions add name=ansibletest action=ansibletest category=/ desc="test ansible" playbook="update_webserver.yml" plugin="ansible" source_url="https://gitexample/something.git" sudo="yes"
+  bandicoot> actions add name=ansibletest action=ansibletest category=/ desc="test ansible" playbook="update_webserver.yml" plugin="ansible" source_url="https://gitexample/something.git" sudo="yes"
 
 Below shows running the action which creates a job.  ctrl-z is then pressed to background the job and the "jobs list" command is used to see the running job and previously run jobs.  The "job status" command is used to check the result of the job.
 
 .. sourcecode:: bash
 
-  outbit> ansibletest
+  bandicoot> ansibletest
 
   Job is running with id=17. Press ctrl-z to background job.
 
-  outbit> jobs list
+  bandicoot> jobs list
     Job ID        Is Running?     User    Command
     16            False           superadmin              /ansibletest
     17            True            superadmin              /ansibletest
 
-  outbit> jobs status id=17
-    Cloning into '/tmp/outbit/1467473131.22'...
+  bandicoot> jobs status id=17
+    Cloning into '/tmp/bandicoot/1467473131.22'...
 
-  outbit> jobs kill id=17
+  bandicoot> jobs kill id=17
     The job 17, was terminated

@@ -4,7 +4,7 @@ import jwt
 import os
 from functools import wraps
 import hashlib
-import outbit.cli.api
+import bandicoot.cli.api
 import json
 import datetime
 import re
@@ -74,21 +74,21 @@ def check_auth(username, password):
     password_md5 = m.hexdigest()
 
     # Check If Local User Can Be Authenticated
-    post = outbit.cli.api.db.users.find_one({"username": username})
+    post = bandicoot.cli.api.db.users.find_one({"username": username})
     if post is not None:
         if "password_md5" in post and post["password_md5"] == password_md5:
             valid_auth = True
 
     # LDAP Auth, if Local User Not Authenticated
-    if valid_auth == False and outbit.cli.api.ldap_server is not None and outbit.cli.api.ldap_user_cn is not None:
+    if valid_auth == False and bandicoot.cli.api.ldap_server is not None and bandicoot.cli.api.ldap_user_cn is not None:
         try:
-            server = Server(outbit.cli.api.ldap_server, use_ssl=outbit.cli.api.ldap_use_ssl)
-            conn = Connection(server, "uid=%s, %s" % (username, outbit.cli.api.ldap_user_cn), password)
+            server = Server(bandicoot.cli.api.ldap_server, use_ssl=bandicoot.cli.api.ldap_use_ssl)
+            conn = Connection(server, "uid=%s, %s" % (username, bandicoot.cli.api.ldap_user_cn), password)
             bind_success = conn.bind()
             if  bind_success == True:
                 valid_auth = True
         except LDAPSocketOpenError:
-            print("Failed to connect to LDAP server %s" % outbit.cli.api.ldap_server)
+            print("Failed to connect to LDAP server %s" % bandicoot.cli.api.ldap_server)
 
     return valid_auth
 
@@ -151,7 +151,7 @@ def token_required(f):
 
 @app.route("/login", methods=["POST"])
 @requires_auth
-def outbit_login():
+def bandicoot_login():
     dat = None
     status = 200
 
@@ -163,10 +163,10 @@ def outbit_login():
     return(resp)
 
 
-# Support Authorization headers for auth (outbit-cli uses this API)
+# Support Authorization headers for auth (bandicoot-cli uses this API)
 @app.route("/", methods=["POST"])
 @requires_auth
-def outbit_base():
+def bandicoot_base():
     indata = request.get_json()
     dat = None
     status = 200
@@ -176,25 +176,25 @@ def outbit_base():
         return Response(response=json.dumps({"response": "  invalid request"}), status=400, mimetype="application/json")
 
     # Encrypt indata values that are sensitive
-    outbit.cli.api.encrypt_dict(indata["options"])
+    bandicoot.cli.api.encrypt_dict(indata["options"])
 
     # Run Action
-    dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
+    dat = bandicoot.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
     if dat is None:
         dat = json.dumps({"response": "  action not found"})
 
     # Audit Logging / History
-    outbit.cli.api.log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
+    bandicoot.cli.api.log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
 
     # http response
     resp = Response(response=dat, status=status, mimetype="application/json")
     return(resp)
 
 
-# Support Token for auth (outbit-gui uses this API)
+# Support Token for auth (bandicoot-gui uses this API)
 @app.route("/api", methods=["POST"])
 @token_required
-def outbit_api():
+def bandicoot_api():
     indata = request.get_json()
     dat = None
     status = 200
@@ -204,16 +204,16 @@ def outbit_api():
         return Response(response=json.dumps({"response": "  invalid request"}), status=400, mimetype="application/json")
 
     # Encrypt indata values that are sensitive
-    outbit.cli.api.encrypt_dict(indata["options"])
+    bandicoot.cli.api.encrypt_dict(indata["options"])
 
     # Run Action
-    dat = outbit.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
+    dat = bandicoot.cli.api.parse_action(username, indata["category"], indata["action"], indata["options"])
     if dat is None:
         dat = json.dumps({"response": "  action not found"})
         status = 400
 
     # Audit Logging / History
-    outbit.cli.api.log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
+    bandicoot.cli.api.log_action(username, {"result": dat, "category": indata["category"], "action": indata["action"], "options": indata["options"]})
 
     # http response
     resp = Response(response=dat, status=status, mimetype="application/json")

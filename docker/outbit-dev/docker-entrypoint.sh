@@ -3,4 +3,4 @@
 service mongodb start
 service nginx start
 
-su - outbit -c "outbit-api"
+su - bandicoot -c "bandicoot-api"

@@ -1,5 +1,5 @@
-import outbit.cli.api
-from outbit.exceptions import DecryptWrongKeyException, DecryptNotClearTextException, DecryptException
+import bandicoot.cli.api
+from bandicoot.exceptions import DecryptWrongKeyException, DecryptNotClearTextException, DecryptException
 import json
 import subprocess
 import hashlib
@@ -28,8 +28,8 @@ def queue_support():
             exit_event = multiprocessing.Event()
             q = multiprocessing.Queue()
             p = multiprocessing.Process(target=f, args=args+(exit_event,q))
-            job_id = int(outbit.cli.api.counters_db_getNextSequence("jobid"))
-            outbit.cli.api.db.jobs.insert_one({"_id": int(job_id), "start_time": time.time(), "user": user, "action": action, "options": options, "running": True, "response": ""})
+            job_id = int(bandicoot.cli.api.counters_db_getNextSequence("jobid"))
+            bandicoot.cli.api.db.jobs.insert_one({"_id": int(job_id), "start_time": time.time(), "user": user, "action": action, "options": options, "running": True, "response": ""})
             job_queue[job_id] = { "queue": q, "process": p, "exit_event": exit_event}
             p.start()
             return json.dumps({"queue_id": job_id})
@@ -97,15 +97,15 @@ def category_fix(options):
 
 
 def plugin_help(user, action, options):
-    cursor = outbit.cli.api.db.actions.find()
+    cursor = bandicoot.cli.api.db.actions.find()
     response = ""
     api_response = []
     compact_actions = {}
     dbaction_count = 0
 
     # Build Compact, Sortable, Dictinary like: {"roles": {"actions": ["list", "edit"], "num": 0}}
-    for dbaction in outbit.cli.api.builtin_actions + list(cursor):
-        if not outbit.cli.api.roles_has_permission(user, {"category": dbaction["category"], "action": dbaction["action"]}, {}):
+    for dbaction in bandicoot.cli.api.builtin_actions + list(cursor):
+        if not bandicoot.cli.api.roles_has_permission(user, {"category": dbaction["category"], "action": dbaction["action"]}, {}):
             continue
 
         if dbaction["category"] not in compact_actions:
@@ -155,13 +155,13 @@ def plugin_ping(user, action, options):
 @options_required(option_list=["username", "password"])
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_add(user, action, options):
-    result = outbit.cli.api.db.users.find_one({"username": options["username"]})
+    result = bandicoot.cli.api.db.users.find_one({"username": options["username"]})
     if result is None:
         m = hashlib.md5()
         m.update(str(options["password"]))
         password_md5 = str(m.hexdigest())
         post = {"username": options["username"], "password_md5": password_md5}
-        outbit.cli.api.db.users.insert_one(post)
+        bandicoot.cli.api.db.users.insert_one(post)
         return json.dumps({"exit_code": 0, "response": "  created user %s" % options["username"]})
     else:
         return json.dumps({"exit_code": 1, "response": "  user %s already exists" % options["username"]})
@@ -172,7 +172,7 @@ def plugin_users_add(user, action, options):
 @options_validator(option_list=["username"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_users_del(user, action, options):
     post = {"username": options["username"]}
-    result = outbit.cli.api.db.users.delete_many(post)
+    result = bandicoot.cli.api.db.users.delete_many(post)
     if result.deleted_count > 0:
         return json.dumps({"exit_code": 0, "response": "  deleted user %s" % options["username"]})
     else:
@@ -192,7 +192,7 @@ def plugin_users_edit(user, action, options):
     if "username" not in options:
         options["username"] = user
 
-    result = outbit.cli.api.db.users.update_one({"username": options["username"]},
+    result = bandicoot.cli.api.db.users.update_one({"username": options["username"]},
             {"$set": {"password_md5": password_md5},})
     if result.matched_count > 0:
         return json.dumps({"exit_code": 0, "response": "  modified user %s" % options["username"]})
@@ -202,7 +202,7 @@ def plugin_users_edit(user, action, options):
 
 def plugin_users_list(user, action, options):
     result = ""
-    cursor = outbit.cli.api.db.users.find()
+    cursor = bandicoot.cli.api.db.users.find()
     for doc in list(cursor):
         result += "  %s\n" % doc["username"]
     return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
@@ -216,9 +216,9 @@ def plugin_actions_add(user, action, options):
 
     category_fix(options)
 
-    find_result = outbit.cli.api.db.actions.find_one({"name": options["name"]})
+    find_result = bandicoot.cli.api.db.actions.find_one({"name": options["name"]})
     if find_result is None:
-        result = outbit.cli.api.db.actions.insert_one(options)
+        result = bandicoot.cli.api.db.actions.insert_one(options)
         dat = json.dumps({"exit_code": 0, "response": "  created action %s" % options["name"]})
     else:
         dat = json.dumps({"exit_code": 1, "response": "  action %s already exists" % options["name"]})
@@ -244,7 +244,7 @@ def plugin_command(user, action, options):
 def plugin_actions_edit(user, action, options):
     category_fix(options)
 
-    result = outbit.cli.api.db.actions.update_one({"name": options["name"]},
+    result = bandicoot.cli.api.db.actions.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
         return json.dumps({"exit_code": 0, "response": "  modified action %s" % options["name"]})
@@ -259,7 +259,7 @@ def plugin_actions_del(user, action, options):
     dat = None
 
     post = {"name": options["name"]}
-    result = outbit.cli.api.db.actions.delete_many(post)
+    result = bandicoot.cli.api.db.actions.delete_many(post)
     if result.deleted_count > 0:
         dat = json.dumps({"exit_code": 0, "response": "  deleted action %s" % options["name"]})
     else:
@@ -269,7 +269,7 @@ def plugin_actions_del(user, action, options):
 
 def plugin_actions_list(user, action, options):
     result = ""
-    cursor = outbit.cli.api.db.actions.find()
+    cursor = bandicoot.cli.api.db.actions.find()
     for doc in list(cursor):
         for key in sorted(doc):
             if key not in ["_id"]:
@@ -281,10 +281,10 @@ def plugin_actions_list(user, action, options):
 @options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_add(user, action, options):
-    result = outbit.cli.api.db.roles.find_one({"name": options["name"]})
+    result = bandicoot.cli.api.db.roles.find_one({"name": options["name"]})
     if result is None:
         post = options
-        outbit.cli.api.db.roles.insert_one(post)
+        bandicoot.cli.api.db.roles.insert_one(post)
         return json.dumps({"exit_code": 0, "response": "  created role %s" % options["name"]})
     else:
         return json.dumps({"exit_code": 1, "response": "  role %s already exists" % options["name"]})
@@ -293,7 +293,7 @@ def plugin_roles_add(user, action, options):
 @options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_edit(user, action, options):
-    result = outbit.cli.api.db.roles.update_one({"name": options["name"]},
+    result = bandicoot.cli.api.db.roles.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
         return json.dumps({"exit_code": 0, "response": "  modified role %s" % options["name"]})
@@ -306,7 +306,7 @@ def plugin_roles_edit(user, action, options):
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_roles_del(user, action, options):
     post = {"name": options["name"]}
-    result = outbit.cli.api.db.roles.delete_many(post)
+    result = bandicoot.cli.api.db.roles.delete_many(post)
     if result.deleted_count > 0:
         return json.dumps({"exit_code": 0, "response": "  deleted role %s" % options["name"]})
     else:
@@ -315,7 +315,7 @@ def plugin_roles_del(user, action, options):
 
 def plugin_roles_list(user, action, options):
     result = ""
-    cursor = outbit.cli.api.db.roles.find()
+    cursor = bandicoot.cli.api.db.roles.find()
     for doc in list(cursor):
         for key in sorted(doc):
             if key not in ["_id"]:
@@ -327,10 +327,10 @@ def plugin_roles_list(user, action, options):
 @options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_add(user, action, options):
-    result = outbit.cli.api.db.secrets.find_one({"name": options["name"]})
+    result = bandicoot.cli.api.db.secrets.find_one({"name": options["name"]})
     if result is None:
         post = options
-        outbit.cli.api.db.secrets.insert_one(post)
+        bandicoot.cli.api.db.secrets.insert_one(post)
         return json.dumps({"exit_code": 0, "response": "  created secret %s" % options["name"]})
     else:
         return json.dumps({"exit_code": 1, "response": "  secret %s already exists" % options["name"]})
@@ -339,7 +339,7 @@ def plugin_secrets_add(user, action, options):
 @options_required(option_list=["name"])
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_edit(user, action, options):
-    result = outbit.cli.api.db.secrets.update_one({"name": options["name"]},
+    result = bandicoot.cli.api.db.secrets.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
         return json.dumps({"exit_code": 0, "response": "  modified secret %s" % options["name"]})
@@ -352,7 +352,7 @@ def plugin_secrets_edit(user, action, options):
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_secrets_del(user, action, options):
     post = {"name": options["name"]}
-    result = outbit.cli.api.db.secrets.delete_many(post)
+    result = bandicoot.cli.api.db.secrets.delete_many(post)
     if result.deleted_count > 0:
         return json.dumps({"exit_code": 0, "response": "  deleted secret %s" % options["name"]})
     else:
@@ -362,14 +362,14 @@ def plugin_secrets_del(user, action, options):
 @options_supported(option_list=["oldpw"])
 def plugin_secrets_encryptpw(user, action, options):
     def update_secret_pw(name, options):
-        result = outbit.cli.api.db.secrets.update_one({"name": name},
+        result = bandicoot.cli.api.db.secrets.update_one({"name": name},
                 {"$set": options})
         if result.matched_count > 0:
             return True
         else:
             return False
     result = ""
-    cursor = outbit.cli.api.db.secrets.find()
+    cursor = bandicoot.cli.api.db.secrets.find()
     # secrets encryptpw --- encrypt clear text pw using the current password
     # secrets encryptpw oldpw=XXXX --- re-encrypt secrets that use oldpw to use the current password
     for doc in list(cursor):
@@ -387,33 +387,33 @@ def plugin_secrets_encryptpw(user, action, options):
 
             # Detect The Problem With Decryption
             try:
-                decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password=new_encrypt_password)
+                decrypted_secret = bandicoot.cli.api.decrypt_str(doc["secret"], encrypt_password=new_encrypt_password)
             except DecryptWrongKeyException:
                 # P
                 what_to_do = "updatepw"
             except DecryptNotClearTextException:
                 # User said it was clear text, but its not. Skip, Do Nothing.
                 what_to_do = "notcleartext"
-            # Prefix is "__outbit_encrypted__:"
-            if decrypted_secret == doc["secret"][len("__outbit_encrypted__:"):]:
+            # Prefix is "__bandicoot_encrypted__:"
+            if decrypted_secret == doc["secret"][len("__bandicoot_encrypted__:"):]:
                 # Clear text to encrypted
                 what_to_do = "encrypt"
 
             if what_to_do == "updatepw":
                 try:
-                    decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password=old_encrypt_password)
+                    decrypted_secret = bandicoot.cli.api.decrypt_str(doc["secret"], encrypt_password=old_encrypt_password)
                 except DecryptException:
                     result += "secret %s failed to update to new password\n" % doc["name"]
                     continue
-                encrypted_secret = outbit.cli.api.encrypt_str(decrypted_secret, new_encrypt_password)
+                encrypted_secret = bandicoot.cli.api.encrypt_str(decrypted_secret, new_encrypt_password)
                 result += "secret %s updated to new password\n" % doc["name"]
             elif what_to_do == "encrypt":
                 try:
-                    decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"], encrypt_password=old_encrypt_password)
+                    decrypted_secret = bandicoot.cli.api.decrypt_str(doc["secret"], encrypt_password=old_encrypt_password)
                 except DecryptException:
                     result += "secret %s failed to update because the secret is not clear text\n" % doc["name"]
                     continue
-                encrypted_secret = outbit.cli.api.encrypt_str(decrypted_secret, new_encrypt_password)
+                encrypted_secret = bandicoot.cli.api.encrypt_str(decrypted_secret, new_encrypt_password)
                 result += "secret %s encrypted using new password\n" % doc["name"]
 
             # Secret Was Updated
@@ -425,20 +425,20 @@ def plugin_secrets_encryptpw(user, action, options):
 
 def plugin_secrets_list(user, action, options):
     result = ""
-    cursor = outbit.cli.api.db.secrets.find()
+    cursor = bandicoot.cli.api.db.secrets.find()
     for doc in list(cursor):
         if "secret" in doc:
             # Detect status of secret
             decrypted_secret = ""
             doc["status"] = "encrypted"
             try:
-                decrypted_secret = outbit.cli.api.decrypt_str(doc["secret"])
+                decrypted_secret = bandicoot.cli.api.decrypt_str(doc["secret"])
             except DecryptWrongKeyException:
                 doc["status"] = "wrongpw"
             except DecryptNotClearTextException:
                 doc["status"] = "noencryptpw"
-            # Prefix is "__outbit_encrypted__:"
-            if decrypted_secret == doc["secret"][len("__outbit_encrypted__:"):]:
+            # Prefix is "__bandicoot_encrypted__:"
+            if decrypted_secret == doc["secret"][len("__bandicoot_encrypted__:"):]:
                 doc["status"] = "cleartext"
 
             # Do Not Print Encrypted Secret
@@ -451,7 +451,7 @@ def plugin_secrets_list(user, action, options):
 
 
 def plugin_plugins_list(user, action, options):
-    return json.dumps({"exit_code": 0, "response": "\n  ".join(outbit.cli.api.plugins.keys())})
+    return json.dumps({"exit_code": 0, "response": "\n  ".join(bandicoot.cli.api.plugins.keys())})
 
 
 def plugin_logs(user, action, options):
@@ -459,25 +459,25 @@ def plugin_logs(user, action, options):
 
     # Index is required because of the sorting
     # Not sure if this should be done at each call or only once when the first log is created
-    outbit.cli.api.db.logs.create_index([("date", 1)])
-    outbit.cli.api.db.inventory.changes.create_index([("date", 1)])
+    bandicoot.cli.api.db.logs.create_index([("date", 1)])
+    bandicoot.cli.api.db.inventory.changes.create_index([("date", 1)])
 
     if options is not None and ("name" in options or ("type" in options and options["type"] == "changes")):
         # List changes/logs for a specific inventory host
         result += "  inventory_item\t\tdesc\t\tjob_id\t\tdate\n"
         if "name" in options:
             # Show changes for a specific inventory item
-            cursor = outbit.cli.api.db.inventory.changes.find({"name": options["name"]}).sort("date", 1)
+            cursor = bandicoot.cli.api.db.inventory.changes.find({"name": options["name"]}).sort("date", 1)
         else:
             # Show all changes
-            cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
+            cursor = bandicoot.cli.api.db.inventory.changes.find().sort("date", 1)
         for doc in list(cursor):
             if "date" in doc: # Backward compat
                 result += '  %s\t"%s"\t%s\t%s\n' % (doc["name"], doc["desc"], doc["job_id"], "{:%m/%d/%Y %M:%H}".format(doc["date"]))
     else: # type=requests is the default
         # Default List all requests to api server
         result += "  category\t\taction\t\toptions\t\tdate\n"
-        cursor = outbit.cli.api.db.logs.find().sort("date", 1)
+        cursor = bandicoot.cli.api.db.logs.find().sort("date", 1)
         for doc in list(cursor):
             # Backward compat when user field did not exist
             if "user" not in doc:
@@ -504,7 +504,7 @@ def plugin_ansible(user, action, options, exit_event, q):
         return 0
 
     ansible_options = ""
-    temp_location = "/tmp/outbit/%s" % str(time.time())
+    temp_location = "/tmp/bandicoot/%s" % str(time.time())
 
     # Required options to be included in action
     for option in ["source_url", "playbook"]:
@@ -560,7 +560,7 @@ def plugin_jobs_status(user, action, options):
     global job_queue
     exit_code = 0
 
-    result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
+    result = bandicoot.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
         exit_code = 1
         return json.dumps({"exit_code": 1, "response": "  The job id %s does not match a job" % str(options["id"]), "exit_code": exit_code})
@@ -575,7 +575,7 @@ def plugin_jobs_status(user, action, options):
             try:
                 if result["_id"] not in job_queue:
                     result["running"] = False
-                    outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
+                    bandicoot.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
                     # Job already ran, just return the result
                     break
 
@@ -583,13 +583,13 @@ def plugin_jobs_status(user, action, options):
                 if qitem != EOF:
                     # New Data from job!
                     result["response"] += qitem
-                    outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"response": result["response"]},})
+                    bandicoot.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"response": result["response"]},})
                 else:
                     # EOF, job is finished
                     result["running"] = False
-                    outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
+                    bandicoot.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
                     result["end_time"] = time.time()
-                    outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"end_time": result["end_time"]},})
+                    bandicoot.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"end_time": result["end_time"]},})
 
                     # Discover New Inventory
                     tmp_hosts = {}
@@ -613,14 +613,14 @@ def plugin_jobs_status(user, action, options):
                                 tmp_hosts[hostname].append({"name": hostname, "date": datetime.datetime.utcnow(), "desc": current_task_name, "job_id": result["_id"]})
 
                     for hostname in tmp_hosts:
-                        dbresult = outbit.cli.api.db.inventory.hosts.find_one({"name": hostname})
+                        dbresult = bandicoot.cli.api.db.inventory.hosts.find_one({"name": hostname})
                         if dbresult is None:
                             # New Inventory Item discovered
-                            outbit.cli.api.db.inventory.hosts.insert_one({"name": hostname})
+                            bandicoot.cli.api.db.inventory.hosts.insert_one({"name": hostname})
 
                         # Log Inventory Changelog
                         for document in tmp_hosts[hostname]:
-                            outbit.cli.api.db.inventory.changes.insert_one(document)
+                            bandicoot.cli.api.db.inventory.changes.insert_one(document)
 
                     break
             except Queue.Empty:
@@ -632,7 +632,7 @@ def plugin_jobs_status(user, action, options):
 def plugin_jobs_list(user, action, options):
     result = "  Job ID\tIs Running?\tUser\tCommand\n"
     api_result = []
-    cursor = outbit.cli.api.db.jobs.find()
+    cursor = bandicoot.cli.api.db.jobs.find()
     for doc in list(cursor):
         is_running = doc["_id"] in job_queue and doc["running"]
         api_result.append({"_id": doc["_id"], "is_running": is_running, "user": doc["user"], "category": doc["action"]["category"], "action": doc["action"]["action"]})
@@ -650,7 +650,7 @@ def plugin_jobs_list(user, action, options):
 def plugin_jobs_kill(user, action, options):
     global job_queue
     
-    result = outbit.cli.api.db.jobs.find_one({"_id": int(options["id"])})
+    result = bandicoot.cli.api.db.jobs.find_one({"_id": int(options["id"])})
     if result is None:
         return json.dumps({"exit_code": 1, "response": "  The job id %s does not match a job" % str(options["id"])})
     else:
@@ -662,7 +662,7 @@ def plugin_jobs_kill(user, action, options):
         job_queue[int_id]["exit_event"].set() # Set event to trigger exit
         job_queue[int_id]["process"].join() # Wait for Plugin to exit
         result["running"] = False
-        outbit.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
+        bandicoot.cli.api.db.jobs.update_one({"_id": result["_id"]}, {"$set": {"running": result["running"]},})
         return json.dumps({"exit_code": 0, "response": "  The job %s, was terminated" % str(int_id)})
 
 
@@ -672,7 +672,7 @@ def plugin_jobs_kill(user, action, options):
 @options_validator(option_list=["category"], regexp=r'^[/a-zA-Z0-9_\-]+$')
 @options_validator(option_list=["minute", "hour", "day_of_month", "month", "day_of_week"], regexp=r'^([0-9]+|\*)$')
 def plugin_schedules_add(user, action, options):
-    result = outbit.cli.api.db.schedules.find_one({"name": options["name"]})
+    result = bandicoot.cli.api.db.schedules.find_one({"name": options["name"]})
     if result is None:
         post = options
         # Prevent Users from setting up crons for other users
@@ -682,7 +682,7 @@ def plugin_schedules_add(user, action, options):
         if "user" not in post:
             post["user"] = user
 
-        outbit.cli.api.db.schedules.insert_one(post)
+        bandicoot.cli.api.db.schedules.insert_one(post)
         return json.dumps({"exit_code": 0, "response": "  created schedule %s" % options["name"]})
     else:
         return json.dumps({"exit_code": 1, "response": "  schedule %s already exists" % options["name"]})
@@ -698,7 +698,7 @@ def plugin_schedules_edit(user, action, options):
     if "user" in options and options["user"] != user:
         return json.dumps({"exit_code": 1, "response": "  You cannot set the cron user to anyone but your username %s." % user})
 
-    result = outbit.cli.api.db.schedules.update_one({"name": options["name"]},
+    result = bandicoot.cli.api.db.schedules.update_one({"name": options["name"]},
             {"$set": options})
     if result.matched_count > 0:
         return json.dumps({"exit_code": 0, "response": "  modified schedule %s" % options["name"]})
@@ -711,7 +711,7 @@ def plugin_schedules_edit(user, action, options):
 @options_validator(option_list=["name"], regexp=r'^[a-zA-Z0-9_\-]+$')
 def plugin_schedules_del(user, action, options):
     post = {"name": options["name"]}
-    result = outbit.cli.api.db.schedules.delete_many(post)
+    result = bandicoot.cli.api.db.schedules.delete_many(post)
     if result.deleted_count > 0:
         return json.dumps({"exit_code": 0, "response": "  deleted schedule %s" % options["name"]})
     else:
@@ -720,7 +720,7 @@ def plugin_schedules_del(user, action, options):
 
 def plugin_schedules_list(user, action, options):
     result = ""
-    cursor = outbit.cli.api.db.schedules.find()
+    cursor = bandicoot.cli.api.db.schedules.find()
     for doc in list(cursor):
         for key in sorted(doc):
             if key not in ["_id"]:
@@ -731,7 +731,7 @@ def plugin_schedules_list(user, action, options):
 
 def plugin_inventory_list(user, action, options):
     result = ""
-    cursor = outbit.cli.api.db.inventory.hosts.find()
+    cursor = bandicoot.cli.api.db.inventory.hosts.find()
     for doc in list(cursor):
         result += "  %s\n" % doc["name"]
     return json.dumps({"exit_code": 0, "response": result.rstrip()}) # Do not return the last character (carrage return)
@@ -741,7 +741,7 @@ def plugin_inventory_list(user, action, options):
 @options_required(option_list=["name"])
 def plugin_inventory_del(user, action, options):
     post = {"name": options["name"]}
-    result = outbit.cli.api.db.inventory.hosts.delete_many(post)
+    result = bandicoot.cli.api.db.inventory.hosts.delete_many(post)
     if result.deleted_count > 0:
         return json.dumps({"exit_code": 0, "response": "  deleted inventory item %s" % options["name"]})
     else:
@@ -763,7 +763,7 @@ def plugin_stats(user, action, options):
     if stat_type == "users":
         stat_title = "Jobs Submitted Per User"
         user_stats = {}
-        cursor = outbit.cli.api.db.jobs.find()
+        cursor = bandicoot.cli.api.db.jobs.find()
         for doc in list(cursor):
             if doc["user"] not in user_stats:
                 user_stats[doc["user"]] = 1
@@ -773,7 +773,7 @@ def plugin_stats(user, action, options):
     elif stat_type == "system":
         stat_title = "Changes Per Inventory Item"
         system_stats = {}
-        cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
+        cursor = bandicoot.cli.api.db.inventory.changes.find().sort("date", 1)
         for doc in list(cursor):
             if doc["name"] not in system_stats:
                 system_stats[doc["name"]] = 1
@@ -783,7 +783,7 @@ def plugin_stats(user, action, options):
     elif stat_type == "jobs":
         stat_title = "Jobs Submitted By Date"
         job_stats = {}
-        cursor = outbit.cli.api.db.inventory.changes.find().sort("date", 1)
+        cursor = bandicoot.cli.api.db.inventory.changes.find().sort("date", 1)
         for doc in list(cursor):
             if "date" in doc:
                 doc_date = "{:%m/%d/%Y}".format(doc["date"])

@@ -1,11 +1,11 @@
 import nose
-import outbit
-from outbit.plugins import builtins
+import bandicoot
+from bandicoot.plugins import builtins
 import unittest
 import json
 import mock
 import mongomock
-import outbit.cli.api
+import bandicoot.cli.api
 import multiprocessing
 
 
@@ -23,34 +23,34 @@ class MockPopen(object):
 
 class TestCli(unittest.TestCase):
     def __init__(self, *args, **kwargs):
-        outbit.cli.api.load_plugins()
+        bandicoot.cli.api.load_plugins()
         self.mock_db_setup()
         self.mock_db_basic_database()
-        outbit.cli.api.counters_db_init("jobid") # setup counters in mockdb
+        bandicoot.cli.api.counters_db_init("jobid") # setup counters in mockdb
         unittest.TestCase.__init__(self, *args, **kwargs)
 
     def mock_db_setup(self):
-        outbit.cli.api.dbclient = mongomock.MongoClient()
-        outbit.cli.api.db = outbit.cli.api.dbclient.conn["outbit"]
+        bandicoot.cli.api.dbclient = mongomock.MongoClient()
+        bandicoot.cli.api.db = bandicoot.cli.api.dbclient.conn["bandicoot"]
 
     def mock_db_basic_database(self):
-        outbit.cli.api.db.users.insert_one({"username": "deleteme", "password_md5": "md5test"})
-        outbit.cli.api.db.users.insert_one({"username": "jdoe1", "password_md5": "md5test"})
-        outbit.cli.api.db.users.insert_one({"username": "jdoe2", "password_md5": "md5test"})
-        outbit.cli.api.db.users.insert_one({"username": "jdoe3", "password_md5": "md5test"})
-        outbit.cli.api.db.users.insert_one({"username": "jdoe4", "password_md5": "md5test"})
+        bandicoot.cli.api.db.users.insert_one({"username": "deleteme", "password_md5": "md5test"})
+        bandicoot.cli.api.db.users.insert_one({"username": "jdoe1", "password_md5": "md5test"})
+        bandicoot.cli.api.db.users.insert_one({"username": "jdoe2", "password_md5": "md5test"})
+        bandicoot.cli.api.db.users.insert_one({"username": "jdoe3", "password_md5": "md5test"})
+        bandicoot.cli.api.db.users.insert_one({"username": "jdoe4", "password_md5": "md5test"})
 
-        outbit.cli.api.db.actions.insert_one({"name": "deleteme", "category": "/testing", "action": "pwd", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test pwd"})
-        outbit.cli.api.db.actions.insert_one({"name": "test_action1", "category": "/testing", "action": "pwd", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test pwd"})
-        outbit.cli.api.db.actions.insert_one({"name": "test_action2", "category": "/testing", "action": "ls", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test ls"})
+        bandicoot.cli.api.db.actions.insert_one({"name": "deleteme", "category": "/testing", "action": "pwd", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test pwd"})
+        bandicoot.cli.api.db.actions.insert_one({"name": "test_action1", "category": "/testing", "action": "pwd", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test pwd"})
+        bandicoot.cli.api.db.actions.insert_one({"name": "test_action2", "category": "/testing", "action": "ls", "plugin": "command", "command_run": "echo 'hello world'", "desc": "test ls"})
 
-        outbit.cli.api.db.roles.insert_one({"name": "deleteme", "users": "jdoe2", "actions": "/", "secrets": "test_secret1"})
-        outbit.cli.api.db.roles.insert_one({"name": "test_role1", "users": "jdoe2", "actions": "/", "secrets": "test_secret1"})
-        outbit.cli.api.db.roles.insert_one({"name": "test_role2", "users": "jdoe3", "actions": "/testing", "secrets": "test_secret2"})
+        bandicoot.cli.api.db.roles.insert_one({"name": "deleteme", "users": "jdoe2", "actions": "/", "secrets": "test_secret1"})
+        bandicoot.cli.api.db.roles.insert_one({"name": "test_role1", "users": "jdoe2", "actions": "/", "secrets": "test_secret1"})
+        bandicoot.cli.api.db.roles.insert_one({"name": "test_role2", "users": "jdoe3", "actions": "/testing", "secrets": "test_secret2"})
 
-        outbit.cli.api.db.secrets.insert_one({"name": "deleteme", "secret": "foundme1"})
-        outbit.cli.api.db.secrets.insert_one({"name": "test_secret1", "secret": "foundme1"})
-        outbit.cli.api.db.secrets.insert_one({"name": "test_secret2", "secret": "foundme2"})
+        bandicoot.cli.api.db.secrets.insert_one({"name": "deleteme", "secret": "foundme1"})
+        bandicoot.cli.api.db.secrets.insert_one({"name": "test_secret1", "secret": "foundme1"})
+        bandicoot.cli.api.db.secrets.insert_one({"name": "test_secret2", "secret": "foundme2"})
 
     def test_plugin_help_unprivuser(self):
         result = builtins.plugin_help("jdoe3", {"category": "/", "actions": "help"}, {})
@@ -301,11 +301,11 @@ class TestCli(unittest.TestCase):
         post["category"] = "/testing"
         post["action"] = {"name": "testaction"}
         post["options"] = {"testopt": "something"}
-        # Missing Attributes in older version of outbit, test backward compat
+        # Missing Attributes in older version of bandicoot, test backward compat
         # post["result"]
         # post["date"]
         # post["user"]
-        outbit.cli.api.db.logs.insert_one(post)
+        bandicoot.cli.api.db.logs.insert_one(post)
         result = builtins.plugin_logs(None, {}, {})
         print(result)
         assert(result == json.dumps({"exit_code": 0, "response": "  category\t\taction\t\toptions\t\tdate\n  unknown\t/testing\t{'name': 'testaction'}\t{'testopt': 'something'}\t01/01/1970 00:00\n"}))

@@ -1,5 +1,5 @@
 import nose
-from outbit.parser import yacc
+from bandicoot.parser import yacc
 import unittest
 import sys
 import os

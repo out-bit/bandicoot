@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# outbit documentation build configuration file, created by
+# bandicoot documentation build configuration file, created by
 # sphinx-quickstart on Sat Jun 18 00:18:37 2016.
 #
 # This file is execfile()d with the current directory set to its
@@ -48,7 +48,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'outbit'
+project = u'bandicoot'
 copyright = u'2016, David Whiteside'
 author = u'David Whiteside'
 
@@ -133,7 +133,7 @@ html_theme = 'default'
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = u'outbit vX.X.X'
+# html_title = u'bandicoot vX.X.X'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
@@ -233,7 +233,7 @@ html_static_path = ['_static']
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'outbitdoc'
+htmlhelp_basename = 'bandicootdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -259,7 +259,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'outbit.tex', u'outbit Documentation',
+    (master_doc, 'bandicoot.tex', u'bandicoot Documentation',
      u'David Whiteside', 'manual'),
 ]
 
@@ -295,7 +295,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'outbit', u'outbit Documentation',
+    (master_doc, 'bandicoot', u'bandicoot Documentation',
      [author], 1)
 ]
 
@@ -310,8 +310,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'outbit', u'outbit Documentation',
-     author, 'outbit', 'One line description of project.',
+    (master_doc, 'bandicoot', u'bandicoot Documentation',
+     author, 'bandicoot', 'One line description of project.',
      'Miscellaneous'),
 ]
 

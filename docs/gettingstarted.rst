@@ -1,37 +1,37 @@
-Getting Started with outbit
+Getting Started with bandicoot
 ==================
 
-Installing outbit client
+Installing bandicoot client
 
 .. sourcecode:: bash
 
-    $ pip install outbit
+    $ pip install bandicoot
 
-Installing outbit api server
-
-.. sourcecode:: bash
-
-  $ pip install outbit
-  $ sudo outbit-api-install
-
-Starting the outbit api server.
+Installing bandicoot api server
 
 .. sourcecode:: bash
 
-    $ outbit-api -s 127.0.0.1 --insecure
+  $ pip install bandicoot
+  $ sudo bandicoot-api-install
 
-Installing and Starting the outbit api server using Docker.
-
-.. sourcecode:: bash
-
-  $ docker pull starboarder2001/outbit
-  $ docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/outbit
-
-Login to the outbit shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by its configured to use ssl.  If you are using valid ssl certificates and not self signed certificates you can also remove the "--no-check-certificates" flag.
+Starting the bandicoot api server.
 
 .. sourcecode:: bash
 
-    $ outbit -u superadmin -s 127.0.0.1 --insecure --no-check-certificates
+    $ bandicoot-api -s 127.0.0.1 --insecure
+
+Installing and Starting the bandicoot api server using Docker.
+
+.. sourcecode:: bash
+
+  $ docker pull starboarder2001/bandicoot
+  $ docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/bandicoot
+
+Login to the bandicoot shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by its configured to use ssl.  If you are using valid ssl certificates and not self signed certificates you can also remove the "--no-check-certificates" flag.
+
+.. sourcecode:: bash
+
+    $ bandicoot -u superadmin -s 127.0.0.1 --insecure --no-check-certificates
       Password: superadmin
       Changing Password From Default
       Enter New Password: **********
@@ -43,7 +43,7 @@ The help command will display all the commands available to run.
 
 .. sourcecode:: bash
 
-    outbit> help
+    bandicoot> help
       actions [list|del|edit|add]
       users [list|del|edit|add]
       roles [list|del|edit|add]
@@ -63,38 +63,38 @@ The exit command will exit the application.
 
 .. sourcecode:: bash
 
-    outbit> exit
+    bandicoot> exit
 
 The logs command will display the history of actions performed.
 
 .. sourcecode:: bash
 
-    outbit> logs
+    bandicoot> logs
 
-outbit CLI Non-Interactive Usage
+bandicoot CLI Non-Interactive Usage
 
-You can run commands with outbit from the bash shell without entering the interactive outbit shell.
+You can run commands with bandicoot from the bash shell without entering the interactive bandicoot shell.
 
 .. sourcecode:: bash
 
-    $ outbit 'logs'
+    $ bandicoot 'logs'
       Password: ******
       superadmin    /       ping    None    06/18/2016 09:19
       superadmin    /       ping    None    06/18/2016 09:19
       superadmin    /       help    None    06/18/2016 09:19
 
-    $ outbit 'logs' 'users list'
+    $ bandicoot 'logs' 'users list'
       Password: ******
       superadmin    /       ping    None    06/18/2016 09:19
       superadmin    /       ping    None    06/18/2016 09:19
       superadmin
 
-If you do not wish to type the password for each login attempt, you can set your password in the outbit configuration file.
+If you do not wish to type the password for each login attempt, you can set your password in the bandicoot configuration file.
 
 .. sourcecode:: bash
-    $ echo "---" > ~/.outbit.conf
-    $ echo "password: *****" >> ~/.outbit.conf
-    $ outbit 'logs'
+    $ echo "---" > ~/.bandicoot.conf
+    $ echo "password: *****" >> ~/.bandicoot.conf
+    $ bandicoot 'logs'
       superadmin    /       ping    None    06/18/2016 09:19
       superadmin    /       ping    None    06/18/2016 09:19
       superadmin    /       help    None    06/18/2016 09:19

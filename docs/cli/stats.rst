@@ -1,23 +1,23 @@
 Stats
 ==================
 
-The stats command is used to display statistics and graphs from outbit data.
+The stats command is used to display statistics and graphs from bandicoot data.
 
 .. sourcecode:: bash
 
-    outbit> stats
+    bandicoot> stats
       Jobs Submitted Per User
     ###############################################################################
     ███████████████████████████████████████████████████████████████  99  superadmin
                                                                       1  user1
 
-    outbit> stats type=system
+    bandicoot> stats type=system
       Changes Per Inventory Item
     ######################################################################################################
     ██████████████████████████████████████████████████  22  testhost1
     █████████████████████████████████████████████████   21  testhost2
 
-    outbit> stats type=jobs
+    bandicoot> stats type=jobs
       Jobs Submitted By Date
     ###############################################################################
     ██████████████████████████████████████████████████████████  3  07/14/2016

@@ -9,7 +9,7 @@ import getpass
 import curses
 import time
 import signal
-from outbit.parser import yacc
+from bandicoot.parser import yacc
 
 session = requests.Session()
 sig_bg_pressed = 0
@@ -38,22 +38,22 @@ signal.signal(signal.SIGINT, sig_kill)
 
 
 class Cli(object):
-    """ outbit CLI """
+    """ bandicoot CLI """
 
     def __init__(self):
         """ Setup Arguments and Options for CLI """
         # Parse CLI Arguments
         parser = optparse.OptionParser()
         parser.add_option("-u", "--user", dest="user",
-                          help="outbit username",
+                          help="bandicoot username",
                           metavar="USER",
                           default=None)
         parser.add_option("-s", "--server", dest="server",
-                          help="IP address or hostname of outbit-api server",
+                          help="IP address or hostname of bandicoot-api server",
                           metavar="SERVER",
                           default=None)
         parser.add_option("-p", "--port", dest="port",
-                          help="tcp port of outbit-api server",
+                          help="tcp port of bandicoot-api server",
                           metavar="PORT",
                           default=None)
         parser.add_option("-t", "--insecure", dest="is_secure",
@@ -88,27 +88,27 @@ class Cli(object):
                 self.noninteractive_commands.append(command)
 
         # Assign values from conf
-        outbit_config_locations = [os.path.expanduser("~")+"/.outbit.conf", "/etc/outbit.conf"]
-        outbit_conf_obj = {}
-        for outbit_conf in outbit_config_locations:
-            if os.path.isfile(outbit_conf):
-                with open(outbit_conf, 'r') as stream:
+        bandicoot_config_locations = [os.path.expanduser("~")+"/.bandicoot.conf", "/etc/bandicoot.conf"]
+        bandicoot_conf_obj = {}
+        for bandicoot_conf in bandicoot_config_locations:
+            if os.path.isfile(bandicoot_conf):
+                with open(bandicoot_conf, 'r') as stream:
                     try:
-                        outbit_conf_obj = yaml.load(stream)
+                        bandicoot_conf_obj = yaml.load(stream)
                     except yaml.YAMLError as excep:
                         print("%s\n" % excep)
-        if self.user is None and "user" in outbit_conf_obj:
-            self.user = str(outbit_conf_obj["user"])
-        if self.password is None and "password" in outbit_conf_obj:
-            self.password = str(outbit_conf_obj["password"])
-        if self.server is None and "server" in outbit_conf_obj:
-            self.server = str(outbit_conf_obj["server"])
-        if self.port is None and "port" in outbit_conf_obj:
-            self.port = int(outbit_conf_obj["port"])
-        if self.is_secure == True and "secure" in outbit_conf_obj:
-            self.is_secure = bool(outbit_conf_obj["secure"])
-        if self.is_ssl_verify == True and "ssl_verify" in outbit_conf_obj:
-            self.is_ssl_verify = bool(outbit_conf_obj["ssl_verify"])
+        if self.user is None and "user" in bandicoot_conf_obj:
+            self.user = str(bandicoot_conf_obj["user"])
+        if self.password is None and "password" in bandicoot_conf_obj:
+            self.password = str(bandicoot_conf_obj["password"])
+        if self.server is None and "server" in bandicoot_conf_obj:
+            self.server = str(bandicoot_conf_obj["server"])
+        if self.port is None and "port" in bandicoot_conf_obj:
+            self.port = int(bandicoot_conf_obj["port"])
+        if self.is_secure == True and "secure" in bandicoot_conf_obj:
+            self.is_secure = bool(bandicoot_conf_obj["secure"])
+        if self.is_ssl_verify == True and "ssl_verify" in bandicoot_conf_obj:
+            self.is_ssl_verify = bool(bandicoot_conf_obj["ssl_verify"])
 
         # Assign Default values if they were not specified at the cli or in the conf
         if self.user is None:
@@ -125,7 +125,7 @@ class Cli(object):
     def welcome(self):
         """ Welcome Message """
         self.screen.addstr("======================\n")
-        self.screen.addstr("Welcome To outbit\n")
+        self.screen.addstr("Welcome To bandicoot\n")
         if "pong" in self.action_ping():
             self.screen.addstr("Connected to Server %s\n" % self.url)
         else:
@@ -217,7 +217,7 @@ class Cli(object):
         self.screen = curses.initscr()
         self.welcome()
         curses.curs_set(1)
-        self.screen.addstr("outbit> ")
+        self.screen.addstr("bandicoot> ")
         self.screen.keypad(1)
         self.screen.scrollok(1)
 
@@ -273,7 +273,7 @@ class Cli(object):
             # Finished With Line Input
             elif s == ord("\n"):
                 (y, x) = self.screen.getyx()
-                self.screen.move(y, len("outbit> ")+len(line))
+                self.screen.move(y, len("bandicoot> ")+len(line))
                 self.screen.addstr("\n")
                 if search_mode:
                     if match is not None:
@@ -283,7 +283,7 @@ class Cli(object):
                     result = self.shell_parse_line(line)
                     if result is not None:
                         self.screen.addstr(result.encode("UTF-8"))
-                self.screen.addstr("\noutbit> ")
+                self.screen.addstr("\nbandicoot> ")
                 line = ""
                 history_index = 0
                 cursor_offset = 0
@@ -291,14 +291,14 @@ class Cli(object):
             # Backspace
             elif s == curses.KEY_BACKSPACE or s == 127 or s == curses.erasechar():
                 (y, x) = self.screen.getyx()
-                if len(line) > 0 and x > len("outbit> "):
+                if len(line) > 0 and x > len("bandicoot> "):
                     line = line[:len(line)+cursor_offset-1] + line[len(line)+cursor_offset:]
                     self.screen.delch(y, x-1)
                 history_index = 0
             # Ctrl-u, clear line
             elif s == 21:
                 (y, x) = self.screen.getyx()
-                self.screen.addstr(y, 0, "outbit> ")
+                self.screen.addstr(y, 0, "bandicoot> ")
                 self.screen.clrtoeol()
                 line = ""
                 history_index = 0
@@ -317,8 +317,8 @@ class Cli(object):
                 history_index += 1
                 cursor_offset = 0
                 (y, x) = self.screen.getyx()
-                self.screen.addstr(y, 0, "outbit> ")
-                self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
+                self.screen.addstr(y, 0, "bandicoot> ")
+                self.screen.addstr(y, len("bandicoot> "), self.history[-(history_index%len(self.history))])
                 self.screen.clrtoeol()
                 line = self.history[-(history_index%len(self.history))]
             elif s == curses.KEY_DOWN:
@@ -328,8 +328,8 @@ class Cli(object):
                 history_index -= 1
                 cursor_offset = 0
                 (y, x) = self.screen.getyx()
-                self.screen.addstr(y, 0, "outbit> ")
-                self.screen.addstr(y, len("outbit> "), self.history[-(history_index%len(self.history))])
+                self.screen.addstr(y, 0, "bandicoot> ")
+                self.screen.addstr(y, len("bandicoot> "), self.history[-(history_index%len(self.history))])
                 self.screen.clrtoeol()
                 line = self.history[-(history_index%len(self.history))]
             elif s == curses.KEY_LEFT:
@@ -394,12 +394,12 @@ class Cli(object):
 
         action = line.split()
         if self.is_action_quit(action):
-            # outbit> quit
-            # outbit> exit
+            # bandicoot> quit
+            # bandicoot> exit
             self.action_quit()
         else:
             # Server Side Handles Command Response
-            # outbit> [category ..] action [option1=something ..]
+            # bandicoot> [category ..] action [option1=something ..]
             if line is not None and len(line) > 0:
                 self.history.append(line)
 
@@ -414,9 +414,9 @@ class Cli(object):
                 elif "queue_id" in data:
                     return self.blocking_get_response_queued_job(data["queue_id"])
                 else:
-                    return("outbit - Invalid Response From server\n")
+                    return("bandicoot - Invalid Response From server\n")
             else:
-                return("outbit - Failed To Get Response From Server\n")
+                return("bandicoot - Failed To Get Response From Server\n")
 
     def run(self):
         """ EntryPoint Of Application """
