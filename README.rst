@@ -1,8 +1,8 @@
 bandicoot
 ============
 
-.. image:: https://secure.travis-ci.org/outbit/bandicoot.png?branch=master
-        :target: http://travis-ci.org/outbit/bandicoot
+.. image:: https://secure.travis-ci.org/out-bit/bandicoot.png?branch=master
+        :target: http://travis-ci.org/out-bit/bandicoot
         :alt: Travis CI
 
 .. image:: https://img.shields.io/pypi/v/bandicoot.svg
