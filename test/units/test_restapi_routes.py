@@ -1,7 +1,7 @@
 import nose
 import unittest
-from outbit.cli import api
-from outbit.restapi import routes
+from bandicoot.cli import api
+from bandicoot.restapi import routes
 import mongomock
 from flask import Response
 
@@ -14,7 +14,7 @@ class TestCli(unittest.TestCase):
 
     def mock_db_setup(self):
         api.dbclient = mongomock.MongoClient()
-        api.db = api.dbclient.conn["outbit"]
+        api.db = api.dbclient.conn["bandicoot"]
 
     def mock_db_basic_database(self):
         api.db.users.insert_one({"username": "jdoe1", "password_md5": "5f4dcc3b5aa765d61d8327deb882cf99"})

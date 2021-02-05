@@ -18,12 +18,12 @@
     - name: OSX Check if SSL cert exists
       always_run: yes
       changed_when: False
-      stat: path=/usr/local/etc/openssl/certs/outbit.crt
+      stat: path=/usr/local/etc/openssl/certs/bandicoot.crt
       register: st
       when: ansible_distribution == 'MacOSX'
 
     - name: OSX Create self-signed SSL cert
-      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /usr/local/etc/openssl/certs/outbit.key -out /usr/local/etc/openssl/certs/outbit.crt -extensions v3_ca'
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /usr/local/etc/openssl/certs/bandicoot.key -out /usr/local/etc/openssl/certs/bandicoot.crt -extensions v3_ca'
       when: ansible_distribution == 'MacOSX' and st.stat.exists == False
 
     - name: RedHat/CentOS (7) Linux make sure EPEL is installed
@@ -57,12 +57,12 @@
       when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
     - name: Linux Check if SSL cert exists
-      stat: path=/etc/ssl/certs/outbit.crt
+      stat: path=/etc/ssl/certs/bandicoot.crt
       always_run: yes
       changed_when: False
       register: st
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
     - name: Linux Create self-signed SSL cert
-      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /etc/ssl/certs/outbit.key -out /etc/ssl/certs/outbit.crt -extensions v3_ca'
+      shell: 'openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN={{ansible_fqdn}}" -days 3650 -keyout /etc/ssl/certs/bandicoot.key -out /etc/ssl/certs/bandicoot.crt -extensions v3_ca'
       when: st.stat.exists == False and ( ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' )

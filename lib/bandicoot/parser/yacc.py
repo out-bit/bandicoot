@@ -1,4 +1,4 @@
-from outbit.parser.lex import *
+from bandicoot.parser.lex import *
 import ply.yacc as yacc
 
 

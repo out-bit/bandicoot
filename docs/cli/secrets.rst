@@ -7,20 +7,20 @@ Adding, Editing, and Deleting Secrets
 
 .. sourcecode:: bash
 
-    outbit> secrets add name=neptune_rootpw secret='verysecretpassword' desc="root pw for neptune server"
+    bandicoot> secrets add name=neptune_rootpw secret='verysecretpassword' desc="root pw for neptune server"
       created secret neptune_rootpw
-    outbit> secrets edit name=neptune_rootpw secret="newpassword" desc="root pw for neptune server"
+    bandicoot> secrets edit name=neptune_rootpw secret="newpassword" desc="root pw for neptune server"
       modified secret neptune_rootpw
-    outbit> secrets list
+    bandicoot> secrets list
       desc="root pw for neptune server"   name="neptune_rootpw"   secret="..." status="encrypted"
-    outbit> secrets del name=neptune_rootpw
+    bandicoot> secrets del name=neptune_rootpw
       deleted secret neptune_rootpw
 
 Examples of migrating secrets encrypted with an older "encryption_password" or unencrypted secrets
 
 .. sourcecode:: bash
 
-    outbit> secrets encryptpw
+    bandicoot> secrets encryptpw
       secret secretusingoldpw encrypted using new password
-    outbit> secrets encryptpw name=noencsecret
+    bandicoot> secrets encryptpw name=noencsecret
       secret noencsecret updated to new password

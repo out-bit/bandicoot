@@ -17,14 +17,8 @@ RUN pip install -U setuptools
 # bandicoot application user and group
 RUN groupadd -r bandicoot && useradd -r -g bandicoot bandicoot
 
-# bandicoot-api install latest unstable
-RUN apt-get install -y git
-RUN mkdir -p /opt/bandicoot-dev/ && chmod 700 /opt/bandicoot-dev/ && chown bandicoot: /opt/bandicoot-dev/
-WORKDIR /opt/bandicoot-dev/
-RUN git clone https://github.com/starboarder2001/bandicoot.git
-WORKDIR /opt/bandicoot-dev/bandicoot/
-RUN python setup.py sdist
-RUN pip install "dist/$(ls -tr dist/|tail -1)"
+# bandicoot-api install latest stable
+RUN pip install -U bandicoot
 RUN bandicoot-api-install
 
 # bandicoot-api config
