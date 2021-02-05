@@ -7,9 +7,9 @@ import re
 import json
 import hashlib
 from pymongo import MongoClient
-from outbit.restapi import routes
-from outbit.plugins import builtins
-from outbit.exceptions import DecryptWrongKeyException, DecryptNotClearTextException, DecryptException
+from bandicoot.restapi import routes
+from bandicoot.plugins import builtins
+from bandicoot.exceptions import DecryptWrongKeyException, DecryptNotClearTextException, DecryptException
 from Crypto.Cipher import AES
 from hashlib import md5
 import binascii
@@ -51,7 +51,7 @@ def schedule_manager():
     global db
 
     # Setup DB Connection For Thread
-    db = MongoClient('localhost').outbit
+    db = MongoClient('localhost').bandicoot
 
     while True:
         # Get Current Time
@@ -251,7 +251,7 @@ def aes_derive_key_and_iv(password, salt, key_length, iv_length):
     return key, iv
 
 
-def encrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__outbit_encrypted__:"):
+def encrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__bandicoot_encrypted__:"):
     global encryption_password
     if encrypt_password is None and encryption_password is not None:
         # If No encryption password provided, use global encryption password
@@ -265,7 +265,7 @@ def encrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__ou
     return str(encrypt_text)
 
 
-def decrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__outbit_encrypted__:", keyname="unknown"):
+def decrypt_str(text, encrypt_password=None, key_len=32, encryption_prefix="__bandicoot_encrypted__:", keyname="unknown"):
     global encryption_password
     if encrypt_password is None and encryption_password is not None:
         # If No encryption password provided, use global encryption password
@@ -338,13 +338,13 @@ def roles_has_permission(user, action, options):
 
 
 def clean_all_secrets():
-    if not os.path.isdir("/tmp/outbit/"):
-        os.mkdir("/tmp/outbit")
+    if not os.path.isdir("/tmp/bandicoot/"):
+        os.mkdir("/tmp/bandicoot")
 
     # Make sure directory permissions are secure
-    os.chmod("/tmp/outbit/", 0700)
+    os.chmod("/tmp/bandicoot/", 0700)
 
-    for filename in glob("/tmp/outbit/*"):
+    for filename in glob("/tmp/bandicoot/*"):
         if os.path.isdir(filename):
             shutil.rmtree(filename)
         else:
@@ -363,7 +363,7 @@ def clean_secrets(secrets):
 
 
 def render_secret_file(name, secret):
-    filepath = "/tmp/outbit/"
+    filepath = "/tmp/bandicoot/"
     filename = "%s.%s" % (name, time.time())
     fullpath = "%s%s" % (filepath, filename)
 
@@ -455,18 +455,18 @@ def parse_action(user, category, action, options):
 
 
 class Cli(object):
-    """ outbit CLI """
+    """ bandicoot CLI """
 
     def __init__(self):
         """ Setup Arguments and Options for CLI """
         # Parse CLI Arguments
         parser = optparse.OptionParser()
         parser.add_option("-s", "--server", dest="server",
-                          help="IP address or hostname of outbit-api server",
+                          help="IP address or hostname of bandicoot-api server",
                           metavar="SERVER",
                           default=None)
         parser.add_option("-p", "--port", dest="port",
-                          help="tcp port of outbit-api server",
+                          help="tcp port of bandicoot-api server",
                           metavar="PORT",
                           default=None)
         parser.add_option("-t", "--insecure", dest="is_secure",
@@ -520,37 +520,37 @@ class Cli(object):
         pluginpath = options.pluginpath
 
         # Assign values from conf
-        outbit_config_locations = [os.path.expanduser("~")+"/.outbit-api.conf", "/etc/outbit-api.conf"]
-        outbit_conf_obj = {}
-        for outbit_conf in outbit_config_locations:
-            if os.path.isfile(outbit_conf):
-                with open(outbit_conf, 'r') as stream:
+        bandicoot_config_locations = [os.path.expanduser("~")+"/.bandicoot-api.conf", "/etc/bandicoot-api.conf"]
+        bandicoot_conf_obj = {}
+        for bandicoot_conf in bandicoot_config_locations:
+            if os.path.isfile(bandicoot_conf):
+                with open(bandicoot_conf, 'r') as stream:
                     try:
-                        outbit_conf_obj = yaml.load(stream)
+                        bandicoot_conf_obj = yaml.load(stream)
                     except yaml.YAMLError as excep:
                         print("%s\n" % excep)
-        if self.server is None and "server" in outbit_conf_obj:
-            self.server = str(outbit_conf_obj["server"])
-        if self.port is None and "port" in outbit_conf_obj:
-            self.port = int(outbit_conf_obj["port"])
-        if self.is_secure == True and "secure" in outbit_conf_obj:
-            self.is_secure = bool(outbit_conf_obj["secure"])
-        if self.is_debug == True and "debug" in outbit_conf_obj:
-            self.is_debug = bool(outbit_conf_obj["debug"])
-        if encryption_password is None and "encryption_password" in outbit_conf_obj:
-            encryption_password = str(outbit_conf_obj["encryption_password"])
-        if self.ssl_key == None and "ssl_key" in outbit_conf_obj:
-            self.ssl_key = bool(outbit_conf_obj["ssl_key"])
-        if self.ssl_crt == None and "ssl_crt" in outbit_conf_obj:
-            self.ssl_crt = bool(outbit_conf_obj["ssl_crt"])
-        if ldap_server == None and "ldap_server" in outbit_conf_obj:
-            ldap_server = str(outbit_conf_obj["ldap_server"])
-        if ldap_use_ssl == None and "ldap_use_ssl" in outbit_conf_obj:
-            ldap_use_ssl = str(outbit_conf_obj["ldap_use_ssl"])
-        if ldap_user_cn == None and "ldap_user_cn" in outbit_conf_obj:
-            ldap_user_cn = str(outbit_conf_obj["ldap_user_cn"])
-        if pluginpath == None and "pluginpath" in outbit_conf_obj:
-            pluginpath = str(outbit_conf_obj["pluginpath"])
+        if self.server is None and "server" in bandicoot_conf_obj:
+            self.server = str(bandicoot_conf_obj["server"])
+        if self.port is None and "port" in bandicoot_conf_obj:
+            self.port = int(bandicoot_conf_obj["port"])
+        if self.is_secure == True and "secure" in bandicoot_conf_obj:
+            self.is_secure = bool(bandicoot_conf_obj["secure"])
+        if self.is_debug == True and "debug" in bandicoot_conf_obj:
+            self.is_debug = bool(bandicoot_conf_obj["debug"])
+        if encryption_password is None and "encryption_password" in bandicoot_conf_obj:
+            encryption_password = str(bandicoot_conf_obj["encryption_password"])
+        if self.ssl_key == None and "ssl_key" in bandicoot_conf_obj:
+            self.ssl_key = bool(bandicoot_conf_obj["ssl_key"])
+        if self.ssl_crt == None and "ssl_crt" in bandicoot_conf_obj:
+            self.ssl_crt = bool(bandicoot_conf_obj["ssl_crt"])
+        if ldap_server == None and "ldap_server" in bandicoot_conf_obj:
+            ldap_server = str(bandicoot_conf_obj["ldap_server"])
+        if ldap_use_ssl == None and "ldap_use_ssl" in bandicoot_conf_obj:
+            ldap_use_ssl = str(bandicoot_conf_obj["ldap_use_ssl"])
+        if ldap_user_cn == None and "ldap_user_cn" in bandicoot_conf_obj:
+            ldap_user_cn = str(bandicoot_conf_obj["ldap_user_cn"])
+        if pluginpath == None and "pluginpath" in bandicoot_conf_obj:
+            pluginpath = str(bandicoot_conf_obj["pluginpath"])
 
         # Assign Default values if they were not specified at the cli or in the conf
         if self.server is None:
@@ -558,9 +558,9 @@ class Cli(object):
         if self.port is None:
             self.port = 8088
         if self.ssl_key is None:
-            self.ssl_key = "/usr/local/etc/openssl/certs/outbit.key"
+            self.ssl_key = "/usr/local/etc/openssl/certs/bandicoot.key"
         if self.ssl_crt is None:
-            self.ssl_crt = "/usr/local/etc/openssl/certs/outbit.crt"
+            self.ssl_crt = "/usr/local/etc/openssl/certs/bandicoot.crt"
         if ldap_server is None:
             ldap_server = options.ldap_server
         if ldap_use_ssl is None:
@@ -579,8 +579,8 @@ class Cli(object):
         global db
 
         # Setup logging to logfile (only if the file was touched)
-        if os.path.isfile("/var/log/outbit.log"):
-            handler = RotatingFileHandler('/var/log/outbit.log', maxBytes=10000, backupCount=1)
+        if os.path.isfile("/var/log/bandicoot.log"):
+            handler = RotatingFileHandler('/var/log/bandicoot.log', maxBytes=10000, backupCount=1)
 
         # Assign Default values if they were not specified at the cli or in the conf
         if self.server is None:
@@ -588,9 +588,9 @@ class Cli(object):
         if self.port is None:
             self.port = 8088
         if self.ssl_key is None:
-            self.ssl_key = "/usr/local/etc/openssl/certs/outbit.key"
+            self.ssl_key = "/usr/local/etc/openssl/certs/bandicoot.key"
         if self.ssl_crt is None:
-            self.ssl_crt = "/usr/local/etc/openssl/certs/outbit.crt"
+            self.ssl_crt = "/usr/local/etc/openssl/certs/bandicoot.crt"
         if ldap_server is None:
             ldap_server = options.ldap_server
         if ldap_use_ssl is None:
@@ -609,8 +609,8 @@ class Cli(object):
         global db
 
         # Setup logging to logfile (only if the file was touched)
-        if os.path.isfile("/var/log/outbit.log"):
-            handler = RotatingFileHandler('/var/log/outbit.log', maxBytes=10000, backupCount=1)
+        if os.path.isfile("/var/log/bandicoot.log"):
+            handler = RotatingFileHandler('/var/log/bandicoot.log', maxBytes=10000, backupCount=1)
             handler.setLevel(logging.INFO)
             routes.app.logger.addHandler(handler)
             # Disable stdout logging since its logging to a log file
@@ -627,7 +627,7 @@ class Cli(object):
         p.start()
 
         # Setup DB Connection
-        db = MongoClient('localhost').outbit
+        db = MongoClient('localhost').bandicoot
 
         # Init db counters for jobs
         counters_db_init("jobid")
@@ -648,7 +648,7 @@ class Cli(object):
             db.roles.insert_one(post)
 
         # Start API Server
-        routes.app.logger.info("Starting outbit api server on %s://%s:%d" % ("https" if
+        routes.app.logger.info("Starting bandicoot api server on %s://%s:%d" % ("https" if
             self.is_secure else "http", self.server, self.port))
         if self.is_secure:
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)

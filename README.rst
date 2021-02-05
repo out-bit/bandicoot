@@ -1,49 +1,49 @@
-outbit
+bandicoot
 ============
 
-.. image:: https://secure.travis-ci.org/starboarder2001/outbit.png?branch=master
-        :target: http://travis-ci.org/starboarder2001/outbit
+.. image:: https://secure.travis-ci.org/starboarder2001/bandicoot.png?branch=master
+        :target: http://travis-ci.org/starboarder2001/bandicoot
         :alt: Travis CI
 
-.. image:: https://img.shields.io/pypi/v/outbit.svg
-    :target: https://pypi.python.org/pypi/outbit
+.. image:: https://img.shields.io/pypi/v/bandicoot.svg
+    :target: https://pypi.python.org/pypi/bandicoot
     :alt: PyPI version
 
 .. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/starboarder2001/outbit
-   :target: https://gitter.im/starboarder2001/outbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+   :alt: Join the chat at https://gitter.im/starboarder2001/bandicoot
+   :target: https://gitter.im/starboarder2001/bandicoot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-.. image:: https://coveralls.io/repos/starboarder2001/outbit/badge.svg?branch=master
-    :target: https://coveralls.io/r/starboarder2001/outbit?branch=master
+.. image:: https://coveralls.io/repos/starboarder2001/bandicoot/badge.svg?branch=master
+    :target: https://coveralls.io/r/starboarder2001/bandicoot?branch=master
 
-.. image:: https://readthedocs.org/projects/outbit/badge/?version=stable
-    :target: http://outbit.readthedocs.io/en/stable/
+.. image:: https://readthedocs.org/projects/bandicoot/badge/?version=stable
+    :target: http://bandicoot.readthedocs.io/en/stable/
     :alt: Documentation Status
 
-outbit provides a simple UI for orchestrating changes or applying configurations in a datacenter and cloud environment.  outbit provides a layer on top of Ansible that allows you to easily wrap up automated tasks and provide a simple way to execute them.  The role based access control allows you to implement seperations of duties and limit specific actions to be executed by specific roles.  The logging feature allows you to track the history of changes in the environment.
+bandicoot provides a simple UI for orchestrating changes or applying configurations in a datacenter and cloud environment.  bandicoot provides a layer on top of Ansible that allows you to easily wrap up automated tasks and provide a simple way to execute them.  The role based access control allows you to implement seperations of duties and limit specific actions to be executed by specific roles.  The logging feature allows you to track the history of changes in the environment.
 
 Installation
 ============
 
-Install outbit client only. This is if you already have a dedicated outbit api server.
+Install bandicoot client only. This is if you already have a dedicated bandicoot api server.
 
 .. sourcecode:: bash
 
-    $ pip install outbit
+    $ pip install bandicoot
 
-Install outbit api server.
-
-.. sourcecode:: bash
-
-  $ pip install outbit
-  $ sudo outbit-api-install
-
-Install and Starting the outbit api server using Docker.
+Install bandicoot api server.
 
 .. sourcecode:: bash
 
-  $ docker pull starboarder2001/outbit
-  $ docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/outbit
+  $ pip install bandicoot
+  $ sudo bandicoot-api-install
+
+Install and Starting the bandicoot api server using Docker.
+
+.. sourcecode:: bash
+
+  $ docker pull starboarder2001/bandicoot
+  $ docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/bandicoot
 
 Usage
 ============
@@ -52,13 +52,13 @@ Start the API server on your localhost or on a dedicated IP.  If your using the 
 
 .. sourcecode:: bash
 
-    $ outbit-api -s 127.0.0.1 --insecure
+    $ bandicoot-api -s 127.0.0.1 --insecure
 
-Login to the outbit shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by default its configured to use ssl.  If you are using valid ssl certificates and not self signed certificates you can also remove the “-–no-check-certificates” flag.
+Login to the bandicoot shell. On the first login you will be prompted to change the default password.  If your using the Docker container you can remove the "--insecure" flag since by default its configured to use ssl.  If you are using valid ssl certificates and not self signed certificates you can also remove the “-–no-check-certificates” flag.
 
 .. sourcecode:: bash
 
-    $ outbit -u superadmin -s 127.0.0.1 --insecure --no-check-certificates
+    $ bandicoot -u superadmin -s 127.0.0.1 --insecure --no-check-certificates
       Password: superadmin
       Changing Password From Default
       Enter New Password: **********
@@ -68,7 +68,7 @@ Example of adding a "hello world" action that prints hello world.
 
 .. sourcecode:: bash
 
-    outbit> help
+    bandicoot> help
       actions [list|del|edit|add]
       users [list|del|edit|add]
       roles [list|del|edit|add]
@@ -84,9 +84,9 @@ Example of adding a "hello world" action that prints hello world.
       stats
       exit
 
-    outbit> actions add name=helloworld category=/hello action=world plugin=command desc="print hello world" command_run="echo 'hello world'"
+    bandicoot> actions add name=helloworld category=/hello action=world plugin=command desc="print hello world" command_run="echo 'hello world'"
 
-    outbit> help
+    bandicoot> help
       actions [list|del|edit|add]
       users [list|del|edit|add]
       roles [list|del|edit|add]
@@ -103,15 +103,15 @@ Example of adding a "hello world" action that prints hello world.
       hello [world]
       exit
 
-    outbit> hello world
+    bandicoot> hello world
       hello world
       return code: 0
 
-    outbit> exit
+    bandicoot> exit
 
 License
 ============
-outbit is released under the `MIT License
+bandicoot is released under the `MIT License
 <./LICENSE.rst>`_.
 
 Author

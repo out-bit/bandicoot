@@ -1,5 +1,5 @@
 import nose
-from outbit.cli import api
+from bandicoot.cli import api
 import sys
 import unittest
 import mongomock
@@ -14,12 +14,12 @@ class TestCli(unittest.TestCase):
 
     def mock_db_setup(self):
         api.dbclient = mongomock.MongoClient()
-        api.db = api.dbclient.conn["outbit"]
+        api.db = api.dbclient.conn["bandicoot"]
 
     def mock_db_basic_database(self):
         api.db.users.insert_one({"username": "jdoe1", "password_md5": "md5test"})
         api.db.users.insert_one({"username": "jdoe2", "password_md5": "md5test"})
-        api.db.secrets.insert_one({"name": "test_secret1", "secret": "__outbit_encrypted__:"+"test"})
+        api.db.secrets.insert_one({"name": "test_secret1", "secret": "__bandicoot_encrypted__:"+"test"})
         api.db.roles.insert_one({"name": "test_role1", "users": "jdoe1", "actions": "/", "secrets": "test_secret1"})
 
     def test_counters_db_init(self):

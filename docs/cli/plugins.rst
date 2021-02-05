@@ -5,7 +5,7 @@ The plugins command will show plugins that are available to use in user defined 
 
 .. sourcecode:: bash
 
-    outbit> plugins list
+    bandicoot> plugins list
       ansible
       actions_list
       roles_del

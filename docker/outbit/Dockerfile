@@ -1,7 +1,7 @@
 FROM debian:stable
 MAINTAINER David Whiteside <david@davidwhiteside.com>
 
-# outbit-api dependencies
+# bandicoot-api dependencies
 RUN apt-get update && apt-get install -y python \
   python-setuptools \
   python-dev \
@@ -14,32 +14,32 @@ RUN apt-get update && apt-get install -y python \
 RUN pip install -U pip
 RUN pip install -U setuptools
 
-# outbit application user and group
-RUN groupadd -r outbit && useradd -r -g outbit outbit
+# bandicoot application user and group
+RUN groupadd -r bandicoot && useradd -r -g bandicoot bandicoot
 
-# outbit-api install latest stable
-RUN pip install -U outbit
-RUN outbit-api-install
+# bandicoot-api install latest stable
+RUN pip install -U bandicoot
+RUN bandicoot-api-install
 
-# outbit-api config
-RUN echo "---" > /etc/outbit-api.conf
-RUN chmod 400 /etc/outbit-api.conf && chown outbit:outbit /etc/outbit-api.conf
-RUN echo "encryption_password: \"$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)\"" >> /etc/outbit-api.conf
-RUN echo "port: 8080" >> /etc/outbit-api.conf
-RUN echo "secure: False" >> /etc/outbit-api.conf
-RUN echo "server: 127.0.0.1" >> /etc/outbit-api.conf
+# bandicoot-api config
+RUN echo "---" > /etc/bandicoot-api.conf
+RUN chmod 400 /etc/bandicoot-api.conf && chown bandicoot:bandicoot /etc/bandicoot-api.conf
+RUN echo "encryption_password: \"$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)\"" >> /etc/bandicoot-api.conf
+RUN echo "port: 8080" >> /etc/bandicoot-api.conf
+RUN echo "secure: False" >> /etc/bandicoot-api.conf
+RUN echo "server: 127.0.0.1" >> /etc/bandicoot-api.conf
 
 # SSL Cert
-RUN chown outbit: /etc/ssl/certs/outbit*
-RUN chmod 440 /etc/ssl/certs/outbit*
+RUN chown bandicoot: /etc/ssl/certs/bandicoot*
+RUN chmod 440 /etc/ssl/certs/bandicoot*
 
 # Log file
-RUN touch /var/log/outbit.log && chmod 755 /var/log/outbit.log && chown outbit: /var/log/outbit.log
+RUN touch /var/log/bandicoot.log && chmod 755 /var/log/bandicoot.log && chown bandicoot: /var/log/bandicoot.log
 
 # NGINX SSL Proxy
 RUN rm -f /etc/nginx/sites-available/default
-COPY ./outbit-nginx.conf /etc/nginx/sites-available/outbit
-RUN ln -s /etc/nginx/sites-available/outbit /etc/nginx/sites-enabled/outbit
+COPY ./bandicoot-nginx.conf /etc/nginx/sites-available/bandicoot
+RUN ln -s /etc/nginx/sites-available/bandicoot /etc/nginx/sites-enabled/bandicoot
 
 # Entry Point
 COPY ./docker-entrypoint.sh /sbin/

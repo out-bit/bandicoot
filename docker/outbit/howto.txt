@@ -1,8 +1,8 @@
 # building image
-docker build -t starboarder2001/outbit .
+docker build -t starboarder2001/bandicoot .
 
 # running
-docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/outbit
+docker run -d -p 8088:8088 -p 80:80 -p 443:443 starboarder2001/bandicoot
 
 # bash shell
 docker exec -i -t da426841d88f /bin/bash

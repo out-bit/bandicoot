@@ -5,7 +5,7 @@ The help command is used to get usage information for a category or action.
 
 .. sourcecode:: bash
 
-    outbit> help
+    bandicoot> help
       actions [list|del|edit|add]
       users [list|del|edit|add]
       roles [list|del|edit|add]
@@ -22,7 +22,7 @@ The help command is used to get usage information for a category or action.
       ansibletest
       exit
 
-    outbit> help actions
+    bandicoot> help actions
       list  list actions
       del   del actions
       edit  edit actions
