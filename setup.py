@@ -50,7 +50,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'bandicoot-cli':
 else:
     # Full bandicoot Package
     # python setup.py install
-    setup(name='bandicoot',
+    setup(name='bandicoots',
           version=__version__,
           description='The command line and control center of a Data Center or Cloud.',
           author=__author__,

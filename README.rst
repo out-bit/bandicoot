@@ -5,8 +5,8 @@ bandicoot
         :target: http://travis-ci.org/out-bit/bandicoot
         :alt: Travis CI
 
-.. image:: https://img.shields.io/pypi/v/bandicoot.svg
-    :target: https://pypi.python.org/pypi/bandicoot
+.. image:: https://img.shields.io/pypi/v/bandicoots.svg
+    :target: https://pypi.python.org/pypi/bandicoots
     :alt: PyPI version
 
 .. image:: https://badges.gitter.im/Join%20Chat.svg
@@ -29,13 +29,13 @@ Install bandicoot client only. This is if you already have a dedicated bandicoot
 
 .. sourcecode:: bash
 
-    $ pip install bandicoot
+    $ pip install bandicoots
 
 Install bandicoot api server.
 
 .. sourcecode:: bash
 
-  $ pip install bandicoot
+  $ pip install bandicoots
   $ sudo bandicoot-api-install
 
 Install and Starting the bandicoot api server using Docker.
